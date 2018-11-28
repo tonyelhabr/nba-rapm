@@ -6,11 +6,20 @@ data in a CSV file in the same format defined by the "rapm_data.csv" file.
 It uses R "in the back end" for processing, so the user must have R (and Rscript.exe) installed.
 
 See below for an example of how the program can be called.
-The command line  API is essentially this:
+The command line  API is essentially as follows:
 
 ```
 > [/path/to/Rscript.exe] "[R script name]" [parameters to pass to R script]
 ```
+
+Note that is not assumed that Rscript executable is in the user's environment variables
+(although it might be). To ensure that the program will run regardless of whether
+Rscript is in the environment variables, the user should specify it explicitly.
+If the Rscript executable is in the user's "Program Files" folder (and the 
+user is on a Windows computer),
+then the user should use the prefix "C:/PROGRA~1/"
+(instead of the "C:/Users/aelhabr/Documents/" used in the examples below),
+as this is defined as an alias for the "Program Files" folder on (most) Windows computers.
 
 As shown in the example below, the "--help" option is useful for displaying
 more details about the program.

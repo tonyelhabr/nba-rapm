@@ -270,8 +270,6 @@ display_info(
 
 stopifnot_exist_dir(argv$dir)
 setwd(argv$dir)
-stopifnot_exist_file(argv$input)
-stopifnot_exist_file(argv$output)
 
 # `multi_core` parsing ---------------------------------------------------------
 if(.Platform$OS.type != "windows") {
@@ -315,13 +313,15 @@ if(!cond_import) {
       function(path, ..., side = c("o", "d")) {
         if(!file.exists(path)) {
           display_warning(
-            sprintf("Can't import because %srapm possession data from %s.", side, path)
+            sprintf("Can't import because %srapm possession data from \"%s\".", side, path)
           )
         }
       }
     import_poss_data_warn(path = path_cache_o, side = "o")
     import_poss_data_warn(path = path_cache_d, side = "d")
   }
+
+  stopifnot_exist_file(argv$input)
 
   display_info(
     sprintf("It may take some time to process the data...")

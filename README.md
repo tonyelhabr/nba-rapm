@@ -1,7 +1,7 @@
 
 # Introduction
 
-This command line program calculates Regressed Adjusted Plus-Minus given
+This command line program calculates Regularized Adjusted Plus-Minus given
 data in a CSV file in the same format defined by the "rapm_data.csv" file.
 It uses R "in the back end" for processing, so the user must have R (and Rscript.exe) installed.
 
@@ -42,13 +42,13 @@ cross-validated ridge regression. If FALSE, uses default values
 Only used if --optimize is TRUE. [default: 42]
   -ex, --export EXPORT                  Boolean to indicate whether to export "intermediary" data.
 If TRUE, will export the following:
-- offensive possession data in "wide" format to poss-data-wide-o.rds.
-- defensive possession data in "wide" format to poss-data-wide-d.rds.
+- offensive possession data in "wide" format to "poss-data-wide-o.rds".
+- defensive possession data in "wide" format to "poss-data-wide-d.rds".
  [default: TRUE]
   -in, --import IMPORT                  Boolean to indicate whether to import "intermediary" data (i.e. from a previous run, assuming the files exist).
 If TRUE, will import the following:
-- offensive possession data in "wide" format to poss-data-wide-o.rds.
-- defensive possession data in "wide" format to poss-data-wide-d.rds.
+- offensive possession data in "wide" format to "poss-data-wide-o.rds".
+- defensive possession data in "wide" format to "poss-data-wide-d.rds".
  [default: TRUE]Loading required package: methods
 usage: NBA RAPM Script [--] [--help] [--verbose] [--multi_core] [--optimize] [--export] [--import] [--opts OPTS] [--input INPUT] [--output OUTPUT] [--cores CORES]
 
@@ -64,13 +64,13 @@ flags:
 If FALSE, uses default values (162.430100 and 205.568700 for offense and defense respectively). [default: FALSE]
   -e, --export                  Flag to indicate whether to export "intermediary" data.
 If TRUE, will export the following:
-- offensive possession data in "wide" format to poss-data-wide-o.rds.
-- defensive possession data in "wide" format to poss-data-wide-d.rds.
+- offensive possession data in "wide" format to "poss-data-wide-o.rds".
+- defensive possession data in "wide" format to "poss-data-wide-d.rds".
  [default: TRUE]
   --import                      Flag to indicate whether to import "intermediary" data (i.e. from a previous run, assuming the files exist).
 If TRUE, will import the following:
-- offensive possession data in "wide" format to poss-data-wide-o.rds.
-- defensive possession data in "wide" format to poss-data-wide-d.rds.
+- offensive possession data in "wide" format to "poss-data-wide-o.rds".
+- defensive possession data in "wide" format to "poss-data-wide-d.rds".
  [default: TRUE]
 
 optional arguments:
@@ -99,23 +99,32 @@ id,drapm,orapm,rapm
 # Examples
 
 Being explicit with the argument objects that must exist. (`dir` and`input`) and specifying `output` explicitly.
-This is the best way of ensuring that everything works.
+This is the best way for the user to ensure that everything works on their system
+(because the location of the script and the name of the input file will be dependent on the user).
+
+Note that the warnings seen in this example (and the others) arise because 
+the boolean `import` is set to `TRUE` by default, but there are
+no files to import from a previous run.
+
 
 ```
-C:\Users\aelhabr>C:/Users/aelhabr/Documents/R/R-3.4.4/bin/Rscript.exe "C:/Users/aelhabr/Documents/projects/nba-rapm/_main.R" --dir "C:/Users/aelhabr/Documents/projects/nba-rapm/" --input "rapm_data.csv" --output "rapm_estimates.csv"
+C:\Users\aelhabr>C:/Users/aelhabr/Documents/R/R-3.4.4/bin/Rscript.exe "C:/Users/aelhabr/Documents/projects/nba-rapm/_main.R" --dir "C:/Users/aelhabr/Documents/projects/nba-rapm/" --input "rapm_data.csv" --output "my output.csv"
 Loading required package: methods
 INFO: `dir` is "C:/Users/aelhabr/Documents/projects/nba-rapm/".
 INFO: `input` is "rapm_data.csv".
 INFO: `output` is "rapm_estimates.csv".
-WARNING: Can't import because orapm possession data from poss-data-wide-o.rds.
-WARNING: Can't import because drapm possession data from poss-data-wide-d.rds.
+WARNING: Can't import because orapm possession data from "poss-data-wide-o.rds".
+WARNING: Can't import because drapm possession data from "poss-data-wide-d.rds".
 INFO: It may take some time to process the data...
-INFO: Trying to export "o" possession data to poss-data-wide-o.rds.
-INFO: Trying to export "d" possession data to poss-data-wide-d.rds.
-INFO: Exported final rapm estimates to "rapm_estimates.csv".
+INFO: Trying to export "o" possession data to "poss-data-wide-o.rds".
+INFO: Trying to export "d" possession data to "poss-data-wide-d.rds".
+INFO: Exported final rapm estimates to "my_output.csv".
 ```
 
-Not being explicit with the required argument objects. Depending on the default values being correct and using the default `output` value.
+Not being explicit with the required argument objects.
+Instead, depending on the default values being correct and using the default `output` value.
+(Again, the alternative input files to use do not exist, so `input` is used directly.)
+
 
 ```
 C:\Users\aelhabr>C:/Users/aelhabr/Documents/R/R-3.4.4/bin/Rscript.exe "C:/Users/aelhabr/Documents/projects/nba-rapm/_main.R"
@@ -123,11 +132,26 @@ Loading required package: methods
 INFO: `dir` is "C:/Users/aelhabr/Documents/projects/nba-rapm/".
 INFO: `input` is "rapm_data.csv".
 INFO: `output` is "rapm_estimates.csv".
-WARNING: Can't import because orapm possession data from poss-data-wide-o.rds.
-WARNING: Can't import because drapm possession data from poss-data-wide-d.rds.
+WARNING: Can't import because orapm possession data from "poss-data-wide-o.rds".
+WARNING: Can't import because drapm possession data from "poss-data-wide-d.rds".
 INFO: It may take some time to process the data...
-INFO: Trying to export "o" possession data to poss-data-wide-o.rds.
-INFO: Trying to export "d" possession data to poss-data-wide-d.rds.
+INFO: Trying to export "o" possession data to "poss-data-wide-o.rds".
+INFO: Trying to export "d" possession data to "poss-data-wide-d.rds".
+INFO: Exported final rapm estimates to "rapm_estimates.csv".
+```
+
+Using "cached" input files (from a previous run), meaning that `input` is ignored.
+(Also, depending on default values).
+
+```
+C:\Users\aelhabr>C:/Users/aelhabr/Documents/R/R-3.4.4/bin/Rscript.exe "C:/Users/aelhabr/Documents/projects/nba-rapm/_main.R"
+Loading required package: methods
+INFO: `dir` is "C:/Users/aelhabr/Documents/projects/nba-rapm".
+INFO: `input` is "rapm_data.csv".
+INFO: `output` is "rapm_estimates.csv".
+INFO: It may take some time to process the data...
+INFO: Importing orapm possession data from "poss-data-wide-o.rds".
+INFO: Importing drapm possession data from "poss-data-wide-d.rds".
 INFO: Exported final rapm estimates to "rapm_estimates.csv".
 ```
 
@@ -140,8 +164,8 @@ INFO: `dir` is "C:/Users/aelhabr/Documents/projects/nba-rapm".
 INFO: `input` is "rapm_data.csv".
 INFO: `output` is "rapm_estimates.csv".
 INFO: It may take some time to process the data...
-INFO: Trying to export "o" possession data to poss-data-wide-o.rds.
-INFO: Trying to export "d" possession data to poss-data-wide-d.rds.
+INFO: Trying to export "o" possession data to "poss-data-wide-o.rds".
+INFO: Trying to export "d" possession data to "poss-data-wide-d.rds".
 INFO: Exported final rapm estimates to "rapm_estimates.csv".
 ```
 
@@ -154,7 +178,6 @@ Loading required package: methods
 INFO: `dir` is "C:/Users/aelhabr/Documents/projects/nba-rapm".
 INFO: `input` is "rapm_data.csv".
 INFO: `output` is "rapm_estimates.csv".
-WARNING: Ignoring `multi_core` = `TRUE` because user system is not Windows.
 INFO: Importing orapm possession data from "poss-data-wide-o.rds".
 INFO: Importing drapm possession data from "poss-data-wide-d.rds".
 INFO: It may take some time to optimize...

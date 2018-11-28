@@ -117,7 +117,7 @@ no files to import from a previous run.
 
 
 ```
-C:\Users\aelhabr>C:/Users/aelhabr/Documents/R/R-3.4.4/bin/Rscript.exe "C:/Users/aelhabr/Documents/projects/nba-rapm/_main.R" --dir "C:/Users/aelhabr/Documents/projects/nba-rapm/" --input "rapm_data.csv" --output "my output.csv"
+C:\Users\aelhabr>C:/Users/aelhabr/Documents/R/R-3.4.4/bin/Rscript.exe "C:/Users/aelhabr/Documents/projects/nba-rapm/_main.R" --dir "C:/Users/aelhabr/Documents/projects/nba-rapm/" --input "rapm_data.csv" --output "my_output.csv"
 Loading required package: methods
 INFO: `dir` is "C:/Users/aelhabr/Documents/projects/nba-rapm/".
 INFO: `input` is "rapm_data.csv".

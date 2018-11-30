@@ -59,7 +59,7 @@ player_stats <-
   data_raw %>%
   pull(PlayerStats) %>%
   str_extract_all("([-0-9a-zA-Z)]+)", simplify = TRUE) %>%
-  .[,c(2, 3, 5)] %>%
+  .[, c(2, 3, 5)] %>%
   as_tibble() %>%
   purrr::set_names(c("lineup1", "lineup2", "poss")) %>%
   # filter(str_detect(poss, "^(Def|Off)Poss$")) %>%
@@ -85,78 +85,174 @@ data <-
   arrange(game_id, period, num_poss_period) %>%
   mutate_at(vars(matches("^min.*period$")), funs(. / 60L)) %>%
   bind_cols(player_stats) # %>%
-  # Other `lineup1`s correspond to `off_id`s that are repeated in the `player_stats`.
-  # Don't filter `player_stats` beforehand in order to keep same number of rows
-  # for binding.
-  # filter(str_detect(lineup1, "[-]"))
+# Other `lineup1`s correspond to `off_id`s that are repeated in the `player_stats`.
+# Don't filter `player_stats` beforehand in order to keep same number of rows
+# for binding.
+# filter(str_detect(lineup1, "[-]"))
 data
+# game_id_filt <- "21700605"
+# data2 <- nbastatR::get_games_play_by_play(game_ids = game_id_filt)
+#
+# data2_filt <-
+#   data2 %>%
+#   janitor::clean_names() %>%
+#   select(
+#     game_id = id_game,
+#     period = number_period,
+#     minsec_start_period = time_quarter,
+#     pts_home = score_home,
+#     pts_away = score_away
+#   ) %>%
+#   filter(!is.na(pts_home)) %>%
+#   mutate(pts_diff_start = pts_home - pts_away) %>%
+#   separate(minsec_start_period, into = c("min_start_period", "sec_start_period"), sep = ":") %>%
+#   mutate_all(funs(as.integer)) %>%
+#   mutate(min_start_period = min_start_period + (sec_start_period / 60L)) %>%
+#   select(-matches("sec_start_period"))
+# data2_filt
+#
+# data_filt <-
+#   data %>%
+#   filter(game_id == game_id_filt)
+# data_filt
+#
+# data_join_filt <-
+#   data_filt %>%
+#   mutate(
+#     pts_diff_start_abs = abs(pts_diff_start)
+#   ) %>%
+#   left_join(
+#     data2_filt %>% rename(pts_diff_start_abs = pts_diff_start),
+#     by = c("game_id", "period", "min_start_period", "pts_diff_start_abs")
+#   ) %>%
+#   # filter(lineup2 == "") %>%
+#   distinct() %>%
+#   fill(pts_home) %>%
+#   fill(pts_away) %>%
+#   mutate_at(vars(matches("^pts_(home)|(away)$")), funs(coalesce(., 0L))) %>%
+#   # mutate(pts = (abs(pts_diff_start) - abs(lag(pts_diff_start, 1))) * -off) %>%
+#   select(-matches("abs$")) %>%
+#   mutate_at(
+#     vars(matches("id$")),
+#     funs(str_replace_all(., "(^.*)([0-9]{3}$)", "\\2") %>% as.integer())
+#   ) %>%
+#   select(-matches("lineup"), everything(), matches("lineup"))
+#
+# data_join_filt %>%
+#   mutate(tm1 = min(off_id, def_id), tm2 = max(off_id, def_id)) %>%
+#   # mutate(pts1 = if_else(off_id == tm1, -lead(pts_diff_start, 1), 0L)) %>%
+#   # mutate(pts2 = if_else(off_id != tm1, lead(pts_diff_start, 1) - pts1, 0L)) %>%
+#   # arrange(game_id, desc(period), desc(min_end_period)) %>%
+#   mutate(
+#     pts_diff1 = if_else(off_id == tm1, pts_diff_start, 0L),
+#     pts_diff2 = if_else(off_id == tm2, pts_diff_start, 0L)
+#   ) %>%
+#   mutate(
+#     pts1 =
+#       if_else(off_id == tm1,
+#               if_else((sign(-dplyr::lead(pts_diff2, 1)) == sign(pts_diff1)),
+#                       (-dplyr::lead(pts_diff2, 1) - pts_diff1),
+#                       # abs(-dplyr::lead(pts_diff2, 1) + pts_diff1)
+#                       # -9999L
+#                       abs(dplyr::lead(pts_diff2, 1)) + abs(pts_diff1)
+#                       ),
+#               0L
+#               )
+#   ) %>%
+#   mutate(
+#     pts2 =
+#       if_else(off_id == tm2,
+#               if_else((sign(-dplyr::lead(pts_diff1, 1)) == sign(pts_diff2)),
+#                       (-dplyr::lead(pts_diff1, 1) - pts_diff2),
+#                       abs(dplyr::lead(pts_diff1, 1)) + abs(pts_diff2)
+#               ),
+#               0L
+#       )
+#   ) %>%
+#   mutate_at(vars(matches("^pts[12]$")), funs(coalesce(., 0L))) %>%
+#   mutate(
+#     pts_cumsum1 = cumsum(pts1)
+#   ) %>%
+#   mutate(
+#     pts_cumsum2 = cumsum(pts2)
+#   ) %>%
+#   select(-matches("lineup")) -> z
+#
+# z %>%
+#   filter((pts_cumsum1 != (pts_cumsum2 + abs(lead(pts_diff_start, 1)))) &
+#            (pts_cumsum2 != (pts_cumsum1 + abs(lead(pts_diff_start, 1)))))
+# z %>% filter(pts1 > 3 | pts2 > 3)
+#
+# data %>%
+#   filter(game_id == game_id_filt) %>%
+#   group_by(game_id) %>%
+#   mutate(tm1 = min(off_id, def_id)) %>%
+#   # mutate(pts1 = if_else(off_id == tm1, -lead(pts_diff_start, 1), 0L)) %>%
+#   # mutate(pts2 = if_else(off_id != tm1, lead(pts_diff_start, 1) - pts1, 0L)) %>%
+#   # arrange(game_id, desc(period), desc(min_end_period)) %>%
+#   select(-matches("lineup"))
 
-game_id_filt <- "21700605"
-data2 <- nbastatR::get_games_play_by_play(game_ids = game_id_filt)
-
-data2_filt <-
-  data2 %>%
-  janitor::clean_names() %>%
-  select(
-    game_id = id_game,
-    period = number_period,
-    minsec_start_period = time_quarter,
-    pts_home = score_home,
-    pts_away = score_away
-  ) %>%
-  filter(!is.na(pts_home)) %>%
-  mutate(pts_diff_start = pts_home - pts_away) %>%
-  separate(minsec_start_period, into = c("min_start_period", "sec_start_period"), sep = ":") %>%
-  mutate_all(funs(as.integer)) %>%
-  mutate(min_start_period = min_start_period + (sec_start_period / 60L)) %>%
-  select(-matches("sec_start_period"))
-data2_filt
-
-data_join_filt <-
+data <-
   data %>%
-  filter(game_id == game_id_filt) %>%
-  mutate(
-    pts_diff_start_abs = abs(pts_diff_start)
-  ) %>%
-  left_join(
-    data2_filt,
-    by = c("game_id", "period", "min_start_period", "pts_diff_start")
-  ) %>%
-  # filter(lineup2 == "") %>%
-  distinct() %>%
-  fill(pts_home) %>%
-  fill(pts_away) %>%
-  mutate_at(vars(matches("^pts_(home)|(away)$")), funs(coalesce(., 0L))) %>%
-  # mutate(pts = (abs(pts_diff_start) - abs(lag(pts_diff_start, 1))) * -off) %>%
-  select(-matches("abs$")) %>%
-  select(-matches("lineup"), everything(), matches("lineup"))
+  filter(str_detect(lineup1, "[-]"))
 
-data_join_filt %>%
-  mutate_at(vars(matches("id$")), funs(str_replace_all(., "(^.*)([0-9]{3}$)", "\\2") %>% as.integer())) %>%
-  mutate(tm1 = min(off_id, def_id), tm2 = max(off_id, def_id)) %>%
-  # mutate(pts1 = if_else(off_id == tm1, -lead(pts_diff_start, 1), 0L)) %>%
-  # mutate(pts2 = if_else(off_id != tm1, lead(pts_diff_start, 1) - pts1, 0L)) %>%
-  # arrange(game_id, desc(period), desc(min_end_period)) %>%
-  select(-matches("lineup"))
-
-
-data %>%
-  filter(game_id == game_id_filt) %>%
+data <-
+  data %>%
   group_by(game_id) %>%
-  mutate(tm1 = min(off_id, def_id)) %>%
-  # mutate(pts1 = if_else(off_id == tm1, -lead(pts_diff_start, 1), 0L)) %>%
-  # mutate(pts2 = if_else(off_id != tm1, lead(pts_diff_start, 1) - pts1, 0L)) %>%
-  # arrange(game_id, desc(period), desc(min_end_period)) %>%
-  select(-matches("lineup"))
+  mutate(tm1 = min(off_id, def_id), tm2 = max(off_id, def_id)) %>%
+  mutate(
+    pts_diff1 = if_else(off_id == tm1, pts_diff_start, 0L),
+    pts_diff2 = if_else(off_id == tm2, pts_diff_start, 0L)
+  ) %>%
+  mutate(
+    pts1 =
+      if_else(off_id == tm1,
+        if_else((sign(-dplyr::lead(pts_diff2, 1)) == sign(pts_diff1)),
+          (-dplyr::lead(pts_diff2, 1) - pts_diff1),
+          abs(dplyr::lead(pts_diff2, 1)) + abs(pts_diff1)
+        ),
+        0L
+      )
+  ) %>%
+  mutate(
+    pts2 =
+      if_else(off_id == tm2,
+        if_else((sign(-dplyr::lead(pts_diff1, 1)) == sign(pts_diff2)),
+          (-dplyr::lead(pts_diff1, 1) - pts_diff2),
+          abs(dplyr::lead(pts_diff1, 1)) + abs(pts_diff2)
+        ),
+        0L
+      )
+  ) %>%
+  mutate(off = if_else(off_id == tm1, 1L, 0L)) %>%
+  mutate_at(vars(matches("^pts[12]$")), funs(coalesce(., 0L))) %>%
+  ungroup() %>%
+  select(-matches("^off_id$|^def_id$|^pts_diff_start$|^num_poss_period$|^min_.*_period$"))
+data
+data %>% filter(off == dplyr::lag(off, 1) | off == dplyr::lead(off, 1))
+
+data <-
+  data %>%
+  filter(
+    !((pts1 > 4) | (pts2 > 4)) |
+      !(
+        ((pts1 > 4) &
+           (
+             pts1 == abs(pts_diff1)
+           )) |
+          ((pts2 > 4) &
+             (
+               pts2 == abs(pts_diff2)
+             ))
+      )
+  )
+data %>% filter(off == dplyr::lag(off, 1) | off == dplyr::lead(off, 1))
 
 data_summ <-
   data %>%
+  mutate(pts = (pts1 + pts2)) %>%
   mutate(n_poss = 1L) %>%
   group_by(lineup1, lineup2, off) %>%
-  # summarise(
-  #   pts = sum(pts),
-  #   n_poss = n()
-  # ) %>%
   summarise_at(vars(pts, n_poss), funs(sum)) %>%
   ungroup()
 data_summ
@@ -194,7 +290,7 @@ separate_lineup <-
 data_sep <-
   data_summ %>%
   separate_lineup(lineup1, suffix = 1:5) %>%
-  separate_lineup(lineup2, suffix = 6:10) %>%%
+  separate_lineup(lineup2, suffix = 6:10) %>%
   mutate_at(vars(matches("^x")), funs(as.integer))
 data_sep
 

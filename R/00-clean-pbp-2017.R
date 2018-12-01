@@ -1,9 +1,10 @@
 
 # Source: https://dblackrun.github.io/2018/04/17/nba-possession-data.html.
-# url <- "https://s3.amazonaws.com/pbpstats/db_dumps/possession_details_00217.csv.zip"
+# url <- "https://s3.amazonaws.com/datastats/db_dumps/possession_details_00217.csv.zip"
 data_raw <-
   config$path_data_raw %>%
-  read_csv()
+  # read_csv()
+  teproj::import_path()
 data_raw
 
 player_stats <- data_raw %>% pull(PlayerStats)
@@ -264,7 +265,7 @@ data %>%
 data <-
   data %>%
   mutate(pts = (pts1 + pts2)) %>%
-  select(-matches("game_id|period|pts_diff[1|2]|tm[1|2]|pts[1|2]")) %>%
+  select(-matches("pts_diff[1|2]|tm[1|2]|pts[1|2]")) %>%
   # mutate(n_poss = 1L) %>%
   # group_by(lineup1, lineup2, is_off) %>%
   # summarise_at(vars(pts, n_poss), funs(sum)) %>%
@@ -272,24 +273,22 @@ data <-
   # # filter(n_poss > 1) %>%
   # mutate(ppp = 100 * pts / n_poss) %>%
   # filter(ppp <= 300) %>%
-  arrange(desc(pts)) %>%
+  # arrange(desc(pts)) %>%
+  arrange(game_id, period) %>%
   ungroup()
 data
 
-data %>% write_csv(config$path_data_clean)
-
-
 # # Note: player_ids are either 4, 6, or 7 characters in length
-# pbp %>%
-#   separate(lineup_id1, into = c(paste0("x", 1:5)), sep = "-") %>%
+# data %>%
+#   separate(lineup1, into = c(paste0("x", 1:5)), sep = "-") %>%
 #   gather(key, value, matches("^x")) %>%
 #   filter(value != off_id, value != def_id) %>%
 #   mutate(n_char = nchar(value)) %>%
 #   filter(n_char == max(n_char, na.rm = TRUE)) %>%
 #   distinct(value)
 #
-# pbp %>%
-#   separate(lineup_id1, into = c(paste0("x", 1:5)), sep = "-") %>%
+# data %>%
+#   separate(lineup1, into = c(paste0("x", 1:5)), sep = "-") %>%
 #   gather(key, value, matches("^x")) %>%
 #   filter(value != off_id, value != def_id) %>%
 #   mutate(n_char = nchar(value)) %>%
@@ -298,18 +297,9 @@ data %>% write_csv(config$path_data_clean)
 #   geom_histogram()
 
 
-# to add ----
-players_raw <-
-  nbastatR::get_nba_players()
+teproj::export_path(
+  data,
+  path = config$path_data_clean,
+  export = config$export_data
+)
 
-players <-
-  players_raw %>%
-  janitor::clean_names() %>%
-  filter(is_active) %>%
-  select(
-    id = id_player,
-    name = name_player
-  ) %>%
-  arrange(id)
-players
-players %>% arrange(desc(id_player))

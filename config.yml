@@ -1,13 +1,25 @@
 default:
+
+  export_data: true
+  # dir_data: "data"
+  export_viz: true
+  # dir_viz: "figs"
+
   path_data_raw: "data-raw/possession_details_00217.csv"
   path_data_clean: "data/data-clean-2017.csv"
-  path_export: "data/rapm-estimates-2017.csv"
+
+  path_cache_o: "data/data-wide-o.rds"
+  path_cache_d: "data/data-wide-d.rds"
+
+  path_data_export: "data/rapm-estimates-2017.csv"
+
+  path_players: "data/players.csv"
 
   seed: 42
   optimize: false
 
-  lambda_optm_o:
-  lambda_optm_d:
+  lambda_optm_o: 200
+  lambda_optm_d: 200
 
 production:
 

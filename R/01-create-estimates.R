@@ -5,6 +5,7 @@
 data <-
   config$path_data_clean %>%
   teproj::import_path_cleanly()
+data
 
 separate_lineup <-
   function(data, col, prefix = "x", suffix = 1:5, sep = "-") {
@@ -21,15 +22,20 @@ data
 
 data <-
   data %>%
+  mutate(poss_num = row_number()) %>%
   gather(dummy, id, matches("^x")) %>%
   select(-dummy) %>%
   mutate_at(vars(is_off), funs(if_else(. == 0L, "d", "o"))) %>%
   mutate_at(vars(id), funs(sprintf("%s%010d", is_off, as.integer(.)))) %>%
   select(-is_off) %>%
   mutate(dummy = 1L)
+data
 
-path_cache_o <- "data/data-wide-o.rds"
-path_cache_d <- "data/data-wide-d.rds"
+
+data %>%
+  filter(str_detect(id, sprintf("^%s", "o"))) %>%
+  count(game_id, period, id, sort = TRUE)
+
 
 create_data_wide <-
   function(data, prefix = c("o", "d"), path) {
@@ -38,26 +44,27 @@ create_data_wide <-
     res <-
       data %>%
       filter(str_detect(id, sprintf("^%s", prefix))) %>%
+      spread(id, dummy, fill = 0L) %>%
+      select(-matches("game_id|period")) %>%
       mutate(n_poss = 1L) %>%
       group_by_at(vars(-pts, -n_poss)) %>%
       summarise_at(vars(pts, n_poss), funs(sum)) %>%
       ungroup() %>%
       select(pts, n_poss, everything()) %>%
-      # filter(n_poss > 1) %>%
-      filter(n_poss > 20) %>%
+      filter(n_poss > 1) %>%
+      # filter(n_poss > 20) %>%
       filter(pts > 0) %>%
       mutate(pts = 100 * pts / n_poss) %>%
-       #filter(pts <= 300) %>%
-      filter(pts <= 200) %>%
-      select(-n_poss) %>%
-      spread(id, dummy, fill = 0L)
+      filter(pts <= 300) %>%
+      # filter(pts <= 200) %>%
+      select(-n_poss)
 
     res %>% write_rds(path)
     res
   }
 
-data_wide_o <- create_data_wide(data, prefix = "o", path = path_cache_o)
-data_wide_d <- create_data_wide(data, prefix = "d", path = path_cache_d)
+data_wide_o <- create_data_wide(data, prefix = "o", path = config$path_cache_o)
+data_wide_d <- create_data_wide(data, prefix = "d", path = config$path_cache_d)
 
 # Note that everything from here on down is the same, except `config` <-> `aregv`
 # and `message()` <-> `display_info()`.
@@ -202,13 +209,22 @@ estimates <-
   arrange(desc(rapm))
 estimates
 
+players <-
+  config$path_players %>%
+  teproj::import_path_cleanly()
+
 estimates_pretty <-
   estimates %>%
   mutate_at(vars(matches("rapm")), funs(rnk = row_number(desc(.)))) %>%
   left_join(players, by = "id")
 estimates_pretty
 
-estimates %>% teproj::export_path(config$path_export)
+teproj::export_path(
+  estimates,
+  path = config$path_data_export,
+  export = config$export_data
+)
+
 message(
   sprintf("Exported final rapm estimates to \"%s\".", config$output)
 )

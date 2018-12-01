@@ -1,0 +1,13 @@
+default:
+  path_data_raw: "data-raw/possession_details_00217.csv"
+  path_data_clean: "data/data-clean-2017.csv"
+  path_export: "data/rapm-estimates-2017.csv"
+
+  seed: 42
+  optimize: false
+
+  lambda_optm_o:
+  lambda_optm_d:
+
+production:
+

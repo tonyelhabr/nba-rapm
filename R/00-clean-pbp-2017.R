@@ -1,10 +1,9 @@
 
-library("tidyverse")
 # Source: https://dblackrun.github.io/2018/04/17/nba-possession-data.html.
 # url <- "https://s3.amazonaws.com/pbpstats/db_dumps/possession_details_00217.csv.zip"
 data_raw <-
-  "possession_details_00217.csv" %>%
-  readr::read_csv()
+  config$path_data_raw %>%
+  read_csv()
 data_raw
 
 player_stats <- data_raw %>% pull(PlayerStats)
@@ -62,8 +61,14 @@ player_stats <-
   .[, c(2, 3, 5)] %>%
   as_tibble() %>%
   purrr::set_names(c("lineup1", "lineup2", "poss")) %>%
-  # filter(str_detect(poss, "^(Def|Off)Poss$")) %>%
-  mutate(off = case_when(poss == "OffPoss" ~ 1L, poss == "DefPoss" ~ -1L, TRUE ~ 0L)) %>%
+  # filter(str_detect(poss, "^(Def|is_off)Poss$")) %>%
+  mutate(is_off =
+           case_when(
+             poss == "OffPoss" ~ 1L,
+             poss == "DefPoss" ~ -1L,
+             TRUE ~ 0L
+             )
+         ) %>%
   select(-poss)
 player_stats
 
@@ -130,7 +135,7 @@ data
 #   fill(pts_home) %>%
 #   fill(pts_away) %>%
 #   mutate_at(vars(matches("^pts_(home)|(away)$")), funs(coalesce(., 0L))) %>%
-#   # mutate(pts = (abs(pts_diff_start) - abs(lag(pts_diff_start, 1))) * -off) %>%
+#   # mutate(pts = (abs(pts_diff_start) - abs(lag(pts_diff_start, 1))) * -is_off) %>%
 #   select(-matches("abs$")) %>%
 #   mutate_at(
 #     vars(matches("id$")),
@@ -192,10 +197,12 @@ data
 #   # arrange(game_id, desc(period), desc(min_end_period)) %>%
 #   select(-matches("lineup"))
 
+# Remove the dummy row with just a single string in `lineup1` and nothing for `lineup2`.
 data <-
   data %>%
   filter(str_detect(lineup1, "[-]"))
 
+# Really should write some functions for these.
 data <-
   data %>%
   group_by(game_id) %>%
@@ -224,12 +231,15 @@ data <-
         0L
       )
   ) %>%
-  mutate(off = if_else(off_id == tm1, 1L, 0L)) %>%
+  mutate(is_off = if_else(off_id == tm1, 1L, 0L)) %>%
   mutate_at(vars(matches("^pts[12]$")), funs(coalesce(., 0L))) %>%
   ungroup() %>%
   select(-matches("^off_id$|^def_id$|^pts_diff_start$|^num_poss_period$|^min_.*_period$"))
 data
-data %>% filter(off == dplyr::lag(off, 1) | off == dplyr::lead(off, 1))
+
+# There are still some to fix...
+data %>%
+  filter(is_off == dplyr::lag(is_off, 1) | is_off == dplyr::lead(is_off, 1))
 
 data <-
   data %>%
@@ -246,28 +256,28 @@ data <-
              ))
       )
   )
-data %>% filter(off == dplyr::lag(off, 1) | off == dplyr::lead(off, 1))
 
-data_summ <-
+# Looks like it's pretty good now.
+data %>%
+  filter(is_off == dplyr::lag(is_off, 1) | is_off == dplyr::lead(is_off, 1))
+
+data <-
   data %>%
   mutate(pts = (pts1 + pts2)) %>%
-  mutate(n_poss = 1L) %>%
-  group_by(lineup1, lineup2, off) %>%
-  summarise_at(vars(pts, n_poss), funs(sum)) %>%
+  select(-matches("game_id|period|pts_diff[1|2]|tm[1|2]|pts[1|2]")) %>%
+  # mutate(n_poss = 1L) %>%
+  # group_by(lineup1, lineup2, is_off) %>%
+  # summarise_at(vars(pts, n_poss), funs(sum)) %>%
+  # ungroup() %>%
+  # # filter(n_poss > 1) %>%
+  # mutate(ppp = 100 * pts / n_poss) %>%
+  # filter(ppp <= 300) %>%
+  arrange(desc(pts)) %>%
   ungroup()
-data_summ
+data
 
-data_summ %>%
-  # arrange(desc(pts))
-  mutate(ppp = pts / n_poss) %>%
-  # arrange(desc(ppp))
-  arrange(ppp)
+data %>% write_csv(config$path_data_clean)
 
-separate_lineup <-
-  function(data, col, prefix = "x", suffix = 1:5, sep = "-") {
-    data %>%
-      separate(!!enquo(col), into = paste0(prefix, suffix), sep = sep)
-  }
 
 # # Note: player_ids are either 4, 6, or 7 characters in length
 # pbp %>%
@@ -287,15 +297,8 @@ separate_lineup <-
 #   ggplot(aes(n_char)) +
 #   geom_histogram()
 
-data_sep <-
-  data_summ %>%
-  separate_lineup(lineup1, suffix = 1:5) %>%
-  separate_lineup(lineup2, suffix = 6:10) %>%
-  mutate_at(vars(matches("^x")), funs(as.integer))
-data_sep
 
 # to add ----
-
 players_raw <-
   nbastatR::get_nba_players()
 
@@ -304,9 +307,9 @@ players <-
   janitor::clean_names() %>%
   filter(is_active) %>%
   select(
-    id_player,
-    name_player
+    id = id_player,
+    name = name_player
   ) %>%
-  arrange(id_player)
+  arrange(id)
 players
 players %>% arrange(desc(id_player))

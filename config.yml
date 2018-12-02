@@ -1,28 +1,82 @@
 default:
 
-  export_data: true
-  # dir_data: "data"
-  export_viz: true
-  # dir_viz: "figs"
+  argparser:
+    default:
+      # Note that the `{argparser}` default is `TRUE`, but I would rather make
+      # it optional.
+      required: false
+      # Cannot be `NULL` at run-time
+      arg:
+      help: "" # This is required by `{argparser}`.
+      # These are the `{argparser}` defaults (for `add_parameter()`).
+      type:
+      nargs:
+      short:
+      # Note that the `{argparser}` default is `NULL`, but I want to explicitly
+      # go against this behavior by default because I prefer even boolean-like
+      # parameters to be non-boolean (because if the default is `TRUE`, there
+      # is no easy way to set the value to `FALSE` at run-time at the command line.
+      flag: FALSE
 
-  path_data_raw: "data-raw/possession_details_00217.csv"
-  path_data_clean: "data/data-clean-2017.csv"
-  path_data_check: "data/data-21700002.csv"
-  game_id_check: 21700002
+  yaml:
+    general:
+      export_data: true
+      # dir_data: "data"
+      export_viz: true
+      # dir_viz: "figs"
 
-  path_cache_o: "data/data-wide-o.rds"
-  path_cache_d: "data/data-wide-d.rds"
+      # These were valid for the first data source used.
+      # path_data_raw: "data-raw/possession_details_00217.csv"
+      # path_data_clean: "data/data-clean-2017.csv"
+      # path_data_check: "data/data-21700002.csv"
+      # game_id_check: 21700002
 
-  path_data_export: "data/rapm-estimates-2017.csv"
+      multicore: true
+      n_core:
+        arg: 4
+        help: "How many cores?"
+        type: "integer"
 
-  path_players: "data/players.csv"
-  path_players_summ: "data/players-summ.csv"
+    # Data pre-processing (i.e. cleaning) parameters.
+    preprocess:
+      # season: !expr 2016:2017
+      season: 2016
+      path_play_by_play_raw_format:
+        arg: "data-raw/play_by_play_with_lineup/play_by_play_with_lineup_%04d.csv"
+      path_game_summary_raw_format:
+        arg: "data-raw/raw_game_summary/raw_game_summary_%04d.csv"
+      path_data_clean_format:
+        arg: "data/data-clean-%04d.csv"
+      path_players_format:
+        arg: "data/players-%04d.csv"
+      path_players_summ_format:
+        arg: "data/players-summ-%04d.csv"
 
-  seed: 42
-  optimize: true
+    runtime:
+      # Run-time parameters.
+      # These `min*` paraemeters are to-be-implemented.
+      min_poss: 200
+      min_gm:
+      min_min:
 
-  lambda_optm_o: 200 # 304.338412
-  lambda_optm_d: 200 # 259.729389
+      path_cache_o_format:
+        arg: "data/data-wide-o-%04d.rds"
+      path_cache_d_format:
+        arg: "data/data-wide-d-%04d.rds"
+      path_data_export_format:
+        arg: "data/rapm-estimates-%04d.csv"
+      seed:
+        arg: 42
+        type: "numeric"
+      optimize:
+        arg: true
+        type: "logical"
+      lambda_optm_o:
+        arg: 200
+        type: "numeric"
+      lambda_optm_d:
+        arg: 200
+        type: "numeric"
 
 production:
 

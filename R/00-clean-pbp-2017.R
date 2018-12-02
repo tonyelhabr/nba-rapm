@@ -313,6 +313,8 @@ data <-
     funs(str_replace_all(., "([0-9]{3})([0-9]{7})", "\\2"))
   )
 
+
+# columns: game_id, period, lineup1, lineup2, is_off, min_poss, pts
 teproj::export_path(
   data,
   path = config$path_data_clean,

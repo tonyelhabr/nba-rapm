@@ -20,9 +20,35 @@
 # players %>% filter(str_detect(id, "01158"))
 # players %>% filter(str_detect(id, "235"))
 
+# data-clean ----
+path_data_clean_old <- "_project/rapm_data.csv"
+
+data_clean_old <-
+  path_data_clean_old %>%
+  teproj::import_path_cleanly()
+data_clean <-
+  config$path_data_clean %>%
+  teproj::import_path_cleanly()
+
+data_clean_old %>%
+  count(game_id, sort = TRUE)
+
+data_clean %>%
+  count(game_id, sort = TRUE)
+
+data_clean_old %>%
+  count(game_id, sort = TRUE) %>%
+  ggplot(aes(x = n)) +
+  geom_density()
+
+data_clean %>%
+  count(game_id, sort = TRUE) %>%
+  ggplot(aes(x = n)) +
+  geom_density()
+
+# data_wide ----
 path_cache_o_old <- "_project/poss-data-wide-o.rds"
 path_cache_d_old <- path_cache_o_old %>% str_replace("-o", "-d")
-
 data_wide_o_old <-
   path_cache_o_old %>%
   teproj::import_path_cleanly()
@@ -37,8 +63,8 @@ data_wide_d <-
   config$path_cache_d %>%
   teproj::import_path_cleanly()
 
+
 data_wide_o_old %>%
   arrange(desc(pts))
-
 data_wide_o %>%
   arrange(desc(pts))

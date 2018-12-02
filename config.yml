@@ -7,6 +7,8 @@ default:
 
   path_data_raw: "data-raw/possession_details_00217.csv"
   path_data_clean: "data/data-clean-2017.csv"
+  path_data_check: "data/data-21700002.csv"
+  game_id_check: 21700002
 
   path_cache_o: "data/data-wide-o.rds"
   path_cache_d: "data/data-wide-d.rds"
@@ -14,12 +16,16 @@ default:
   path_data_export: "data/rapm-estimates-2017.csv"
 
   path_players: "data/players.csv"
+  path_players_summ: "data/players-summ.csv"
 
   seed: 42
-  optimize: false
+  optimize: true
 
-  lambda_optm_o: 200
-  lambda_optm_d: 200
+  lambda_optm_o: 200 # 304.338412
+  lambda_optm_d: 200 # 259.729389
 
 production:
 
+# ```r
+# config <- config::get()
+# ```

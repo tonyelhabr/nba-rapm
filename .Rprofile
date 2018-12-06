@@ -30,10 +30,6 @@ paths_funcs <-
 invisible(sapply(paths_funcs, source))
 rm("paths_funcs")
 
-opt_before <- getOption("tibble.print_min")
 options(tibble.print_min = 20)
-opt_after <- getOption("tibble.print_min")
-
 parser <-
   to_argparser(config, description = "A descriptive description.", name = "A cool name")
-

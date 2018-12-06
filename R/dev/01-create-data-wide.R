@@ -2,16 +2,18 @@
 cl <- parallel::makeCluster(4)
 doParallel::registerDoParallel(cl)
 
-data <-
-  config$path_data_clean %>%
-  teproj::import_path_cleanly()
-data
 
 separate_lineup <-
   function(data, col, prefix = "x", suffix = 1:5, sep = "-") {
     data %>%
       separate(!!enquo(col), into = paste0(prefix, suffix), sep = sep)
   }
+
+data <-
+  config$path_data_clean %>%
+  teproj::import_path_cleanly()
+data
+
 
 data <-
   data %>%

@@ -15,75 +15,77 @@ default:
 # is no easy way to set the value to `FALSE` at run-time at the command line.
 # flag: FALSE
 
-  # general:
-  # These were valid for the first data source used.
-  # path_data_raw: "data-raw/possession_details_00217.csv"
-  # path_data_clean: "data/data-clean-2017.csv"
-  # path_data_check: "data/data-21700002.csv"
-  # game_id_check: 21700002
-
+  # General parameters.
+  verbose:
+    default: true
+    help: "Whether to print info messages." # (See original description.)
   multicore:
-     default: true
+    default: true
+    help: ""  # (See original description.)
   n_core:
     default: 4
-    help: "Number of computer cores to use."
-    type: "integer"
+    help: "Number of computer cores to use." # (See original description.)
 
   # Data pre-processing (i.e. cleaning) parameters.
-  # season: !expr 2016:2017
   season:
     default: 2016
-    type: "numeric"
   path_play_by_play_raw_format:
     default: "data-raw/play_by_play_with_lineup/play_by_play_with_lineup_%04d.csv"
     help: "Format of raw play-by-play data file (with `season` as suffix) to clean."
   path_game_summary_raw_format:
     default: "data-raw/raw_game_summary/raw_game_summary_%04d.csv"
     help: "Format of raw game summary data file."
-  export:
-    default: true
-    help: "If `TRUE` exports final data."
-    type: "logical"
   export_clean:
     default: true
     help: "If `TRUE` exports cleaned intermediary data."
   path_data_clean_format:
     default: "data/data-clean-%04d.csv"
     help: "Format of cleaned play-by-play data file to export."
+  export_intermediate:
+    default: true
+    help: "If `TRUE` exports \"wide\" intermediary data."
+  path_wide_o_format:
+    default: "data/data-wide-o-%04d.rds"
+    help: ""  # (See original description.)
+  path_wide_d_format:
+    default: "data/data-wide-d-%04d.rds"
+    help: ""  # (See original description.)
   path_players_format:
     default: "data/players-%04d.csv"
     help: "Format of cleaned player data to export."
   path_players_summ_format:
     default: "data/players-summ-%04d.csv"
     help: "Format of summarized cleaned player data to export."
+  export_final:
+    default: true
+    help: "If `TRUE` exports final data."
+  path_data_export_format:
+    default: "data/rapm-estimates-%04d.csv"
+    help: ""  # (See original description.)
 
   # Run-time parameters.
   # These `min*` paraemeters are to-be-implemented.
   min_poss:
     default: 200
+    help: ""
   min_gm:
     default: 0
+    help: ""
   min_min:
     default: 0
-
-  path_cache_o_format:
-    default: "data/data-wide-o-%04d.rds"
-  path_cache_d_format:
-    default: "data/data-wide-d-%04d.rds"
-  path_data_export_format:
-    default: "data/rapm-estimates-%04d.csv"
+    help: ""
   seed:
     default: 42
-    type: "numeric"
+    help: ""  # (See original description.)
   optimize:
     default: true
-    type: "logical"
+    help: ""  # (See original description.)
   lambda_optm_o:
     default: 200
-    type: "numeric"
+    help: ""  # (See original description.)
   lambda_optm_d:
     default: 200
-    type: "numeric"
+    help: ""  # (See original description.)
 
 production:
 

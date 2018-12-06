@@ -61,3 +61,40 @@ to_argparser <-
 # p <- to_argparser(config, description = "A description.", name = "A name")
 # p
 # argparser::parse_args(p)
+
+# Make this more like `httr::build_url()`?
+.get_path_from_format <- function(path_format, season) {
+  path <- sprintf(path_format, season)
+}
+
+.get_path_ifnull <- function(path, ...) {
+  if(!is.null(path)) {
+    return(invisble(path))
+  }
+  .get_path_from_format(...)
+}
+
+.import_data_ifnull <-
+  function(data, ...) {
+    if(!is.null(data)) {
+      return(invisble(data))
+    }
+    .import_data(...)
+  }
+
+# path <- "data-raw/play_by_play_with_lineup/play_by_play_with_lineup_2017-18.csv"
+# Add `verbose`, etc. (i.e. `backup`) to this(?).
+.import_path <-
+  function(path, ...) {
+    path %>%
+      # data.table::fread(sep = ",") %>%
+      # readr::read_csv() %>%
+      rio::import(...) %>%
+      tibble::as_tibble()
+  }
+
+.export_path <-
+  function(data, path, ...) {
+      path_export <- data %>% rio::export(path, ...)
+      invisible(path_export)
+  }

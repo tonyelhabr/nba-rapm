@@ -42,18 +42,20 @@ default:
     help: "Format of raw game summary data file."
   export:
     default: true
-    help: "If `TRUE` exports final data.
+    help: "If `TRUE` exports final data."
     type: "logical"
   export_clean:
     default: true
-    help: "If `TRUE` exports cleaned intermediary data.
+    help: "If `TRUE` exports cleaned intermediary data."
   path_data_clean_format:
     default: "data/data-clean-%04d.csv"
     help: "Format of cleaned play-by-play data file to export."
   path_players_format:
     default: "data/players-%04d.csv"
+    help: "Format of cleaned player data to export."
   path_players_summ_format:
     default: "data/players-summ-%04d.csv"
+    help: "Format of summarized cleaned player data to export."
 
   # Run-time parameters.
   # These `min*` paraemeters are to-be-implemented.

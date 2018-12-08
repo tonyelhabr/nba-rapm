@@ -39,13 +39,13 @@ rm("paths_funcs")
 
 # options(tibble.print_min = 20)
 
-if(interactive()) {
-  args <-
-    convert_config_to_args(
-    config,
-    description = "A descriptive description.",
-    name = "A cool name"
-  )
-}
+# if(interactive()) {
+#   args <-
+#     convert_config_to_args(
+#     config,
+#     description = "A descriptive description.",
+#     name = "A cool name"
+#   )
+# }
 
 

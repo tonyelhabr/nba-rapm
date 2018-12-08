@@ -105,7 +105,7 @@ fit_rapm_model_byside <-
       } else {
         msg <- sprintf("Using default `lambda = %f` for %srapm.", lambda, side)
       }
-      display_msg(msg)
+      display_info(msg)
     }
 
     estimates <-
@@ -158,8 +158,9 @@ fit_rapm_model_byside <-
       mutate_at(vars(matches("rapm")), funs(rnk = row_number(desc(.)))) %>%
       left_join(players_summary, by = "id")
 
-    display_msg(
-      "Successfully joined `players_summary` with `estimates`.", verbose = verbose
+    display_info(
+      "Successfully joined `players_summary` with `estimates`.", 
+      verbose = verbose
     )
     estimates
   }
@@ -170,7 +171,7 @@ fit_rapm_model_byside <-
     otherwise = NULL
   )
 
-do_fit_rapm_models <-
+fit_rapm_models <-
   function(season,
            path_data_wide_o_format,
            path_data_wide_d_format,
@@ -231,7 +232,6 @@ do_fit_rapm_models <-
     if(!is.null(estimates_pretty)) {
       estimates <- estimates_pretty
     }
-
 
     if (export) {
       path_data_clean <-

@@ -9,12 +9,17 @@ if (!interactive()) {
   invisible(source(".Rprofile"))
 
 } else {
-  message("Running this script in interactive mode! (It is not designed to do so.)")
+  # message("Running this script in interactive mode! (It is not designed to do so.)")
+    args <-
+      get_args(
+      description = "A descriptive description.",
+      name = "A cool name"
+    )
 }
 
 # setup ----
 pre_auto()
-do_configure_cores()
+do_setup_cores()
 
 # clean ----
 do_clean_raw_data()

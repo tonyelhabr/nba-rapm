@@ -59,15 +59,28 @@
     parser
   }
 
-convert_config_to_args <-
+.convert_config_to_args <-
   function(...) {
     args_preparsed <- .convert_config_to_args_preparsed(...)
     args_parsed <- argparser::parse_args(args_preparsed)
   }
 
+get_args <-
+  function(config = NULL, ...) {
+    if(is.null(config)) {
+      config <- config::get()
+    }
+    .convert_config_to_args(config)
+  }
+
 # files ----
 # Make this more like `httr::build_url()`?
 .get_path_from_format <- function(path_format, season) {
+  stopifnot(is.numeric(season))
+  if(str_detect(path_format, "%s")) {
+    season_suffix <- sprintf("%02d", (season + 1) %% 2000)
+    season <- paste0(season, "-", season_suffix)
+  }
   path <- sprintf(path_format, season)
 }
 
@@ -78,59 +91,81 @@ convert_config_to_args <-
     path %>%
       # data.table::fread(sep = ",") %>%
       # readr::read_csv() %>%
-      rio::import(...) %>%
-      tibble::as_tibble()
+      # Set `verbose = FALSE` always to suppress verose `data.table::fread()` messages.
+      rio::import(verbose = FALSE) %>%
+      # rio::import(..., verbose = FALSE) %>%
+      tibble::as_tibble() %>%
+      janitor::clean_names()
   }
 
 .import_data_from_path_format <-
-  function(path_format, season, ...) {
+  function(path_format,
+           season,
+           ...,
+           verbose = .VERBOSE) {
     path <- .get_path_from_format(path_format, season)
-    data <- .import_data(path = path, ...)
-    display_msg(
-      sprintf("Successfully imported data from `%s`.", path), verbose = verbose
+    data <- .import_data(path = path, verbose = verbose, ...)
+    display_info(
+      sprintf("Successfully imported %s from `%s`.", "data", path),
+      verbose = verbose
     )
     data
   }
 
 .export_data <-
   function(data, path, ...) {
-      path_export <- rio::export(data, path, ...)
-      invisible(path_export)
+    # path_export <- rio::export(data, path, ...)
+    # See `.import_data()` for the reasoning for setting `verbose = FALSE` here.
+    path_export <- rio::export(data, path, verbose = FALSE)
+    invisible(path_export)
   }
 
-.import_data_from_path_format <-
-  function(data, path_format, season, ...) {
+
+.export_data_from_path_format <-
+  function(data,
+           path_format,
+           season,
+           ...,
+           verbose = .VERBOSE)) {
     path <- .get_path_from_format(path_format, season)
-    .export_data(data = data, path = path, ...)
+    path_export <-
+      .export_data(data = data,
+                   path = path,
+                   verbose = verbose,
+                   ...)
+    display_info(
+      sprintf("Successfully exported %s to `%s`.", "data", path),
+      verbose = verbose
+    )
+    invisible(path_export)
   }
 
 
-.stopifnot_exist <-
-  function(path, ..., type = c("file", "dir")) {
-    if(type == "file") {
-      if(file.exists(path)) {
-        return(invisible(NULL))
-      }
-    } else if (type == "dir") {
-      if(dir.exists(path)) {
-        return(invisible(NULL))
-      }
-    }
-    display_error(sprintf("`%s` does not exist!", path))
-    stop(call. = FALSE)
-  }
-
-.stopifnot_exist_dir <-
-  function(..., type = "dir") {
-    stopifnot_exist(..., type = type)
-  }
-
-.stopifnot_exist_file <-
-  function(..., type = "file") {
-    stopifnot_exist(..., type = type)
-  }
-
-
+# .stopifnot_exist <-
+#   function(path, ..., type = c("file", "dir")) {
+#     if(type == "file") {
+#       if(file.exists(path)) {
+#         return(invisible(NULL))
+#       }
+#     } else if (type == "dir") {
+#       if(dir.exists(path)) {
+#         return(invisible(NULL))
+#       }
+#     }
+#     display_error(sprintf("`%s` does not exist!", path))
+#     stop(call. = FALSE)
+#   }
+#
+# .stopifnot_exist_dir <-
+#   function(..., type = "dir") {
+#     stopifnot_exist(..., type = type)
+#   }
+#
+# .stopifnot_exist_file <-
+#   function(..., type = "file") {
+#     stopifnot_exist(..., type = type)
+#   }
+#
 # # Straight copy-paste of `tools::file_ext()`.
 # .file_ext <-
 #   function (x) {
@@ -169,39 +204,58 @@ setup_cores <-
     if(.Platform$OS.type != "windows") {
       if(multi_core) {
         display_warning(
-          "Ignoring `multi_core` = `TRUE` because user system is not Windows."
+          "Ignoring `multi_core = TRUE` because user system is not Windows."
         )
       }
-    } else if(multi_core) {
-      suppressWarnings(suppressPackageStartupMessages(library("parallel")))
-      suppressWarnings(suppressPackageStartupMessages(library("doParallel")))
-      n_core_avail <- parallel::detect_core()
-      if(n_core > n_core_avail) {
-        display_error(
-          sprintf("`n_core` must be less than %d.", n_core_avail)
-        )
-        stop(call. = FALSE)
+    } else {
+      if(multi_core) {
+        if(n_core == 1) {
+          display_warning(
+            sprintf(
+              paste0(
+                "Not using multiple cores (even though `multi_core = TRUE`",
+                "becuase `n_core == 1`.", n_core)
+            ),
+            verbose = verbose
+          )
+        } else {
+          suppressWarnings(suppressPackageStartupMessages(library("parallel")))
+
+          n_core_avail <- parallel::detectCores()
+          if(n_core > n_core_avail) {
+            display_error(
+              sprintf("`n_core` must be less than %d.", n_core_avail),
+              verbose = verbose
+            )
+            stop(call. = FALSE)
+          }
+
+          if((n_core != 1) & ((n_core %% 2) != 0)) {
+            display_error(
+              sprintf("`n_core` must be 1 or an even number (not %d).", n_core),
+              verbose = verbose
+            )
+            stop(call. = FALSE)
+          }
+          cl <- parallel::makeCluster(n_core)
+          suppressWarnings(suppressPackageStartupMessages(library("doParallel")))
+          doParallel::registerDoParallel(cl)
+          on.exit(parallel::stopCluster(cl), add = TRUE)
+        }
       }
-      if((n_core != 1) & ((n_core %% 2) != 0)) {
-        display_error(
-          sprintf("`n_core` must be 1 or an even number (not %d).", n_core)
-        )
-        stop(call. = FALSE)
-      }
-      cl <- parallel::makeCluster(n_core)
-      doParallel::registerDoParallel(cl)
-      on.exit(parallel::stopCluster(cl), add = TRUE)
     }
+    return(invisible(NULL))
   }
 
 do_setup_cores <-
   purrr::partial(
     setup_cores,
-    multi_core, args$multi_core,
-    n_core = args$n_core
+    multi_core = ifelse(interactive(), FALSE, args$multi_core),
+    n_core = args$n_core,
+    verbose = args$verbose
   )
 
-# TODO: Call `display_msg()` here?
+# TODO: Call `display_info()` here?
 pre_auto <-
   function(...) {
     message(rep("*", 80L))

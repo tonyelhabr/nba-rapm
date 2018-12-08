@@ -12,14 +12,14 @@ clean_raw_data <-
     if(skip) {
       return(invisible(NULL))
     }
-
+    # browser()
     data_raw <-
       .import_data_from_path_format(
         path_format = path_data_raw_format,
         season = season,
         verbose = verbose
       )
-
+    # browser()
     game_summary_raw <-
       .import_data_from_path_format(
         path_format = path_game_summary_raw_format,
@@ -139,14 +139,13 @@ clean_raw_data <-
     if (export) {
       path_data_clean <-
         .export_data_from_path_format(
-          data = data,s
+          data = data,
           path_format = path_data_clean_format,
           season = season,
           verbose = verbose
         )
     }
-
-    data
+    invisible(data)
   }
 
 do_clean_raw_data <-

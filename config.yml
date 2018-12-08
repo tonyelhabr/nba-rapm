@@ -8,7 +8,7 @@ default:
     default: "C:/Users/aelhabr/Documents/projects/nba-rapm/R"
     help: "Working directory. MUST exist. (Note that the user most certainly will need
     to change the default value, which is primarily specified for the convenience of the developer."
-  multicore:
+  multi_core:
     default: true
     help: "Whether to use multiple user computer cores."
   n_core:
@@ -16,21 +16,21 @@ default:
     help: "Number of cores to use. Only relevant if `multi_core = TRUE`.
     (Requires `{parallel}` package, as well as `{doParallel}` package on Windows.)"
   season:
-    default: 2016
+    default: 2017
     help: "NBA season to process. Used as \"suffix\" for all path formats 
     (where it is subsituted in placed for the \"sprintf\"-style format \"04d\")."
     
   # Data pre-processing (i.e. cleaning) parameters.
   skip_clean:
-    default: true
+    default: false
     help: "If `TRUE`, skips process of cleaning the raw data
     and goes immediately to \"intermediate\" data processing steps.
     In this case, intermediate data for given season MUST exist."
   path_data_raw_format:
-    default: "data-raw/play_by_play_with_lineup/play_by_play_with_lineup_%04d.csv"
+    default: "data-raw/play_by_play_with_lineup/play_by_play_with_lineup_%s.csv"
     help: "Path format of raw play-by-play data file to clean."
   path_game_summary_raw_format:
-    default: "data-raw/raw_game_summary/raw_game_summary_%04d.csv"
+    default: "data-raw/raw_game_summary/raw_game_summary_%s.csv"
     help: "Path format of raw game summary data file. Needed solely for identifying
     home and away teams, which is not defined in `play_by_play_raw` data from source."
   export_clean:
@@ -44,7 +44,7 @@ default:
     case, it is used as the \"input\" to the intermediate processing)."
   
   skip_intermediate:
-    default: true
+    default: false
     help: "If `TRUE`, skips \"intermediate\" processing of cleaned data
     and goes immediately to \"final\" (i.e. model fitting and coefficient estimation) steps.
     In this case \"post\"-intermediate (i.e. \"final\") data for given season MUST exist.

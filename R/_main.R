@@ -1,17 +1,30 @@
 
-
-parser <-
-  to_argparser(config, description = "A descriptive description.", name = "A cool name")
-
-if(argparser$clean & !file.exists(argparser$path_data_clean)) {
-  data_clean <-
-    clean_play_by_play_data(
-      path_play_by_play_raw_format = argparser$path_play_by_play_raw_format,
-      path_game_summary_raw_format = argparser$pathh_game_summary_raw_format,
-      season = argparser$season,
-      ...,
-      verbose = argparser$verbose,
-      export = argparser$export_clean,
-      path_data_clean_format = argparser$path_data_clean_format
-    )
+dir_proj <- "C:/Users/aelhabr/Documents/projects/nba-rapm"
+if(!dir.exists(dir_proj)) {
+  stop("Project directory does not exist!", call. = FALSE)
 }
+
+if (!interactive()) {
+  setwd(wd)
+  invisible(source(".Rprofile"))
+
+} else {
+  message("Running this script in interactive mode! (It is not designed to do so.)")
+}
+
+# setup ----
+pre_auto()
+do_configure_cores()
+
+# clean ----
+do_clean_raw_data()
+
+# intermediate ----
+do_process_cleaned_data()
+
+# final ----
+# do_fit_rapm_model_o()
+# do_fit_rapm_model_d()
+do_fit_rapm_models()
+
+post_auto()

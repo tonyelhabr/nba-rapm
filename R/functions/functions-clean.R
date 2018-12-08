@@ -1,42 +1,31 @@
 
+clean_raw_data <-
+  function(season,
+           path_data_raw_format,
+           path_game_summary_raw_format,
+           ...,
+           skip = .SKIP,
+           verbose = .VERBOSE,
+           export = .EXPORT,
+           path_data_clean_format) {
 
-clean_play_by_play_data <-
-  function(
-    path_play_by_play_raw = NULL,
-    path_game_summary_raw = NULL,
-    season = NULL,
-    path_play_by_play_raw_format = NULL,
-    path_game_summary_raw_format = NULL,
-    ...,
-    verbose = TRUE,
-    export = TRUE,
-    path_data_clean = NULL,
-    path_data_clean_format = NULL
-  ) {
-
-    path_play_by_play_raw <-
-      .get_path_ifnull(
-        path_play_by_play_raw,
-        path_play_by_play_raw_format,
-        season
-      )
-    path_game_summary_raw <-
-      .get_path_ifnull(
-        path_game_summary,
-        path_game_summary_raw_format,
-        season
-      )
-    if(export) {
-      path_data_clean <-
-        .get_path_ifnull(
-          path_data_clean,
-          path_data_clean_format,
-          season
-        )
+    if(skip) {
+      return(invisible(NULL))
     }
 
-    data_raw <- path_play_by_play_raw %>% .import_path(verbose = verbose)
-    game_summary_raw <- path_game_summary_raw <- .import_path(verbose = verbose)
+    data_raw <-
+      .import_data_from_path_format(
+        path_format = path_data_raw_format,
+        season = season,
+        verbose = verbose
+      )
+
+    game_summary_raw <-
+      .import_data_from_path_format(
+        path_format = path_game_summary_raw_format,
+        season = season,
+        verbose = verbose
+      )
 
     data_select <-
       data_raw %>%
@@ -146,87 +135,29 @@ clean_play_by_play_data <-
         lineup1,
         lineup2
       )
-    if(export) {
-      .export_path(
-        data,
-        path = path_data_clean,
-        verbose = verbose
-      )
+
+    if (export) {
+      path_data_clean <-
+        .export_data_from_path_format(
+          data = data,s
+          path_format = path_data_clean_format,
+          season = season,
+          verbose = verbose
+        )
     }
 
     data
   }
 
-
-.separate_lineup <-
-  function(data, col, prefix = "x", suffix = 1:5, sep = "-") {
-    data %>%
-      separate(!!enquo(col), into = paste0(prefix, suffix), sep = sep)
-  }
-
-widen_play_by_play_data <-
-  function(data = NULL,
-           path_format = NULL,
-           season = NULL,
-           ...,
-           verbose = TRUE,
-           path = NULL,
-           export = TRUE,
-           path_export = NULL,
-           path_export_format = NULL) {
-
-
-    data <-
-      .import_data_ifnull(
-      data = data,
-      path_format = path_format,
-      season = season,
-      verbose = verbose
-    )
-
-    data <-
-      data %>%
-      .separate_lineup(lineup1, suffix = 1:5) %>%
-      .separate_lineup(lineup2, suffix = 6:10) %>%
-      mutate_at(vars(matches("^x")), funs(as.integer))
-    data
-
-    data <-
-      data %>%
-      mutate(poss_num = row_number()) %>%
-      gather(dummy, id, matches("^x")) %>%
-      select(-dummy) %>%
-      mutate(side = if_else(is_off == 0L, "d", "o")) %>%
-      mutate(xid = sprintf("%s%07d", side, as.integer(id))) %>%
-      select(-is_off) %>%
-      mutate(dummy = 1L)
-    data
-  }
-
-compute_rapm_estimate <-
-  function(data = NULL,
-           path_format = NULL,
-           season = NULL,
-           ...,
-           verbose = TRUE,
-           path = NULL,
-           export = TRUE,
-           path_export = NULL,
-           path_export_format = NULL) {
-
-  }
-
-combine_rapm_estimates <-
-  function(data = NULL,
-           path_format = NULL,
-           season = NULL,
-           ...,
-           verbose = TRUE,
-           path = NULL,
-           export = TRUE,
-           path_export = NULL,
-           path_export_format = NULL) {
-
-  }
-
+do_clean_raw_data <-
+  purrr::partial(
+    clean_raw_data,
+    season = args$season,
+    path_data_raw_format = args$path_data_raw_format,
+    path_game_summary_raw_format = args$path_game_summary_raw_format,
+    skip = args$skip_clean,
+    verbose = args$verbose,
+    export = args$export_clean,
+    path_data_clean_format = args$path_data_clean_format
+  )
 

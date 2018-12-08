@@ -1,91 +1,126 @@
 default:
 
-# Note that the `{argparser}` default is `TRUE`, but I would rather make it optional.
-# required: false
-# Cannot be `NULL` at run-time
-# default:
-# help: "" # This is required by `{argparser}`.
-# These are the `{argparser}` defaults (for `add_parameter()`).
-# type:
-# nargs:
-# short:
-# Note that the `{argparser}` default is `NULL`, but I want to explicitly
-# go against this behavior by default because I prefer even boolean-like
-# parameters to be non-boolean (because if the default is `TRUE`, there
-# is no easy way to set the value to `FALSE` at run-time at the command line.
-# flag: FALSE
-
   # General parameters.
   verbose:
     default: true
-    help: "Whether to print info messages." # (See original description.)
+    help: "Whether to print INFO messages. (Other message types (WARNING and ERROR) are always shown.)" 
+  dir:
+    default: "C:/Users/aelhabr/Documents/projects/nba-rapm/R"
+    help: "Working directory. MUST exist. (Note that the user most certainly will need
+    to change the default value, which is primarily specified for the convenience of the developer."
   multicore:
     default: true
-    help: ""  # (See original description.)
+    help: "Whether to use multiple user computer cores."
   n_core:
     default: 4
-    help: "Number of computer cores to use." # (See original description.)
-
-  # Data pre-processing (i.e. cleaning) parameters.
+    help: "Number of cores to use. Only relevant if `multi_core = TRUE`.
+    (Requires `{parallel}` package, as well as `{doParallel}` package on Windows.)"
   season:
     default: 2016
-  path_play_by_play_raw_format:
+    help: "NBA season to process. Used as \"suffix\" for all path formats 
+    (where it is subsituted in placed for the \"sprintf\"-style format \"04d\")."
+    
+  # Data pre-processing (i.e. cleaning) parameters.
+  skip_clean:
+    default: true
+    help: "If `TRUE`, skips process of cleaning the raw data
+    and goes immediately to \"intermediate\" data processing steps.
+    In this case, intermediate data for given season MUST exist."
+  path_data_raw_format:
     default: "data-raw/play_by_play_with_lineup/play_by_play_with_lineup_%04d.csv"
-    help: "Format of raw play-by-play data file (with `season` as suffix) to clean."
+    help: "Path format of raw play-by-play data file to clean."
   path_game_summary_raw_format:
     default: "data-raw/raw_game_summary/raw_game_summary_%04d.csv"
-    help: "Format of raw game summary data file."
+    help: "Path format of raw game summary data file. Needed solely for identifying
+    home and away teams, which is not defined in `play_by_play_raw` data from source."
   export_clean:
     default: true
-    help: "If `TRUE` exports cleaned intermediary data."
+    help: "If `TRUE`, cleaned `play_by_play` data is exported. This is what
+    is being referenced by `data` in all parameters/varaibles afterwards."
   path_data_clean_format:
     default: "data/data-clean-%04d.csv"
-    help: "Format of cleaned play-by-play data file to export."
+    help: "Path formatt of cleaned play-by-play data file to export.
+    Only relevant if `export_clean = TRUE` or if `import_intermediate = TRUE` (in which
+    case, it is used as the \"input\" to the intermediate processing)."
+  
+  skip_intermediate:
+    default: true
+    help: "If `TRUE`, skips \"intermediate\" processing of cleaned data
+    and goes immediately to \"final\" (i.e. model fitting and coefficient estimation) steps.
+    In this case \"post\"-intermediate (i.e. \"final\") data for given season MUST exist.
+    (In all, its functionality is analogous to `import_clean`.)"
   export_intermediate:
     default: true
-    help: "If `TRUE` exports \"wide\" intermediary data."
-  path_wide_o_format:
+    help: "If `TRUE`, exports \"wide\" intermediary data (i.e. `data_wide_*`) and player data (i.e. `players_*`)."
+  path_data_wide_o_format:
     default: "data/data-wide-o-%04d.rds"
-    help: ""  # (See original description.)
-  path_wide_d_format:
+    help: "Path format of \"wide\" offensive possession data. 
+    Only relevant if `export_intermediate = TRUE` or if `import_final = TRUE` (in which
+    case, it is used as the \"input\" to the final processing)."
+  path_data_wide_d_format:
     default: "data/data-wide-d-%04d.rds"
-    help: ""  # (See original description.)
+    help: "Analogous to `path_data_wide_o_format`."
   path_players_format:
     default: "data/players-%04d.csv"
-    help: "Format of cleaned player data to export."
-  path_players_summ_format:
-    default: "data/players-summ-%04d.csv"
-    help: "Format of summarized cleaned player data to export."
+    help: "Format of cleaned player data to export.
+    Only relevant if `export_intermediate = TRUE`.
+    Not a dependency for any other data processing. Simply useful for informative purposes."
+  path_players_summary_format:
+    default: "data/players-summary-%04d.csv"
+    help: "Format of summarized cleaned player data to export.
+     Relevant in the same cases as `path_data_wide_o_format`.
+     Used to add names and other player-relevant information to final output."
+   
+  skip_final:
+    default: false
+    help: "If `TRUE`, then skips \"final\" model fitting steps.
+    (There is probably no case in which the user would want to set this to `FALSE`, 
+    but it can be useful to set this to `FALSE` for development debugging purposes.)"
   export_final:
     default: true
-    help: "If `TRUE` exports final data."
+    help: "If `TRUE`, exports \"final\" data.
+    (The same caveat about setting `skip_final = TRUE` is applicable here as well.)"
   path_data_export_format:
     default: "data/rapm-estimates-%04d.csv"
-    help: ""  # (See original description.)
+    help: "Path format of final the player-specific offensive and defensive RAPM estimates
+    (after model fitting)."
 
   # Run-time parameters.
   # These `min*` paraemeters are to-be-implemented.
   min_poss:
     default: 200
-    help: ""
+    help: "Minimum number of possession in which a player must have 
+    participated  (offense and defense combined) in order to qualify for model fitting process.
+    (Model quality generally improves if players with less time played are removed
+    from consideration because they can represent outliers and have high leverage on 
+    the model fitting.)"
   min_gm:
     default: 0
-    help: ""
+    help: "Analogous to `min_poss` for games played."
   min_min:
     default: 0
-    help: ""
-  seed:
+    help: "Analogous to `min_poss` for minutes played."
+  optimize_o:
+    default: false
+    help: "If `TRUE`, then calculates the \"optimal\" ridge regression
+    \"lambda\" penalties for the offensive at run-time.
+    Note that setting this value to `FALSE` (and using the default `lambda_optm_o` value),
+    reduces run-time execution."
+  optimize_d:
+    default: false
+    help: "Analogous to `optimize_lambda_o`."
+  seed_o:
     default: 42
-    help: ""  # (See original description.)
-  optimize:
-    default: true
-    help: ""  # (See original description.)
-  lambda_optm_o:
+    help: "Seed to use for ridge regression cross-validation."
+  seed_d:
+    default: 42
+    help: "Analogous to `seed_o`."
+  lambda_o:
     default: 200
-    help: ""  # (See original description.)
-  lambda_optm_d:
+    help: "Value to use for lambda in ridge regression fit if `optimize_lambda_o = FALSE`."
+  lambda_d:
     default: 200
-    help: ""  # (See original description.)
+    help: "Analogous to `lambda_optm_o`."
 
 production:
 

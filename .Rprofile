@@ -14,22 +14,38 @@ if(file.exists(path_r_profile)) {
 rm("path_r_profile")
 
 suppressWarnings(suppressPackageStartupMessages(library("tidyverse")))
-suppressWarnings(suppressPackageStartupMessages(library("rlang")))
-# suppressWarnings(suppressPackageStartupMessages(library("teplot")))
+suppressWarnings(suppressPackageStartupMessages(library("argparser")))
+# suppressWarnings(suppressPackageStartupMessages(library("doParallel")))
+# suppressWarnings(suppressPackageStartupMessages(library("glmnet")))
 
 config <- config::get()
+
+.SKIP <- FALSE
+.VERBOSE <- TRUE
+.EXPORT <- TRUE
+.OPTIMIZE <- FALSE
+.SEED <- 42
+.LAMBDA <- 200
 
 paths_funcs <-
   list.files(
     path = file.path("R", "functions"),
     # path = "R",
     pattern = "func",
-    # recursive = FALSE,
     full.names = TRUE
   )
 invisible(sapply(paths_funcs, source))
 rm("paths_funcs")
 
-options(tibble.print_min = 20)
-parser <-
-  to_argparser(config, description = "A descriptive description.", name = "A cool name")
+# options(tibble.print_min = 20)
+
+if(interactive()) {
+  args <-
+    convert_config_to_args(
+    config,
+    description = "A descriptive description.",
+    name = "A cool name"
+  )
+}
+
+

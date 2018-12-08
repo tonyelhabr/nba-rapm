@@ -1,6 +1,7 @@
 
-to_argparser <-
-  function(x, description, name = NULL, .optional = TRUE, .help = "") {
+# config ----
+.convert_config_to_args_preparsed <-
+  function(x, description = "A default description.", name = NULL, .optional = TRUE, .help = "") {
     stopifnot(is.list(x))
     parser <-
       argparser::arg_parser(
@@ -58,33 +59,21 @@ to_argparser <-
     parser
   }
 
-# p <- to_argparser(config, description = "A description.", name = "A name")
-# p
-# argparser::parse_args(p)
+convert_config_to_args <-
+  function(...) {
+    args_preparsed <- .convert_config_to_args_preparsed(...)
+    args_parsed <- argparser::parse_args(args_preparsed)
+  }
 
+# files ----
 # Make this more like `httr::build_url()`?
 .get_path_from_format <- function(path_format, season) {
   path <- sprintf(path_format, season)
 }
 
-.get_path_ifnull <- function(path, ...) {
-  if(!is.null(path)) {
-    return(invisble(path))
-  }
-  .get_path_from_format(...)
-}
-
-.import_data_ifnull <-
-  function(data, ...) {
-    if(!is.null(data)) {
-      return(invisble(data))
-    }
-    .import_data(...)
-  }
-
 # path <- "data-raw/play_by_play_with_lineup/play_by_play_with_lineup_2017-18.csv"
 # Add `verbose`, etc. (i.e. `backup`) to this(?).
-.import_path <-
+.import_data <-
   function(path, ...) {
     path %>%
       # data.table::fread(sep = ",") %>%
@@ -93,8 +82,136 @@ to_argparser <-
       tibble::as_tibble()
   }
 
-.export_path <-
+.import_data_from_path_format <-
+  function(path_format, season, ...) {
+    path <- .get_path_from_format(path_format, season)
+    data <- .import_data(path = path, ...)
+    display_msg(
+      sprintf("Successfully imported data from `%s`.", path), verbose = verbose
+    )
+    data
+  }
+
+.export_data <-
   function(data, path, ...) {
-      path_export <- data %>% rio::export(path, ...)
+      path_export <- rio::export(data, path, ...)
       invisible(path_export)
+  }
+
+.import_data_from_path_format <-
+  function(data, path_format, season, ...) {
+    path <- .get_path_from_format(path_format, season)
+    .export_data(data = data, path = path, ...)
+  }
+
+
+.stopifnot_exist <-
+  function(path, ..., type = c("file", "dir")) {
+    if(type == "file") {
+      if(file.exists(path)) {
+        return(invisible(NULL))
+      }
+    } else if (type == "dir") {
+      if(dir.exists(path)) {
+        return(invisible(NULL))
+      }
+    }
+    display_error(sprintf("`%s` does not exist!", path))
+    stop(call. = FALSE)
+  }
+
+.stopifnot_exist_dir <-
+  function(..., type = "dir") {
+    stopifnot_exist(..., type = type)
+  }
+
+.stopifnot_exist_file <-
+  function(..., type = "file") {
+    stopifnot_exist(..., type = type)
+  }
+
+
+# # Straight copy-paste of `tools::file_ext()`.
+# .file_ext <-
+#   function (x) {
+#     pos <- regexpr("\\.([[:alnum:]]+)$", x)
+#     ifelse(pos > -1L, substring(x, pos + 1L), "")
+#   }
+
+
+# logging ----
+.display_msg <-
+  function(..., verbose = TRUE, type = c("info", "warning", "error")) {
+    if(type == "info" && !verbose) {
+      return(invisible(NULL))
+    }
+    # cat(sprintf("%s: %s\n", toupper(type), ...))
+    msg <- paste0(..., collapse = "")
+    cat(sprintf("%s: %s\n", toupper(type), msg))
+  }
+
+display_info <- function(verbose = TRUE, ...) {
+  .display_msg(..., verbose = verbose, type = "info")
+}
+
+display_warning <- function(...) {
+  .display_msg(..., type = "warning")
+}
+
+display_error <- function(...) {
+  .display_msg(..., type = "error")
+}
+
+
+# setup ----
+setup_cores <-
+  function(multi_core, n_core, ..., verbose = .VERBOSE) {
+    if(.Platform$OS.type != "windows") {
+      if(multi_core) {
+        display_warning(
+          "Ignoring `multi_core` = `TRUE` because user system is not Windows."
+        )
+      }
+    } else if(multi_core) {
+      suppressWarnings(suppressPackageStartupMessages(library("parallel")))
+      suppressWarnings(suppressPackageStartupMessages(library("doParallel")))
+      n_core_avail <- parallel::detect_core()
+      if(n_core > n_core_avail) {
+        display_error(
+          sprintf("`n_core` must be less than %d.", n_core_avail)
+        )
+        stop(call. = FALSE)
+      }
+      if((n_core != 1) & ((n_core %% 2) != 0)) {
+        display_error(
+          sprintf("`n_core` must be 1 or an even number (not %d).", n_core)
+        )
+        stop(call. = FALSE)
+      }
+      cl <- parallel::makeCluster(n_core)
+      doParallel::registerDoParallel(cl)
+      on.exit(parallel::stopCluster(cl), add = TRUE)
+    }
+  }
+
+do_setup_cores <-
+  purrr::partial(
+    setup_cores,
+    multi_core, args$multi_core,
+    n_core = args$n_core
+  )
+
+# TODO: Call `display_msg()` here?
+pre_auto <-
+  function(...) {
+    message(rep("*", 80L))
+    msg <- sprintf("Started script at %s.", Sys.time())
+    message(msg)
+  }
+
+post_auto <-
+  function(...) {
+    msg <- sprintf("Finished script at %s.", Sys.time())
+    message(msg)
+    message(rep("*", 80L))
   }

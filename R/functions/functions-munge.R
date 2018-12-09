@@ -166,7 +166,7 @@
            export = .EXPORT) {
 
     side <- match.arg(side)
-    # browser()
+    browser()
     duplicates_n <-
       play_by_play %>%
       filter(str_detect(xid, sprintf("^%s", side))) %>%
@@ -190,6 +190,8 @@
       filter(str_detect(xid, sprintf("^%s", side))) %>%
       # Not sure why, but there are still duplicates.
       distinct(xid, poss_num, .keep_all = TRUE) %>%
+      arrange(xid, poss_num) %>%
+      # select(-poss_num) %>%
       spread(xid, dummy, fill = 0L) %>%
       mutate(poss = 1L) %>%
       group_by_at(vars(-pts, -poss)) %>%
@@ -271,11 +273,22 @@ munge_cleaned_play_by_play <-
       play_by_play %>%
       mutate(poss_num = row_number()) %>%
       gather(dummy, id, matches("^x")) %>%
-      select(-dummy) %>%
+      select(-dummy)
+
+    play_by_play <-
+      play_by_play %>%
       mutate(side = if_else(is_off == 0L, "d", "o")) %>%
       mutate(xid = sprintf("%s%07d", side, as.integer(id))) %>%
       select(-is_off) %>%
       mutate(dummy = 1L)
+    browser()
+    play_by_play %>%
+      count(game_id, poss_num, sort = TRUE) %>%
+      filter(n != 10)
+    play_by_play %>%
+      filter(xid == "o0002772") %>%
+      # count(game_id, poss_num, sort = TRUE)
+      filter(poss_num == 15112)
 
     players_summary <-
       play_by_play %>%

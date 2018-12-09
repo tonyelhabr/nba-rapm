@@ -16,7 +16,7 @@ default:
     help: "Number of cores to use. Only relevant if `multi_core = TRUE`.
     (Requires `{parallel}` package, as well as `{doParallel}` package on Windows.)"
   season:
-    default: 2016
+    default: 2017
     help: "NBA season to process. Used as \"suffix\" for all path formats 
     (where it is subsituted in placed for the \"sprintf\"-style format \"04d\")."
     

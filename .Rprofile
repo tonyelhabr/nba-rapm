@@ -25,9 +25,12 @@ suppressWarnings(suppressPackageStartupMessages(library("argparser")))
 .EXPORT <- TRUE
 .BACKUP <- FALSE # TODO
 .CLEAN <- FALSE # TODO
+.SEASON_TYPES <- c("Regular Season", "Playoffs", "Any")
+.SEASON_TYPE <- .SEASON_TYPES[1]
 .OPTIMIZE <- FALSE
 .SEED <- 42
 .LAMBDA <- 200
+.SIDES <- c("o", "d")
 
 paths_funcs <-
   list.files(

@@ -13,15 +13,15 @@ if (!interactive()) {
 pre_auto()
 
 # setup ----
-do_setup_cores()
+auto_setup_cores()
 
-# clean ----
-do_clean_raw_data()
+# debug(auto_clean_raw_play_by_play)
+auto_clean_raw_play_by_play()
 
-# intermediate ----
-do_process_cleaned_data()
+auto_munge_cleaned_play_by_play()
 
-# final ----
-do_fit_rapm_models()
+auto_fit_rapm_models()
+
+auto_extract_rapm_estimates()
 
 post_auto()

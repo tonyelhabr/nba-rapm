@@ -109,6 +109,10 @@ get_args <-
     } else {
       res <- path %>% rio::import()
     }
+    if(!any("data.frame" == class(res))) {
+      return(res)
+    }
+
     res %>%
       tibble::as_tibble() %>%
       janitor::clean_names()
@@ -128,14 +132,14 @@ get_args <-
     }
     path <- .get_path_from_format(path_format, season)
     if(!file.exists(path)) {
-      display_error(
+      .display_error(
         sprintf("%s does not exist.", path),
         verbose = verbose
       )
     }
     data <- .import_data(path = path, verbose = verbose, ...)
-    display_info(
-      sprintf("Successfully imported %s from `%s`.", "data", path),
+    .display_info(
+      sprintf("Successfully imported %s from %s.", "data", path),
       verbose = verbose
     )
     invisible(data)
@@ -174,38 +178,12 @@ get_args <-
         verbose = verbose,
         ...
       )
-    display_info(
-      sprintf("Successfully exported %s to `%s`.", "data", path),
+    .display_info(
+      sprintf("Successfully exported %s to %s.", "data", path),
       verbose = verbose
     )
     invisible(path_export)
   }
-
-# from original project, but no longer used ----
-# .stopifnot_exist <-
-#   function(path, ..., type = c("file", "dir")) {
-#     if(type == "file") {
-#       if(file.exists(path)) {
-#         return(invisible(NULL))
-#       }
-#     } else if (type == "dir") {
-#       if(dir.exists(path)) {
-#         return(invisible(NULL))
-#       }
-#     }
-#     display_error(sprintf("`%s` does not exist!", path))
-#     stop(call. = FALSE)
-#   }
-#
-# .stopifnot_exist_dir <-
-#   function(..., type = "dir") {
-#     stopifnot_exist(..., type = type)
-#   }
-#
-# .stopifnot_exist_file <-
-#   function(..., type = "file") {
-#     stopifnot_exist(..., type = type)
-#   }
 
 # logging ----
 .display_msg <-
@@ -218,32 +196,47 @@ get_args <-
     cat(sprintf("%s: %s\n", toupper(type), msg))
   }
 
-display_info <- function(verbose = TRUE, ...) {
+.display_info <- function(verbose = TRUE, ...) {
   .display_msg(..., verbose = verbose, type = "info")
 }
 
-display_warning <- function(...) {
+.display_warning <- function(...) {
   .display_msg(..., type = "warning")
 }
 
-display_error <- function(...) {
+.display_error <- function(...) {
   .display_msg(..., type = "error")
 }
 
+# tetidy package ----
+# select_one_of <-
+#   function(data, cols, drop = FALSE) {
+#
+#     .cols <- names(data)
+#
+#     if(!drop) {
+#       cols_in <- intersect(cols, .cols)
+#       cols_nin <- setdiff(.cols, cols_order)
+#       cols_fct <- factor(.cols, levels = c(cols_in, cols_nin))
+#     } else {
+#       cols_fct <- factor(cols, levels = cols)
+#     }
+#     dplyr::select(data, tidyselect::one_of(levels(cols_fct)))
+#   }
 
 # setup ----
 setup_cores <-
   function(multi_core, n_core, ..., verbose = .VERBOSE) {
     if(.Platform$OS.type != "windows") {
       if(multi_core) {
-        display_warning(
+        .display_warning(
           "Ignoring `multi_core = TRUE` because user system is not Windows."
         )
       }
     } else {
       if(multi_core) {
         if(n_core == 1) {
-          display_warning(
+          .display_warning(
             sprintf(
               paste0(
                 "Not using multiple cores (even though `multi_core = TRUE`",
@@ -256,7 +249,7 @@ setup_cores <-
 
           n_core_avail <- parallel::detectCores()
           if(n_core > n_core_avail) {
-            display_error(
+            .display_error(
               sprintf("`n_core` must be less than %d.", n_core_avail),
               verbose = verbose
             )
@@ -264,7 +257,7 @@ setup_cores <-
           }
 
           if((n_core != 1) & ((n_core %% 2) != 0)) {
-            display_error(
+            .display_error(
               sprintf("`n_core` must be 1 or an even number (not %d).", n_core),
               verbose = verbose
             )
@@ -280,7 +273,7 @@ setup_cores <-
     return(invisible(NULL))
   }
 
-do_setup_cores <-
+auto_setup_cores <-
   purrr::partial(
     setup_cores,
     multi_core = ifelse(interactive(), FALSE, args$multi_core),
@@ -289,16 +282,22 @@ do_setup_cores <-
   )
 
 # from other projects ----
-# TODO: Call `display_info()` here?
+# TODO: Call `.display_info()` here?
 pre_auto <-
-  function(...) {
+  function(..., execute = !interactive()) {
+    if(!execute) {
+      return(invisible(NULL))
+    }
     message(rep("*", 80L))
     msg <- sprintf("Started script at %s.", Sys.time())
     message(msg)
   }
 
 post_auto <-
-  function(...) {
+  function(..., execute = !interactive()) {
+    if(!execute) {
+      return(invisible(NULL))
+    }
     msg <- sprintf("Finished script at %s.", Sys.time())
     message(msg)
     message(rep("*", 80L))
@@ -314,7 +313,7 @@ post_auto <-
            clean = FALSE,
            verbose = .VERBOSE) {
     if (!file.exists(path)) {
-      display_warning(
+      .display_warning(
         sprintf("Backup file %s cannot be created because %s cannot be found!",
                 path_backup,
                 path),
@@ -324,7 +323,7 @@ post_auto <-
     }
 
     if (file.exists(path_backup)) {
-      display_error(
+      .display_error(
         sprintf("Backup file %s already exists! Are you sure you want to overwrite it?",
                 path_backup),
         verbose = verbose
@@ -332,7 +331,7 @@ post_auto <-
       stop(call. = FALSE)
     }
     invisible(file.copy(from = path, to = path_backup))
-    display_info(
+    .display_info(
       sprintf("Backed up %s before exporting to %s.", path_backup, path),
       verbose = verbose
     )
@@ -362,14 +361,14 @@ post_auto <-
     n <- length(paths_like_backup)
     if (n < n_keep) {
       if (n == 0L) {
-        display_info(
+        .display_info(
           sprintf("No backup files to delete."),
           verbose = verbose
         )
         return(path)
       }
 
-      display_info(
+      .display_info(
         sprintf(
           paste0(
             "Number of backup files (%.0f) is less than `keep` (%.0f), ",
@@ -392,11 +391,77 @@ post_auto <-
       force = TRUE
     ))
 
-    display_info(
+    .display_info(
       sprintf("Deleted %.0f backup files at %s.",
               length(paths_to_delete),
               Sys.time()),
       verbose = verbose
     )
     invisible(path)
+  }
+
+
+.try_skip <-
+  function(skip,
+           season,
+           path_format_deps,
+           path_format_reqs = NULL,
+           ...,
+           verbose = .VERBOSE,
+           call_name = NULL,
+           safe = TRUE) {
+    if (is.null(call_name)) {
+      call_name <- "function"
+    }
+    if (!skip) {
+      # return(invisible(FALSE))
+      if(!is.null(path_format_reqs)) {
+        path_reqs_exist <-
+          purrr::map_lgl(
+            path_format_reqs,
+            ~.get_path_from_format(
+              path_format = .x,
+              season = season
+            ) %>%
+              file.exists()
+          )
+        if(all(path_reqs_exist)) {
+          msg <- sprintf("Could skip %s since all required input files exist.", call_name)
+        } else {
+          msg <-
+            sprintf(
+              paste0(
+                "Would not be able to skip %s anyways (if `skip = TRUE` ",
+                "were true) since not all required input files exist."
+              ),
+              call_name
+            )
+        }
+        .display_info(msg, verbose = verbose)
+      }
+      return(invisible(FALSE))
+    }
+
+    for (path_format in path_format_deps) {
+      path <-
+        .get_path_from_format(path_format = path_format, season = season)
+      if (!file.exist(path)) {
+
+        msg <-
+          sprintf(
+            "Can't skip %s because up-stream file dependency %s does not exist!",
+            call_name,
+            path
+          )
+        if (safe) {
+          msg <- sprintf("%s\nOver-ruling `skip = TRUE` and continuing.", msg)
+          .display_warning(msg, verbose = verbose)
+          return(invisible(FALSE))
+        } else {
+          .display_error(msg, verbose = verbose)
+          stop(call. = FALSE)
+        }
+      }
+    }
+    skip
   }

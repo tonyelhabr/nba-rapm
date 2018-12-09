@@ -5,20 +5,14 @@ if(!dir.exists(dir_proj)) {
 }
 
 if (!interactive()) {
-  setwd(wd)
+  setwd(dir_proj)
   invisible(source(".Rprofile"))
 
-} else {
-  # message("Running this script in interactive mode! (It is not designed to do so.)")
-    args <-
-      get_args(
-      description = "A descriptive description.",
-      name = "A cool name"
-    )
 }
 
-# setup ----
 pre_auto()
+
+# setup ----
 do_setup_cores()
 
 # clean ----
@@ -28,8 +22,6 @@ do_clean_raw_data()
 do_process_cleaned_data()
 
 # final ----
-# do_fit_rapm_model_o()
-# do_fit_rapm_model_d()
 do_fit_rapm_models()
 
 post_auto()

@@ -40,7 +40,7 @@ data %>%
     config$path_data_check,
     export = config$export_data
   )
-.COLS_STATS <- c("n_poss", "min_poss", "pts")
+.COLS_STATS <- c("n_poss", "mp", "pts")
 .SUFFIX_COLS_STATS_ORDER1 <- c("o", "d")
 .SUFFIX_COLS_STATS_ORDER2 <- c(.SUFFIX_COLS_STATS_ORDER1, "total")
 # list(.COLS_STATS, .SUFFIX_COLS_STATS_ORDER) %>%
@@ -51,7 +51,7 @@ data %>%
     "id",
     "n_gm",
     paste0("n_poss_", .SUFFIX_COLS_STATS_ORDER2),
-    paste0("min_poss_", .SUFFIX_COLS_STATS_ORDER2),
+    paste0("mp_", .SUFFIX_COLS_STATS_ORDER2),
     paste0("pts_", .SUFFIX_COLS_STATS_ORDER1),
     "pm",
     "pts_o_per100",
@@ -67,7 +67,7 @@ summ_byid <-
   group_by(id, game_id, side) %>%
   summarise(
     n_poss = n(),
-    min_poss = sum(min_poss),
+    mp = sum(mp),
     pts = sum(pts)
   ) %>%
   ungroup() %>%
@@ -75,7 +75,7 @@ summ_byid <-
   summarise(
     n_gm = n(),
     n_poss = sum(n_poss),
-    min_poss = sum(min_poss),
+    mp = sum(mp),
     pts = sum(pts)
   ) %>%
   ungroup() %>%
@@ -88,16 +88,16 @@ summ_byid <-
   spread(metric, value) %>%
   mutate(
     n_poss_total = n_poss_o + n_poss_d,
-    min_poss_total = min_poss_o + min_poss_d,
+    mp_total = mp_o + mp_d,
     pm = pts_o - pts_d
   ) %>%
   mutate(
     pts_o_per100 = 100 * pts_o / n_poss_total,
-    pts_o_per36 = 36 * pts_o / min_poss_total
+    pts_o_per36 = 36 * pts_o / mp_total
   ) %>%
   rename(n_gm = n_gm_o) %>%
   select(-n_gm_d) %>%
-  arrange(desc(min_poss_total)) %>%
+  arrange(desc(mp_total)) %>%
   left_join(
     config$path_players %>%
       teproj::import_path_cleanly(),
@@ -107,7 +107,7 @@ summ_byid <-
 summ_byid
 summ_byid %>%
   arrange(desc(pm)) %>%
-  select(name, pm, n_gm, min_poss_total)
+  select(name, pm, n_gm, mp_total)
 teproj::export_path(
   summ_byid,
   config$path_players_summ,
@@ -118,7 +118,7 @@ data <-
   data %>%
   semi_join(
     summ_byid %>%
-      filter(min_poss_total > 250),
+      filter(mp_total > 250),
     by = "id"
   ) %>%
   select(xid, pts, poss_num, dummy)

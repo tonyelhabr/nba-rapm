@@ -12,14 +12,14 @@ clean_raw_data <-
     if(skip) {
       return(invisible(NULL))
     }
-    # browser()
-    data_raw <-
+
+    data <-
       .import_data_from_path_format(
         path_format = path_data_raw_format,
         season = season,
         verbose = verbose
       )
-    # browser()
+
     game_summary_raw <-
       .import_data_from_path_format(
         path_format = path_game_summary_raw_format,
@@ -27,8 +27,8 @@ clean_raw_data <-
         verbose = verbose
       )
 
-    data_select <-
-      data_raw %>%
+    data <-
+      data %>%
       filter(!is.na(player1team_id)) %>%
       select(
         game_id,
@@ -56,34 +56,30 @@ clean_raw_data <-
       ) %>%
       arrange(game_id, period, event_number) %>%
       select(-event_number, -player1team_id)
-    data_select
+    data
 
-    data_select <-
-      data_select %>%
+    data <-
+      data %>%
       filter(play_type %in% c("Make", "Miss", "FreeThrow")) %>%
       mutate_at(vars(play_type), funs(if_else(. == "FreeThrow", "Make", .)))
-    data_select
 
-    data_select <-
-      data_select %>%
+    data <-
+      data %>%
       group_by(game_id, period, sec_elapsed) %>%
       summarise_at(vars(matches("^pts_|^tm_|is_off1|^lineup")), funs(dplyr::last)) %>%
       ungroup()
-    data_select
 
-    data_calc <-
-      data_select %>%
+    data <-
+      data %>%
       group_by(game_id) %>%
       mutate(poss_num = row_number()) %>%
-      mutate(min_poss = (sec_elapsed - lag(sec_elapsed, 1)) / 60) %>%
+      mutate(mp = (sec_elapsed - lag(sec_elapsed, 1)) / 60) %>%
       fill(pts_home) %>%
       fill(pts_away) %>%
       ungroup() %>%
       select(-sec_elapsed) %>%
-      mutate_at(vars(matches("^pts|min_poss")), funs(coalesce(., 0))) %>%
+      mutate_at(vars(matches("^pts|mp")), funs(coalesce(., 0))) %>%
       mutate_at(vars(matches("^pts")), funs(as.integer))
-    data_calc
-
 
     game_summary <-
       game_summary_raw %>%
@@ -95,8 +91,8 @@ clean_raw_data <-
         tm_id_away = away_team_id
       )
 
-    data_join <-
-      data_calc %>%
+    data <-
+      data %>%
       inner_join(
         game_summary,
         by = "game_id"
@@ -116,16 +112,15 @@ clean_raw_data <-
         pts2 = pts_tm2 - dplyr::lag(pts_tm2, default = 0L)
       ) %>%
       ungroup()
-    data_join
 
     data <-
-      data_join %>%
+      data %>%
       mutate(pts = pts1 + pts2) %>%
       select(
         game_id,
         period,
         # poss_num,
-        min_poss,
+        mp,
         is_off = is_off1,
         # tm_id1,
         # tm_id2,
@@ -136,15 +131,16 @@ clean_raw_data <-
         lineup2
       )
 
-    if (export) {
-      path_data_clean <-
-        .export_data_from_path_format(
-          data = data,
-          path_format = path_data_clean_format,
-          season = season,
-          verbose = verbose
-        )
-    }
+    path_export <-
+      .export_data_from_path_format(
+        data = data,
+        path_format = path_data_clean_format,
+        season = season,
+        verbose = verbose,
+        export = export,
+        ...
+      )
+
     invisible(data)
   }
 
@@ -154,9 +150,9 @@ do_clean_raw_data <-
     season = args$season,
     path_data_raw_format = args$path_data_raw_format,
     path_game_summary_raw_format = args$path_game_summary_raw_format,
+    path_data_clean_format = args$path_data_clean_format,
     skip = args$skip_clean,
     verbose = args$verbose,
-    export = args$export_clean,
-    path_data_clean_format = args$path_data_clean_format
+    export = args$export_clean
   )
 

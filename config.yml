@@ -28,7 +28,8 @@ default:
     In this case, intermediate data for given season MUST exist."
   path_data_raw_format:
     default: "data-raw/play_by_play_with_lineup/play_by_play_with_lineup_%s.csv"
-    help: "Path format of raw play-by-play data file to clean."
+    help: "Path format of raw play-by-play data file to clean. (Here, \"data\"
+    refers to play-by-play data.)"
   path_game_summary_raw_format:
     default: "data-raw/raw_game_summary/raw_game_summary_%s.csv"
     help: "Path format of raw game summary data file. Needed solely for identifying
@@ -73,33 +74,41 @@ default:
    
   skip_final:
     default: false
-    help: "If `TRUE`, then skips \"final\" model fitting steps.
+    help: "If `TRUE`, then skips \"final\" model fitting, assumes that
+    `path_data_final_*`s exist, and combines these two data sets (`data_final_*`)
+    to create `data_final`. (Here, \"data\" refers to the RAPM estimates.)
     (There is probably no case in which the user would want to set this to `FALSE`, 
     but it can be useful to set this to `FALSE` for development debugging purposes.)"
   export_final:
     default: true
     help: "If `TRUE`, exports \"final\" data.
     (The same caveat about setting `skip_final = TRUE` is applicable here as well.)"
-  path_data_export_format:
-    default: "data/rapm-estimates-%04d.csv"
-    help: "Path format of final the player-specific offensive and defensive RAPM estimates
+  path_data_final_o_format:
+    default: "data/rapm-estimates-o-%04d.csv"
+    help: "Path format of final the player-specific offensive RAPM estimates
     (after model fitting)."
+  path_data_final_d_format:
+    default: "data/rapm-estimates-d-%04d.csv"
+    help: "Analogous to `path_data_final_o_format`."
+  path_data_final_format:
+    default: "data/rapm-estimates-%04d.csv"
+    help: "Combined offensive and defensive RAPM estimates."
 
   # Run-time parameters.
   # These `min*` paraemeters are to-be-implemented.
-  min_poss:
+  poss_min:
     default: 200
     help: "Minimum number of possession in which a player must have 
     participated  (offense and defense combined) in order to qualify for model fitting process.
     (Model quality generally improves if players with less time played are removed
     from consideration because they can represent outliers and have high leverage on 
     the model fitting.)"
-  min_gm:
+  gp_min:
     default: 0
-    help: "Analogous to `min_poss` for games played."
-  min_min:
+    help: "Analogous to `poss_min` for games played."
+  mp_min:
     default: 0
-    help: "Analogous to `min_poss` for minutes played."
+    help: "Analogous to `poss_min` for minutes played."
   optimize_o:
     default: false
     help: "If `TRUE`, then calculates the \"optimal\" ridge regression

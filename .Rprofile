@@ -18,11 +18,13 @@ suppressWarnings(suppressPackageStartupMessages(library("argparser")))
 # suppressWarnings(suppressPackageStartupMessages(library("doParallel")))
 # suppressWarnings(suppressPackageStartupMessages(library("glmnet")))
 
-config <- config::get()
+# config <- config::get()
 
 .SKIP <- FALSE
 .VERBOSE <- TRUE
 .EXPORT <- TRUE
+.BACKUP <- FALSE # TODO
+.CLEAN <- FALSE # TODO
 .OPTIMIZE <- FALSE
 .SEED <- 42
 .LAMBDA <- 200
@@ -39,13 +41,12 @@ rm("paths_funcs")
 
 # options(tibble.print_min = 20)
 
-# if(interactive()) {
-#   args <-
-#     convert_config_to_args(
-#     config,
-#     description = "A descriptive description.",
-#     name = "A cool name"
-#   )
-# }
+if(interactive()) {
+  args <-
+    get_args(
+      description = "A descriptive description.",
+      name = "A cool name"
+    )
+}
 
 

@@ -240,7 +240,7 @@ data
 
 data <-
   data %>%
-  mutate(min_poss = min_start_period - min_end_period) %>%
+  mutate(mp = min_start_period - min_end_period) %>%
   select(-matches("^off_id$|^def_id$|^pts_diff_start$|^num_poss_period$|^min_.*_period$"))
 data
 
@@ -314,7 +314,7 @@ data <-
   )
 
 
-# columns: game_id, period, lineup1, lineup2, is_off, min_poss, pts
+# columns: game_id, period, lineup1, lineup2, is_off, mp, pts
 teproj::export_path(
   data,
   path = config$path_data_clean,

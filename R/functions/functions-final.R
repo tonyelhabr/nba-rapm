@@ -1,7 +1,7 @@
 
 
 .get_x_glmnet <-
-  function(data_wide, ...) {
+  function(data_wide, fmla, ...) {
     fmla %>%
       model.matrix(data_wide)
   }
@@ -13,7 +13,7 @@
   }
 
 .get_x_glmnet <-
-  function(data_wide, ...) {
+  function(data_wide, fmla, ...) {
     fmla %>%
       model.matrix(data_wide)
   }
@@ -63,28 +63,33 @@
   }
 
 
-fit_rapm_model_byside <-
-  function(season,
-           path_data_wide_format,
-           side = c("o", "d"),
+.fit_rapm_model_byside <-
+  function(side = c("o", "d"),
+           season,
+           path_data_wide_side_format,
            ...,
            # skip = .SKIP,
            verbose = .VERBOSE,
            export = .EXPORT,
            optimize = .OPTIMIZE,
            seed = .SEED,
-           lambda = .LAMBDA) {
+           lambda = .LAMBDA,
+           path_data_final_side_format) {
+    side <- match.arg(side)
 
     data_wide <-
       .import_data_from_path_format(
-        path_format = path_data_wide_format,
+        path_format = path_data_wide_side_format,
         season = season,
-        verbose = verbose
+        verbose = verbose,
+        ...
       )
+
     fmla <- formula(pts ~ .)
+
     x_glmnet <-
       data_wide %>%
-      .get_x_glmnet()
+      .get_x_glmnet(fmla = fmla)
     y_glmnet <-
       data_wide %>%
       .get_y_glmnet()
@@ -97,16 +102,11 @@ fit_rapm_model_byside <-
           x = x_glmnet,
           y = y_glmnet
         )
+      msg <- sprintf("Found %f to be the optimal `lambda` for %srapm.", lambda, side)
+    } else {
+      msg <- sprintf("Using default `lambda = %f` for %srapm.", lambda, side)
     }
-
-    if(verbose) {
-      if(optimze) {
-        msg <- sprintf("Found %f to be the optimal `lambda` for %srapm.", lambda, side)
-      } else {
-        msg <- sprintf("Using default `lambda = %f` for %srapm.", lambda, side)
-      }
-      display_info(msg)
-    }
+    display_info(msg, verbose = verbose)
 
     estimates <-
       .get_estimates(
@@ -115,34 +115,22 @@ fit_rapm_model_byside <-
         lambda = lambda
       )
 
+    .export_data_from_path_format(
+      data = estimates,
+      path_format = path_data_final_side_format,
+      season = season,
+      verbose = verbose,
+      export = export,
+      ...
+    )
+
+
     estimates %>% arrange(desc(rapm))
   }
 
-
-# do_fit_rapm_model_o <-
-#   purrr::partial(
-#     fit_rapm_model_byside,
-#     season = args$season,
-#     path_data_wide_format = args$path_data_wide_o_format,
-#     side = "o",
-#     optimize = args$optimize_o,
-#     seed = args$seed_o,
-#     lambda = args$lambda_o
-#   )
-#
-# do_fit_rapm_model_d <-
-#   purrr::partial(
-#     fit_rapm_model_byside,
-#     season = args$season,
-#     path_data_wide_format = args$path_data_wide_d_format,
-#     side = "d",
-#     optimize = args$optimize_d,
-#     seed = args$seed_d,
-#     lambda = args$lambda_d
-#   )
-
-.join_players_summary <-
-  function(season,
+.join_estimates_with_players_summary <-
+  function(data,
+           season,
            path_players_summary_format,
            ...,
            verbose = .VERBOSE) {
@@ -150,26 +138,25 @@ fit_rapm_model_byside <-
       .import_data_from_path_format(
         path_format = path_players_summary_format,
         season = season,
-        verbose = verbose
+        verbose = verbose,
+        ...
       )
 
-    estimates <-
-      estimates %>%
-      mutate_at(vars(matches("rapm")), funs(rnk = row_number(desc(.)))) %>%
-      left_join(players_summary, by = "id")
+    # TODO: Make a function for this?
+    .SUFFIX_COLS_STATS_ORDER1 <- c("o", "d")
+    .SUFFIX_COLS_STATS_ORDER2 <- c(.SUFFIX_COLS_STATS_ORDER1, "")
+    .COLS_ESIMATES_PRETTY_ORDER <-
+      c("name",
+        "id",
+        paste0(.SUFFIX_COLS_STATS_ORDER2, "rapm"),
+        paste0(.SUFFIX_COLS_STATS_ORDER2, "rapm_rnk")
+      )
 
-    display_info(
-      "Successfully joined `players_summary` with `estimates`.", 
-      verbose = verbose
-    )
-    estimates
+    data %>%
+      mutate_at(vars(matches("rapm$")), funs(rnk = row_number(desc(.)))) %>%
+      left_join(players_summary, by = "id") %>%
+      select(one_of(.COLS_ESIMATES_PRETTY_ORDER))
   }
-
-.join_players_summary_possibly <-
-  purrr::possibly(
-    .join_players_summary,
-    otherwise = NULL
-  )
 
 fit_rapm_models <-
   function(season,
@@ -186,29 +173,40 @@ fit_rapm_models <-
            seed_d = .SEED,
            lambda_o = .LAMBDA,
            lambda_d = .LAMBDA,
+           path_data_final_o_format,
+           path_data_final_d_format,
            path_data_final_format) {
 
     if(skip) {
       return(invisible(NULL))
     }
 
-    estimates_o <-
-      fit_rapm_model_byside(
+    .fit_rapm_model_byside_partially <-
+      purrr::partial(
+        .fit_rapm_model_byside,
         season = season,
-        path_data_wide_format = path_data_wide_o_format,
+        verbose = verbose,
+        export = export,
+        ...
+      )
+
+    estimates_o <-
+      .fit_rapm_model_byside_partially(
         side = "o",
+        path_data_wide_side_format = path_data_wide_o_format,
         optimize = optimize_o,
         seed = seed_o,
-        lambda = lambda_o
+        lambda = lambda_o,
+        path_data_final_side_format = path_data_final_o_format
       )
     estimates_d <-
-      fit_rapm_model_byside(
-        season = season,
-        path_data_wide_format = path_data_wide_d_format,
+      .fit_rapm_model_byside_partially(
         side = "d",
+        path_data_wide_side_format = path_data_wide_d_format,
         optimize = optimize_d,
         seed = seed_d,
-        lambda = lambda_d
+        lambda = lambda_d,
+        path_data_final_side_format = path_data_final_d_format
       )
 
     estimates <-
@@ -221,27 +219,48 @@ fit_rapm_models <-
       mutate(rapm = orapm + drapm) %>%
       arrange(desc(rapm))
 
-    estimates_pretty <-
-      .join_players_summary_possibly(
+
+    .join_estimates_with_players_summary_partially <-
+      purrr::partial(
+        .join_estimates_with_players_summary,
         data = estimates,
         path_players_summary_format = path_players_summary_format,
         season = season,
-        verbose = verbose
+        verbose = verbose,
+        ...
       )
+
+    .join_estimates_with_players_summary_possibly <-
+      purrr::possibly(
+        .join_estimates_with_players_summary_partially,
+        otherwise = NULL
+      )
+
+    estimates_pretty <-
+      .join_estimates_with_players_summary_possibly()
 
     if(!is.null(estimates_pretty)) {
       estimates <- estimates_pretty
+      display_info(
+        "Successfully joined `players_summary` with `estimates`.",
+        verbose = verbose
+      )
+    } else {
+      display_warning(
+        "Could not join `estimates` with `players_summary`.",
+        verbose = verbose
+      )
     }
 
-    if (export) {
-      path_data_clean <-
-        .export_data_from_path_format(
-          data = estimates,
-          path_format = path_data_final_format,
-          season = season,
-          verbose = verbose
-        )
-    }
+    path_data_clean <-
+      .export_data_from_path_format(
+        data = estimates,
+        path_format = path_data_final_format,
+        season = season,
+        verbose = verbose,
+        export = export,
+        ...
+      )
     estimates
   }
 
@@ -256,5 +275,12 @@ do_fit_rapm_models <-
     path_data_wide_d_format = args$path_data_wide_d_format,
     optimize_d = args$optimize_d,
     seed_d = args$seed_d,
-    lambda_d = args$lambda_d
+    lambda_d = args$lambda_d,
+    path_players_summary_format = args$path_players_summary_format,
+    path_data_final_o_format = args$path_data_final_o_format,
+    path_data_final_d_format = args$path_data_final_d_format,
+    path_data_final_format = args$path_data_final_format,
+    skip = args$skip_final,
+    verbose = args$verbose,
+    export = args$export_final
   )

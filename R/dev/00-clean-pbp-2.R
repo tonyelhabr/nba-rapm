@@ -74,12 +74,12 @@ data_calc <-
   data_select %>%
   group_by(game_id) %>%
   mutate(poss_num = row_number()) %>%
-  mutate(min_poss = (sec_elapsed - lag(sec_elapsed, 1)) / 60) %>%
+  mutate(mp = (sec_elapsed - lag(sec_elapsed, 1)) / 60) %>%
   fill(pts_home) %>%
   fill(pts_away) %>%
   ungroup() %>%
   select(-sec_elapsed) %>%
-  mutate_at(vars(matches("^pts|min_poss")), funs(coalesce(., 0))) %>%
+  mutate_at(vars(matches("^pts|mp")), funs(coalesce(., 0))) %>%
   mutate_at(vars(matches("^pts")), funs(as.integer))
 data_calc
 
@@ -136,7 +136,7 @@ data <-
     game_id,
     period,
     # poss_num,
-    min_poss,
+    mp,
     is_off = is_off1,
     # tm_id1,
     # tm_id2,

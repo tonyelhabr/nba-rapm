@@ -1,9 +1,9 @@
 
 # Reference: http://eightthirtyfour.com/data
-path_dl <- download_rda_file(season = 2017)
-# path_dl <- "data-raw/PbP_2017.Rda"
-# rio::import(path_dl)
-load(path_dl)
+# path_dl <- download_rda_file(season = 2017)
+path_dl <- "data-raw/raw_play_by_play_2017_etf.Rda"
+
+.import_data(path_dl)
 
 # pbp %>% names()
 
@@ -44,6 +44,7 @@ rgx_players_away <- "^(away)(_player_id_)([1-5])$"
 # rgx_players <- "^(home|away)(_player_id_)([1-5])$"
 play_by_play2 <-
   play_by_play1 %>%
+  filter(!is.na(player1_team_id)) %>%
   select(
     game_id,
     period,
@@ -57,7 +58,6 @@ play_by_play2 <-
     tm_away = away_team,
     sec = time, # running time elapsed
     play_type,
-    player1_id,
     player1_tm_id = player1_team_id,
     player1_tm_nickname = player1_team_nickname,
     # team,  # always `NA`
@@ -76,6 +76,7 @@ play_by_play2 <-
   ) %>%
   arrange(game_id, period, event_num) %>%
   select(-matches("^event_num$|^player1_tm_id$"))
+play_by_play2
 
 # play_by_play2 %>% count(play_type, pts_home - lag(pts_home), sort = TRUE)
 gms <-

@@ -73,7 +73,7 @@
   function(estimates,
            path_players_summary_format,
            season,
-           ... {
+           ...) {
 
     players_summary <-
       .import_data_from_path_format(
@@ -104,12 +104,10 @@ extract_rapm_estimates <-
            path_rapm_estimates_d_format,
            path_rapm_estimates_format,
            season = .SEASON,
-           skip = .SKIP,
            ...) {
 
     will_skip <-
       .try_skip(
-        skip = skip,
         season = season,
         path_format_reqs =
           c(
@@ -123,10 +121,9 @@ extract_rapm_estimates <-
             path_rapm_estimates_d_format,
             path_rapm_estimates_format
           ),
-        verbose = verbose,
-        # call_name = rlang::call_name(),
         ...
       )
+
     if(will_skip) {
       return(invisible(NULL))
     }
@@ -209,6 +206,7 @@ auto_extract_rapm_estimates <-
     path_rapm_estimates_format = args$path_rapm_estimates_format,
     season = args$season,
     skip = args$skip_fit,
+    debug = args$debug,
     verbose = args$verbose,
     export = args$export,
     backup = args$backup,

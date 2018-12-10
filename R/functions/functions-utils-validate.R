@@ -10,7 +10,9 @@
 
 .validate_season <-
   function(x = .SEASONS) {
-    match.arg(x)
+    # match.arg(x) %>% names()
+    stopifnot(any(x == .SEASONS))
+    x
   }
 
 .validate_season_type <-

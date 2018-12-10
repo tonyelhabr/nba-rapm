@@ -50,3 +50,12 @@ team <-
     slug = slug_team
   )
 team
+
+
+# library("nbastatR")
+# library("future")
+future::plan(multiprocess) 
+game_logs <-
+  nbastatR::game_logs(seasons = 2018, result_types = c("team", "player"))
+
+  

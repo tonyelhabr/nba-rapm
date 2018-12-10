@@ -1,15 +1,42 @@
 
-# Make this more like `httr::build_url()`?
-.get_path_from_format <- function(path_format, season) {
-  .validate_season(season)
-  path <- sprintf(path_format, season)
-}
+# Make this more like `httr:::compose_url()`?
+# (See https://github.com/r-lib/httr/blob/af25ebd0e3b72d2dc6e1423242b94efc25bc97cc/R/url-query.r)
+# Update: Done.
+.SEP <- "_"
+.get_path_from_format <-
+  function(path_format,
+           season = NULL,
+           season_type = NULL,
+           raw_data_source = NULL,
+           sep = .SEP,
+           ...) {
+    ext <- tools::file_ext(path_format)
+    path_format_noext <-
+      tools::file_path_sans_ext(path_format)
+    if (ext == "") {
+     .display_error("Bad path name. Should include a recognizable file extension.",  ...)
+      stop(call. = FALSE)
+    }
+    if (!is.null(season)) {
+      season <- .validate_season(season)
+    }
+    if (!is.null(season_type)) {
+      season_type <- .validate_season_type(season_type)
+      season_type <- names(season_type)
+    }
+    if (!is.null(raw_data_source)) {
+      raw_data_source <- .validate_raw_data_source(raw_data_source)
+      raw_data_source <- names(raw_data_source)
+    }
+    vals <- purrr::compact(list(season, season_type, raw_data_source))
+    vals <- paste0(vals, collapse = sep)
+    path <- sprintf("%s%s%s.%s", path_format_noext, sep, vals, ext)
+    path
+  }
+
 
 .create_dir_ifnecessary <-
-  function(dir, verbose = .VERBOSE, execute = TRUE) {
-    if(!execute) {
-      return(invisible(NULL))
-    }
+  function(dir, verbose = .VERBOSE) {
     if(!dir.exists(dir)) {
       invisible(dir.create(dir, recursive = TRUE))
       .display_info(
@@ -20,21 +47,21 @@
     invisible(dir)
   }
 
-# Straight copy-paste of `tools::file_ext()`.
-.file_ext <-
-  function (x) {
-    pos <- regexpr("\\.([[:alnum:]]+)$", x)
-    ifelse(pos > -1L, substring(x, pos + 1L), "")
-  }
-
 # path <- "data-raw/play_by_play_with_lineup/play_by_play_with_lineup_2017-18.csv"
 # Add `verbose`, etc. (i.e. `backup`) to this(?).
 .import_data <-
   function(path, ...) {
     # Set `verbose = FALSE` always to suppress verose `data.table::fread()` messages.
-    # Also, note that both `data.table::fread()` and `rio::import()` do not
-    # seem to work with `purrr::possibly()` because they call `stop()` without setting `call. = FALSE`
-    ext <- .file_ext(path)
+    # Also, note that both `data.table::fread()` and `rio::import()` set `call. = FALSE` in `stop()`
+    # if the path does not exist.
+    if(!file.exists(path)) {
+      .display_error(
+        sprintf("No file at %s exists!", path),
+        ...
+      )
+      stop(call. = FALSE)
+    }
+    ext <- tools::file_ext(path)
     # after checking if `path` exists.
     if(ext == "csv") {
       res <-
@@ -98,31 +125,29 @@
 .export_data_from_path_format <-
   function(data,
            path_format,
-           season,
            ...,
            backup = .BACKUP,
-           clean = .CLEAN,
-           n_keep = .N_KEEP,
-           verbose = .VERBOSE,
+           # clean = .CLEAN,
+           # n_keep = .N_KEEP,
+           # verbose = .VERBOSE,
            export = .EXPORT) {
     if(!export) {
       return(invisible(NULL))
     }
-    path <- .get_path_from_format(path_format, season)
+    path <- .get_path_from_format(path_format, ...)
     if (backup) {
-      path_backup <- .create_backup(path = path, verbose = verbose, clean = clean, n_keep = n_keep, ...)
+      path_backup <- .create_backup(path = path, ...)
       # .clean_backup(path = path)
     }
     path_export <-
       .export_data(
         data = data,
         path = path,
-        verbose = verbose,
         ...
       )
     .display_info(
       sprintf("Successfully exported %s to %s.", "data", path),
-      verbose = verbose
+      ...
     )
     invisible(path_export)
   }
@@ -135,7 +160,7 @@
            ext = tools::file_ext(path),
            suffix_backup = format(Sys.time(), "%Y-%m-%d_%H-%M-%S"),
            path_backup = sprintf("%s-%s.%s", file, suffix_backup, ext),
-           clean = FALSE,
+           clean = .CLEAN,
            verbose = .VERBOSE) {
     if (!file.exists(path)) {
       .display_warning(
@@ -168,7 +193,7 @@
 
 .clean_backup <-
   function(path,
-           n_keep = 1L,
+           n_keep = .N_KEEP,
            decreasing = TRUE,
            ...,
            dir = dirname(path),

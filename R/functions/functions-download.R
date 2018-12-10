@@ -7,6 +7,7 @@
 .OVERWRITE <- FALSE
 .download_googledrive_files <-
   function(id, dir = .DIR_DL, ..., verbose = .VERBOSE, overwrite = .OVERWRITE) {
+    stop("You should download this manually instead (until better functionality is implemented", call. = FALSE)
     .create_dir_ifnecessary(dir = dir, verbose = verbose)
     temp_zip <- tempfile(fileext = ".zip")
     dribble_raw <-
@@ -70,7 +71,12 @@ download_rda_file <-
     }
 
     if(is.null(path)) {
-      path <- file.path(dir, sprintf("%s%s.%s", .BASENAME_PREFIX_EIGHTYTHIRTYFOUR, season, .EXT_EIGHTYTHIRTYFOUR))
+      .get_path_from_format(
+        path_format = file.path(dir, sprintf("%s.%s", "raw_play_by_play", .EXT_EIGHTYTHIRTYFOUR)),
+        season = season,
+        # season_type = "Any",
+        raw_data_source = "eightthirtyfour"
+      )
     }
     if(file.exists(path)) {
       msg <- sprintf("%s already exists!")

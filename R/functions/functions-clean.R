@@ -1,15 +1,24 @@
 
 .filter_season_type <-
-  function(play_by_play, season_typeS, ...) {
-    season_type <- .validate_season_type(season_type)
-
-    if (season_type == .SEASON_TYPES[3] |
-        (season_type != .SEASON_TYPES[1] &
-        season_type != .SEASON_TYPES[2])) {
+  function(play_by_play, season_type, ...) {
+    if(!any("season_type" %in% names(play_by_play))) {
+      .display_info(
+        "Not filtering for `season_type` since there is `season_type` column in `play_by_play`.",
+        ...
+      )
       return(play_by_play)
     }
-
-    play_by_play %>% filter(season_type %in% !!season_type)
+    # TODO: Implement this better (although this seems like it would work).
+    # season_type <- .validate_season_type(season_type)
+    # season_type <- season_type %>% unname()
+    # browser()
+    # if (season_type == .SEASON_TYPES[3] |
+    #     (season_type != .SEASON_TYPES[1] &
+    #     season_type != .SEASON_TYPES[2])) {
+    #   return(play_by_play)
+    # }
+    # play_by_play %>% filter(season_type == !!season_type)
+    play_by_play %>% filter(season_type == "Regular Season")
   }
 
 # Note that this was split out into its own function because it could
@@ -17,21 +26,28 @@
 .get_game_summary <-
   function(path_raw_game_summary_format,
            path_game_summary_format,
-           season,
            ...) {
 
     raw_game_summary <-
       .import_data_from_path_format(
         path_format = path_raw_game_summary_format,
-        season = season,
         ...
       )
 
     game_summary <-
       raw_game_summary %>%
-      .filter_season_type(season_type = !!season_type) %>%
+      .filter_season_type(...)
 
-      game_summary <-
+    # Export early in order to keep all of the columns.
+    path_export <-
+      .export_data_from_path_format(
+        data = game_summary,
+        path_format = path_game_summary_format,
+        ...
+      )
+
+
+    game_summary <-
       game_summary %>%
       select(
         game_id,
@@ -41,15 +57,55 @@
         tm_id_away = away_team_id
       )
 
-    path_export <-
-      .export_data_from_path_format(
-        data = play_by_play,
-        path_format = path_play_by_play_format,
-        season = season,
-        ...
-      )
     invisible(game_summary)
 
+  }
+
+.import_thing_possibly <-
+  function(path_import_format_clean,
+           f_get = NULL,
+           ...) {
+
+    .import_f_possibly <-
+      purrr::possibly(
+        ~.import_data_from_path_format(
+          path_format = path_import_format_clean,
+          ...
+        ),
+        otherwise = NULL
+      )
+    res <- .import_f_possibly()
+
+    if(is.null(res)) {
+      if(is.null(f_get)) {
+        .display_error(
+          sprintf("`%s` cannot be `NULL`.", f_get),
+          ...
+        )
+        stop(call. = FALSE)
+      }
+      # Note that the above evaluation of `f_get` forces it,
+      # so no need to treat it as a function here.
+      res <- f_get
+    }
+    invisible(res)
+  }
+
+.import_game_summary_possibly <-
+  function(path_raw_game_summary_format,
+           path_game_summary_format,
+           ...) {
+    .import_thing_possibly(
+      path_import_format_clean = path_raw_game_summary_format,
+      path_import_format_raw = path_game_summary_format,
+      f_get =
+        .get_game_summary(
+          path_raw_game_summary_format = path_raw_game_summary_format,
+          path_game_summary_format = path_game_summary_format,
+          ...
+        ),
+      ...
+    )
   }
 
 clean_raw_play_by_play <-
@@ -57,15 +113,14 @@ clean_raw_play_by_play <-
            path_raw_game_summary_format,
            path_play_by_play_format,
            path_game_summary_format,
-           season = .SEASON,
-           season_type = .SEASON_TYPE,
-           skip = .SKIP,
+           # TODO: Figure out a way to abstract this away.
+           # Right now, it needs to be explicit so that `.get_path_from_format()` does not consider it.
+           # season_type = .SEASON_TYPE,
            ...) {
-
+    # browser()
     will_skip <-
       .try_skip(
-        skip = skip,
-        season = season,
+        # season = season,
         path_format_reqs =
           c(
             path_raw_play_by_play_format,
@@ -75,9 +130,9 @@ clean_raw_play_by_play <-
           c(
             path_play_by_play_format
           ),
-        verbose = verbose,
         ...
       )
+
     if(will_skip) {
       return(invisible(NULL))
     }
@@ -85,19 +140,17 @@ clean_raw_play_by_play <-
     raw_play_by_play <-
       .import_data_from_path_format(
         path_format = path_raw_play_by_play_format,
-        season = season,
-        verbose = verbose,
         ...
       )
 
     # TODO: Implement some kind of checking of column names/types for this function?
     play_by_play <-
       raw_play_by_play %>%
-      .filter_season_type(season_type = !!season_type) %>%
-      filter(!is.na(player1team_id))
+      .filter_season_type(...)
 
     play_by_play <-
       play_by_play %>%
+      filter(!is.na(player1team_id)) %>%
       select(
         game_id,
         period,
@@ -147,25 +200,13 @@ clean_raw_play_by_play <-
       mutate_at(vars(matches("^pts|mp")), funs(coalesce(., 0))) %>%
       mutate_at(vars(matches("^pts")), funs(as.integer))
 
-    .import_game_summary_possibly <-
-      purrr::possibly(
-        ~.import_data_from_path_format(
-          path_format = path_game_summary_format,
-          season = season,
-          ...
-        ),
-        otherwise = NULL
+    browser()
+    game_summary <-
+      .import_game_summary_possibly(
+        path_game_summary_format = path_game_summary_format,
+        path_raw_game_summary_format = path_raw_game_summary_format,
+        ...
       )
-    game_summary <- .import_game_summary_possibly()
-
-    if(is.null(game_summary)) {
-      game_summary <-
-        .get_game_summary(
-          path_players_format = path_raw_game_summary_format,
-          season = season,
-          ...
-        )
-    }
 
     play_by_play <-
       play_by_play %>%
@@ -211,7 +252,6 @@ clean_raw_play_by_play <-
       .export_data_from_path_format(
         data = play_by_play,
         path_format = path_play_by_play_format,
-        season = season,
         ...
       )
 
@@ -232,7 +272,9 @@ auto_clean_raw_play_by_play <-
     path_game_summary_format = args$path_game_summary_format,
     season = args$season,
     season_type = args$season_type,
+    raw_data_source = args$raw_data_source,
     skip = args$skip_clean,
+    debug = args$debug,
     verbose = args$verbose,
     export = args$export,
     backup = args$backup,

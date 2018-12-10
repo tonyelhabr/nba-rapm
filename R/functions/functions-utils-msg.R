@@ -1,11 +1,11 @@
 
 .display_msg <-
-  function(..., verbose = TRUE, type = c("info", "warning", "error")) {
+  function(msg, ..., verbose = .VERBOSE, type = c("info", "warning", "error")) {
     if(type == "info" && !verbose) {
       return(invisible(NULL))
     }
     # cat(sprintf("%s: %s\n", toupper(type), ...))
-    msg <- paste0(..., collapse = "")
+    # msg <- paste0(..., collapse = "")
     cat(sprintf("%s: %s\n", toupper(type), msg))
   }
 

@@ -1,53 +1,84 @@
 
+
+.separate_lineup <-
+  function(play_by_play, col, prefix = "x", suffix = 1:5, sep = "-") {
+    play_by_play %>%
+      separate(!!enquo(col), into = paste0(prefix, suffix), sep = sep)
+  }
+
+
 .get_players <-
-  function(path_players_format, season, ...) {
-    season <- .validate_season(season)
+  function(path_players_format, season = NULL, ...) {
+    if(!is.null(season)) {
+      season <- .validate_season(season)
+    }
     players_raw <-
       nbastatR::get_nba_players()
     players <-
       players_raw %>%
-      janitor::clean_names() %>%
-      filter(year_season_first <= season,
-             year_season_last >= season) %>%
+      janitor::clean_names()
+    if(!is.null(season)) {
+      players <-
+        players %>%
+        filter(year_season_first <= season,
+               year_season_last >= season)
+    }
+    players <-
+      players %>%
       select(id = id_player,
              name = name_player) %>%
       arrange(id)
 
-    path_export <-
-      .export_data_from_path_format(
-        data = players,
-        path_format = path_players_format,
-        season = season,
-        ...
-      )
+    # Note that `players` and `teams` are special cases where it is not required
+    # that `path*` be non-`NULL`. (This is a design choice since these are
+    # retrieved from `{nbastatR}`.
+    if(!is.null(path_players_format)) {
+      path_export <-
+        .export_data_from_path_format(
+          data = players,
+          path_format = path_players_format,
+          ...
+        )
+    }
 
     invisible(players)
   }
 
 .get_teams <-
-  function(path_players_format, season, ...) {
-    season <- .validate_season(season)
+  function(path_players_format, season = NULL, ...) {
+    if(!is.null(season)) {
+      season <- .validate_season(season)
+    }
     teams_raw <-
       nbastatR::get_nba_teams()
 
     teams <-
       teams_raw %>%
       janitor::clean_names() %>%
-      filter(is_non_nba_team == 0L) %>%
-      filter(year_played_last >= season) %>%
+      filter(is_non_nba_team == 0L)
+
+    if(!is.null(season)) {
+      teams <-
+        teams %>%
+        filter(year_played_last >= season)
+    }
+    # .COLS_TEAMS_ORDER <- c("id_team", "name_team", "slug_team")
+    teams <-
+      teams %>%
       select(
         id = id_team,
         name = name_team,
         slug = slug_team
       )
 
-    path_export <-
-      .export_data_from_path_format(
-        data = teams,
-        path_format = path_players_format,
-        season = season,
-        ...
-      )
+    if(!is.null(path_teams_format)) {
+      path_export <-
+        .export_data_from_path_format(
+          data = teams,
+          path_format = path_teams_format,
+          ...
+        )
+    }
 
     invisible(teams)
   }
@@ -73,32 +104,26 @@
     .COLS_SUMM_BYID_ORDER
   }
 
-.summarise_players <-
+.import_players_possibly <-
+  function(path_players_format,
+           ...) {
+    .import_thing_possibly(
+      path_import_format_clean = path_players_format,
+      path_import_format_raw = path_players_format,
+      f_clean2raw = .get_players,
+      ...
+    )
+  }
+
+.summarise_res <-
   function(play_by_play,
            path_players_summary_format,
            path_players_format,
            season,
            ...) {
 
-    .import_players_possibly <-
-      purrr::possibly(
-        ~.import_data_from_path_format(
-          path_format = path_players_format,
-          season = season,
-          ...
-        ),
-        otherwise = NULL
-      )
-    players <- .import_players_possibly()
-
-    if(is.null(players)) {
-      players <-
-        .get_players(
-          path_players_format = path_players_format,
-          season = season,
-          ...
-        )
-    }
+    players <-
+      .import_players_possibly(...)
 
     players_summary <-
       play_by_play %>%
@@ -161,11 +186,19 @@
     invisible(players_summary)
   }
 
-
-.separate_lineup <-
-  function(play_by_play, col, prefix = "x", suffix = 1:5, sep = "-") {
+.filter_and_trim_play_by_play <-
+  function(play_by_play, players_summary, poss_min, gp_min, mp_min, ...) {
     play_by_play %>%
-      separate(!!enquo(col), into = paste0(prefix, suffix), sep = sep)
+      semi_join(
+        players_summary %>%
+          filter(
+            poss_total >= poss_min,
+            gp_total >= gp_min,
+            mp_total >= mp_min
+          ),
+        by = "id"
+      ) %>%
+      select(xid, pts, poss_num, dummy)
   }
 
 .widen_data_byside <-
@@ -173,27 +206,56 @@
            side,
            path_possession_data_side_format,
            season,
+           debug = .DEBUG,
            ...) {
 
     side <- .validate_side(side)
 
-    duplicates_n <-
-      play_by_play %>%
-      filter(str_detect(xid, sprintf("^%s", side))) %>%
-      count(xid, poss_num, sort = TRUE) %>%
-      filter(n > 1L)
+    if(debug) {
+      duplicates_n <-
+        play_by_play %>%
+        filter(str_detect(xid, sprintf("^%s", side))) %>%
+        count(xid, poss_num, sort = TRUE) %>%
+        filter(n > 1L)
 
-    n_duplicates <- nrow(duplicates_n)
-    if(n_duplicates > 0L) {
-      .display_warning(
-        sprintf(
-          paste0(
-            "There are %d rows with more than one `xid`-`poss_num` combination.\n",
-            "`dplyr::distinct()` is being used to remove make records uniques."
+      n_duplicates <- nrow(duplicates_n)
+      if(n_duplicates > 0L) {
+        .display_warning(
+          sprintf(
+            paste0(
+              "There are %d rows with more than one `xid`-`poss_num` combination ",
+              "(i.e. a player appears in a lineup more than once on a single possession).",
+              "`dplyr::distinct()` is being used to remove make records uniques."
             ),
-          n_duplicates),
-        ...
-      )
+            n_duplicates),
+          ...
+        )
+
+
+        players <-
+          .import_players_possibly(...)
+
+        duplicates_n_aug <-
+          duplicates_n %>%
+          mutate(
+            id = xid %>% str_replace("^%s") %>% as.integer()
+          ) %>%
+          left_join(
+            players,
+            by = "id"
+          )
+
+        path_format <- sprintf("%s%s.csv", sprintf("data/debug/n_duplicates-%s", Sys.time()))
+        path_export <-
+          .export_data_from_path_format(
+            data = duplicates_n_aug,
+            path_format = path_format,
+            season = season,
+            export = debug,
+            ...
+          )
+      }
+
     }
 
     possession_data <-
@@ -233,20 +295,15 @@ munge_cleaned_play_by_play <-
            path_possession_data_d_format,
            path_players_format,
            path_players_summary_format,
-           season = .SEASON,
-           skip = .SKIP,
+           # season = .SEASON,
            # TODO: Maybe figure out a way to abstract these paramters aways.
            # (Possibly just create a function that does the filtering,
            # taking these named parameters.)
-           poss_min,
-           gp_min,
-           mp_min,
+           # Update: Done.
            ...) {
 
     will_skip <-
       .try_skip(
-        skip = skip,
-        season = season,
         path_format_reqs =
           c(
             path_play_by_play_format
@@ -267,7 +324,6 @@ munge_cleaned_play_by_play <-
     play_by_play <-
       .import_data_from_path_format(
         path_format = path_play_by_play_format,
-        season = season,
         ...
       )
 
@@ -304,22 +360,15 @@ munge_cleaned_play_by_play <-
       .summarise_players(
         path_players_summary_format = path_players_summary_format,
         path_players_format = path_players_format,
-        season = season,
         ...
       )
 
     play_by_play <-
-      play_by_play %>%
-      semi_join(
-        players_summary %>%
-          filter(
-            poss_total >= poss_min,
-            gp_total >= gp_min,
-            mp_total >= mp_min
-          ),
-        by = "id"
-      ) %>%
-      select(xid, pts, poss_num, dummy)
+      .filter_and_trim_play_by_play(
+        play_by_play = play_by_play,
+        players_summary = players_summary,
+        ...
+      )
 
     .widen_data_byside_partially <-
       purrr::partial(
@@ -351,7 +400,7 @@ munge_cleaned_play_by_play <-
 
 auto_munge_cleaned_play_by_play <-
   purrr::partial(
-    munge_cleaned_play_by_play,\
+    munge_cleaned_play_by_play,
     path_play_by_play_format = args$path_play_by_play_format,
     path_possession_data_o_format = args$path_possession_data_o_format,
     path_possession_data_d_format = args$path_possession_data_d_format,
@@ -362,6 +411,7 @@ auto_munge_cleaned_play_by_play <-
     gp_min = args$gp_min,
     mp_min = args$mp_min,
     skip = args$skip_munge,
+    debug = args$debug,
     verbose = args$verbose,
     export = args$export,
     backup = args$backup,

@@ -21,21 +21,25 @@ suppressWarnings(suppressPackageStartupMessages(library("argparser")))
 # config <- config::get()
 
 .SKIP <- FALSE
+.DEBUG <- TRUE
 .VERBOSE <- TRUE
 .EXPORT <- TRUE
 .BACKUP <- TRUE
 .CLEAN <- TRUE
 .N_KEEP <- 1L
-.SEASONS <- 2017L
-.SEASON <- .SEASONS[1]
-.RAW_DATA_SOURCES <- c("eightthirtyfour", "Ryan Davis")
-.RAW_DATA_SOURCE <- .RAW_DATA_SOURCES[1]
-.SEASON_TYPES <- c("Regular Season", "Playoffs", "Any")
-.SEASON_TYPE <- .SEASON_TYPES[1]
 .OPTIMIZE <- FALSE
 .SEED <- 42
 .LAMBDA <- 200
-.SIDES <- c("o", "d")
+
+..SEASONS <- 2017L
+.SEASONS <- purrr::set_names(..SEASONS, as.character(..SEASONS))
+.SEASON <- .SEASONS[1]
+.RAW_DATA_SOURCES <- c(etf = "eightthirtyfour", rd = "Ryan Davis")
+.RAW_DATA_SOURCE <- .RAW_DATA_SOURCES[1]
+.SEASON_TYPES <- c(rs = "Regular Season", plyffs = "Playoffs", any = "Any")
+.SEASON_TYPE <- .SEASON_TYPES[1]
+..SIDES <- c("o", "d")
+.SIDES <- purrr::set_names(..SIDES, as.character(..SIDES))
 
 paths_funcs <-
   list.files(
@@ -45,9 +49,8 @@ paths_funcs <-
     full.names = TRUE
   )
 invisible(sapply(paths_funcs, source))
+# sapply(paths_funcs, source)
 rm("paths_funcs")
-
-# options(tibble.print_min = 20)
 
 if(interactive()) {
   args <-

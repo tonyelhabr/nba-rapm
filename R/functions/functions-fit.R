@@ -114,7 +114,6 @@ fit_rapm_models <-
            path_rapm_fit_o_format,
            path_rapm_fit_d_format,
            season,
-           skip = .SKIP,
            # Unfortunately, these can't be abstracted away with `...`
            # because they have _[o|d]` suffixes.
            optimize_o = .OPTIMIZE,
@@ -127,7 +126,6 @@ fit_rapm_models <-
 
     will_skip <-
       .try_skip(
-        skip = skip,
         season = season,
         path_format_reqs =
           c(
@@ -187,6 +185,7 @@ auto_fit_rapm_models <-
     lambda_o = args$lambda_o,
     lambda_d = args$lambda_d,
     skip = args$skip_fit,
+    debug = args$debug,
     verbose = args$verbose,
     export = args$export,
     backup = args$backup,

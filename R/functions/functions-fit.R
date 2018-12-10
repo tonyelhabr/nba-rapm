@@ -1,7 +1,7 @@
 
-
+.FMLA <- "pts ~ ."
 .get_x_glmnet <-
-  function(possession_data, fmla, ...) {
+  function(possession_data, fmla = .FMLA, ...) {
     fmla %>%
       model.matrix(possession_data)
   }
@@ -13,7 +13,7 @@
   }
 
 .get_x_glmnet <-
-  function(possession_data, fmla, ...) {
+  function(possession_data, fmla = .FMLA, ...) {
     fmla %>%
       model.matrix(possession_data)
   }
@@ -40,11 +40,9 @@
   function(x,
            y,
            lambda,
-           season,
            path_rapm_fit_side_format,
-           ...,
-           verbose = .VERBOSE,
-           export = .EXPORT) {
+           season,
+           ...) {
     fit <-
       glmnet::glmnet(
         intercept = TRUE,
@@ -57,23 +55,18 @@
       data = fit,
       path_format = path_rapm_fit_side_format,
       season = season,
-      verbose = verbose,
-      export = export,
       ...
     )
-    fit
+    invisible(fit)
   }
 
 .fit_rapm_model_byside <-
-  function(season,
-           path_possession_data_side_format,
-           ...,
-           verbose = .VERBOSE,
-           export = .EXPORT,
+  function(path_possession_data_side_format,
+           path_rapm_fit_side_format,
+           season,
            optimize = .OPTIMIZE,
-           seed = .SEED,
            lambda = .LAMBDA,
-           path_rapm_fit_side_format) {
+           ...) {
 
     possession_data <-
       .import_data_from_path_format(
@@ -83,11 +76,9 @@
         ...
       )
 
-    fmla <- formula(pts ~ .)
-
     x_glmnet <-
       possession_data %>%
-      .get_x_glmnet(fmla = fmla)
+      .get_x_glmnet()
     y_glmnet <-
       possession_data %>%
       .get_y_glmnet()
@@ -95,7 +86,6 @@
     if(optimize) {
       lambda <-
         .get_lambda_optm(
-          seed = seed,
           x = x_glmnet,
           y = y_glmnet,
           ...
@@ -104,38 +94,36 @@
     } else {
       msg <- sprintf("Using default `lambda = %f`.", lambda)
     }
-    .display_info(msg, verbose = verbose)
+    .display_info(msg, ...)
 
     fit <-
       .fit_rapm_model_side(
         x = x_glmnet,
         y = y_glmnet,
         lambda = lambda,
-        season = season,
         path_rapm_fit_side_format = path_rapm_fit_side_format,
-        verbose = verbose,
-        export = export,
+        season = season,
         ...
       )
-
+    fit
   }
 
 fit_rapm_models <-
-  function(season,
-           path_possession_data_o_format,
+  function(path_possession_data_o_format,
            path_possession_data_d_format,
-           ...,
+           path_rapm_fit_o_format,
+           path_rapm_fit_d_format,
+           season,
            skip = .SKIP,
-           verbose = .VERBOSE,
-           export = .EXPORT,
+           # Unfortunately, these can't be abstracted away with `...`
+           # because they have _[o|d]` suffixes.
            optimize_o = .OPTIMIZE,
            optimize_d = .OPTIMIZE,
            seed_o = .SEED,
            seed_d = .SEED,
            lambda_o = .LAMBDA,
            lambda_d = .LAMBDA,
-           path_rapm_fit_o_format,
-           path_rapm_fit_d_format) {
+           ...) {
 
     will_skip <-
       .try_skip(
@@ -151,10 +139,9 @@ fit_rapm_models <-
             path_rapm_fit_o_format,
             path_rapm_fit_d_format
           ),
-        verbose = verbose,
-        # call_name = rlang::call_name(),
         ...
       )
+
     if(will_skip) {
       return(invisible(NULL))
     }
@@ -163,8 +150,6 @@ fit_rapm_models <-
       purrr::partial(
         .fit_rapm_model_byside,
         season = season,
-        verbose = verbose,
-        export = export,
         ...
       )
 
@@ -190,18 +175,21 @@ fit_rapm_models <-
 auto_fit_rapm_models <-
   purrr::partial(
     fit_rapm_models,
-    season = args$season,
     path_possession_data_o_format = args$path_possession_data_o_format,
     path_possession_data_d_format = args$path_possession_data_d_format,
+    path_rapm_fit_o_format = args$path_rapm_fit_o_format,
+    path_rapm_fit_d_format = args$path_rapm_fit_d_format,
+    season = args$season,
     optimize_o = args$optimize_o,
     optimize_d = args$optimize_d,
     seed_o = args$seed_o,
     seed_d = args$seed_d,
     lambda_o = args$lambda_o,
     lambda_d = args$lambda_d,
-    path_rapm_fit_o_format = args$path_rapm_fit_o_format,
-    path_rapm_fit_d_format = args$path_rapm_fit_d_format,
     skip = args$skip_fit,
     verbose = args$verbose,
-    export = args$export_fit
+    export = args$export,
+    backup = args$backup,
+    clean = args$clean,
+    n_keep = args$n_keep
   )

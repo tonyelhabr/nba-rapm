@@ -4,7 +4,7 @@
 .ID_GOOGLEDRIVE_RAW_PLAY_BY_PLAY <- "1iXxovZCf1QcHfiDXWBV3aWURkg1ymqh9"
 .ID_GOOGLEDRIVE_RAW_GAME_SUMMARY <- "1_DvoCC-p5vCCOB4q379AFXJTszeFpKie"
 .DIR_DL <- "data-raw"
-.OVERWRITE <- TRUE
+.OVERWRITE <- FALSE
 .download_googledrive_files <-
   function(id, dir = .DIR_DL, ..., verbose = .VERBOSE, overwrite = .OVERWRITE) {
     .create_dir_ifnecessary(dir = dir, verbose = verbose)
@@ -56,25 +56,40 @@ download_raw_play_by_play_files <-
   }
 
 download_rda_file <-
-  function(season, dir = .DIR_DL, path = NULL, ..., verbose = .VERBOSE, overwrite = .OVERWRITE) {
-    stopifnot(is.numeric(season))
+  function(season, dir = .DIR_DL, url = NULL, path = NULL, ..., verbose = .VERBOSE, overwrite = .OVERWRITE) {
+    .validate_season(season)
     .create_dir_ifnecessary(dir = dir, verbose = verbose)
 
-    season_suffix <- sprintf("%02d_%02d", (season) %% 2000, (season + 1) %% 2000)
-    .URL_PREFIX_EIGHTYTHIRTYFOUR <- "http://eightthirtyfour.com/nba/pbp/"
-    .BASENAME_PREFIX_EIGHTYTHIRTYFOUR <- "PbP_"
-    .EXT_EIGHTYTHIRTYFOUR <- "Rda"
-    basename <- sprintf("%s%s.%s", .BASENAME_PREFIX_EIGHTYTHIRTYFOUR, season_suffix, .EXT_EIGHTYTHIRTYFOUR)
+    if(is.null(url)) {
+      .URL_PREFIX_EIGHTYTHIRTYFOUR <- "http://eightthirtyfour.com/nba/pbp/"
+      .BASENAME_PREFIX_EIGHTYTHIRTYFOUR <- "PbP_"
+      .EXT_EIGHTYTHIRTYFOUR <- "Rda"
+      season_suffix <- sprintf("%02d_%02d", (season) %% 2000, (season + 1) %% 2000)
+      basename <- sprintf("%s%s.%s", .BASENAME_PREFIX_EIGHTYTHIRTYFOUR, season_suffix, .EXT_EIGHTYTHIRTYFOUR)
+      url <- sprintf("%s%s", .URL_PREFIX_EIGHTYTHIRTYFOUR, basename)
+    }
 
     if(is.null(path)) {
-    path <- file.path(dir, sprintf("%s%s.%s", .BASENAME_PREFIX_EIGHTYTHIRTYFOUR, season, .EXT_EIGHTYTHIRTYFOUR))
+      path <- file.path(dir, sprintf("%s%s.%s", .BASENAME_PREFIX_EIGHTYTHIRTYFOUR, season, .EXT_EIGHTYTHIRTYFOUR))
     }
-    dl_success <-
+    if(file.exists(path)) {
+      msg <- sprintf("%s already exists!")
+      if(overwrite) {
+        msg <- sprintf("%s Overwriting because `overwrite = %s`.", msg, overwrite)
+        .display_info(msg, verbose = verbose)
+      } else {
+        msg <- sprintf("%s Not overwriting because `overwrite = FALSE`.", msg, overwrite)
+        .display_info(msg, verbose = verbose)
+        return(invisible(NULL))
+      }
+    }
+    f_possibly <-
       purrr::possibly(
-        download.file(url = url, destfile = path, quiet = TRUE),
-        otherwise = FALSE
+        ~download.file(url = url, destfile = path, mode = "wb", quiet = TRUE),
+        otherwise = -1
       )
-    if(!dl_success) {
+    dl_success <- f_possibly()
+    if(dl_success != 0) {
       .display_warning(
         sprintf("Could not download file from %s to %s for `season = %s`.", url, path, season),
         verbose = verbose
@@ -82,7 +97,7 @@ download_rda_file <-
       return(invisible(NULL))
     }
     .display_info(
-      sprintf("Succesfully downloaded file from %s to %s for `season = %s`.", url, path, id),
+      sprintf("Succesfully downloaded file from %s to %s for `season = %s`.", url, path, season),
       verbose = verbose
     )
     invisible(path)

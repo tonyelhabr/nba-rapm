@@ -1,17 +1,7 @@
 
 # Reference: http://eightthirtyfour.com/data
-basename <- "PbP_17_18.Rda"
-url_prefix <- "http://eightthirtyfour.com/nba/pbp/"
-url <- sprintf("%s%s", url_prefix, basename)
-#  url <- "http://eightthirtyfour.com/nba/pbp/PbP_17_18.Rda"
-path_dl <- sprintf("data-raw/%s", basename)
-httr::url_ok(url)
-# identical(httr::status_code(url), 200L)
-if(!file.exists(path_dl)) {
-  # Note that the default `mode = "w"` does not work properly.
-  download.file(url = url, destfile = path_dl, quiet = TRUE, mode = "wb")
-}
-
+path_dl <- download_rda_file(season = 2017)
+# path_dl <- "data-raw/PbP_2017.Rda"
 # rio::import(path_dl)
 load(path_dl)
 
@@ -35,6 +25,7 @@ play_by_play1 <-
   play_by_play0 %>%
   # select(one_of(cols_na)) %>%
   filter_at(vars(one_of(cols_na)), all_vars(is.na(.) | . == ""))
+play_by_play1
 
 # Note that all `type` and `sub_type` records are `NA`,
 # so this my approximation of `play_type`.
@@ -85,6 +76,7 @@ play_by_play2 <-
   ) %>%
   arrange(game_id, period, event_num) %>%
   select(-matches("^event_num$|^player1_tm_id$"))
+
 # play_by_play2 %>% count(play_type, pts_home - lag(pts_home), sort = TRUE)
 gms <-
   play_by_play2 %>%

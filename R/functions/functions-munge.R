@@ -1,26 +1,16 @@
 
-.separate_lineup <-
-  function(play_by_play, col, prefix = "x", suffix = 1:5, sep = "-") {
-    play_by_play %>%
-      separate(!!enquo(col), into = paste0(prefix, suffix), sep = sep)
-  }
-
-
 .get_players <-
-  function(season, path_players_format, ..., verbose = .VERBOSE, export = .EXPORT) {
+  function(path_players_format, season, ...) {
+    season <- .validate_season(season)
     players_raw <-
       nbastatR::get_nba_players()
     players <-
       players_raw %>%
       janitor::clean_names() %>%
-      filter(
-        year_season_first <= season,
-        year_season_last >= season
-      ) %>%
-      select(
-        id = id_player,
-        name = name_player
-      ) %>%
+      filter(year_season_first <= season,
+             year_season_last >= season) %>%
+      select(id = id_player,
+             name = name_player) %>%
       arrange(id)
 
     path_export <-
@@ -28,13 +18,40 @@
         data = players,
         path_format = path_players_format,
         season = season,
-        export = export,
-        verbose = verbose,
         ...
       )
 
-    players
+    invisible(players)
   }
+
+.get_teams <-
+  function(path_players_format, season, ...) {
+    season <- .validate_season(season)
+    teams_raw <-
+      nbastatR::get_nba_teams()
+
+    teams <-
+      teams_raw %>%
+      janitor::clean_names() %>%
+      filter(is_non_nba_team == 0L) %>%
+      filter(year_played_last >= season) %>%
+      select(
+        id = id_team,
+        name = name_team,
+        slug = slug_team
+      )
+
+    path_export <-
+      .export_data_from_path_format(
+        data = teams,
+        path_format = path_players_format,
+        season = season,
+        ...
+      )
+
+    invisible(teams)
+  }
+
 
 # Putting this in all caps to indicate that this is sort of "hard-coded".
 .get_cols_players_summary <-
@@ -58,26 +75,18 @@
 
 .summarise_players <-
   function(play_by_play,
-           season,
            path_players_summary_format,
            path_players_format,
-           ...,
-           verbose = .VERBOSE,
-           export = .EXPORT) {
-
-    # ALWAYS regenerate `players_summary`.
-    .import_players_partially <-
-      purrr::partial(
-      .import_data_from_path_format,
-        path_format = path_players_format,
-        season = season,
-        verbose = verbose,
-        ...
-      )
+           season,
+           ...) {
 
     .import_players_possibly <-
       purrr::possibly(
-        .import_players_partially,
+        ~.import_data_from_path_format(
+          path_format = path_players_format,
+          season = season,
+          ...
+        ),
         otherwise = NULL
       )
     players <- .import_players_possibly()
@@ -85,10 +94,8 @@
     if(is.null(players)) {
       players <-
         .get_players(
-          season = season,
           path_players_format = path_players_format,
-          verbose = verbose,
-          export = export,
+          season = season,
           ...
         )
     }
@@ -148,30 +155,34 @@
         data = players_summary,
         path_format = path_players_summary_format,
         season = season,
-        export = export,
-        verbose = verbose,
         ...
       )
 
-    players_summary
+    invisible(players_summary)
+  }
+
+
+.separate_lineup <-
+  function(play_by_play, col, prefix = "x", suffix = 1:5, sep = "-") {
+    play_by_play %>%
+      separate(!!enquo(col), into = paste0(prefix, suffix), sep = sep)
   }
 
 .widen_data_byside <-
   function(play_by_play,
-           side = .SIDES,
-           season,
+           side,
            path_possession_data_side_format,
-           ...,
-           verbose = .VERBOSE,
-           export = .EXPORT) {
+           season,
+           ...) {
 
-    side <- match.arg(side)
-    browser()
+    side <- .validate_side(side)
+
     duplicates_n <-
       play_by_play %>%
       filter(str_detect(xid, sprintf("^%s", side))) %>%
       count(xid, poss_num, sort = TRUE) %>%
       filter(n > 1L)
+
     n_duplicates <- nrow(duplicates_n)
     if(n_duplicates > 0L) {
       .display_warning(
@@ -181,7 +192,7 @@
             "`dplyr::distinct()` is being used to remove make records uniques."
             ),
           n_duplicates),
-        verbose = verbose
+        ...
       )
     }
 
@@ -201,7 +212,8 @@
       # filter(poss > 1) %>%
       # filter(pts > 2) %>%
       mutate(pts = 100 * pts / poss) %>%
-      # filter(abs(pts) <= 400) %>%
+      # Note that this is an extra precaution.
+      filter(abs(pts) <= 500) %>%
       select(-poss)
 
     path_export <-
@@ -209,28 +221,27 @@
         data = possession_data,
         path_format = path_possession_data_side_format,
         season = season,
-        export = export,
-        verbose = verbose,
         ...
       )
 
-    possession_data
+    invisible(possession_data)
   }
 
 munge_cleaned_play_by_play <-
-  function(season,
-           path_play_by_play_format,
-           poss_min,
-           gp_min,
-           mp_min,
-           ...,
-           skip = .SKIP,
-           verbose = .VERBOSE,
-           export = .EXPORT,
+  function(path_play_by_play_format,
            path_possession_data_o_format,
            path_possession_data_d_format,
            path_players_format,
-           path_players_summary_format) {
+           path_players_summary_format,
+           season = .SEASON,
+           skip = .SKIP,
+           # TODO: Maybe figure out a way to abstract these paramters aways.
+           # (Possibly just create a function that does the filtering,
+           # taking these named parameters.)
+           poss_min,
+           gp_min,
+           mp_min,
+           ...) {
 
     will_skip <-
       .try_skip(
@@ -247,8 +258,6 @@ munge_cleaned_play_by_play <-
             path_players_format,
             path_players_summary_format
           ),
-        verbose = verbose,
-        # call_name = rlang::call_name(),
         ...
       )
     if(will_skip) {
@@ -259,7 +268,6 @@ munge_cleaned_play_by_play <-
       .import_data_from_path_format(
         path_format = path_play_by_play_format,
         season = season,
-        verbose = verbose,
         ...
       )
 
@@ -281,23 +289,22 @@ munge_cleaned_play_by_play <-
       mutate(xid = sprintf("%s%07d", side, as.integer(id))) %>%
       select(-is_off) %>%
       mutate(dummy = 1L)
-    browser()
-    play_by_play %>%
-      count(game_id, poss_num, sort = TRUE) %>%
-      filter(n != 10)
-    play_by_play %>%
-      filter(xid == "o0002772") %>%
-      # count(game_id, poss_num, sort = TRUE)
-      filter(poss_num == 15112)
+    # browser()
+    # play_by_play %>%
+    #   count(game_id, poss_num, sort = TRUE) %>%
+    #   filter(n != 10)
+    # play_by_play %>%
+    #   filter(xid == "o0002772") %>%
+    #   # count(game_id, poss_num, sort = TRUE)
+    #   filter(poss_num == 15112)
 
+    # ALWAYS regenerate `player_summary`.
     players_summary <-
       play_by_play %>%
       .summarise_players(
-        season = season,
         path_players_summary_format = path_players_summary_format,
         path_players_format = path_players_format,
-        verbose = verbose,
-        export = export,
+        season = season,
         ...
       )
 
@@ -319,21 +326,19 @@ munge_cleaned_play_by_play <-
         .widen_data_byside,
         play_by_play = play_by_play,
         season = season,
-        verbose = verbose,
-        export = export,
         ...
       )
 
     possession_data_o <-
       .widen_data_byside_partially(
-        side = "o",
-        path_possession_data_side_format = path_possession_data_o_format
+        path_possession_data_side_format = path_possession_data_o_format,
+        side = "o"
       )
 
     possession_data_d <-
       .widen_data_byside_partially(
-        side = "d",
-        path_possession_data_side_format = path_possession_data_d_format
+        path_possession_data_side_format = path_possession_data_d_format,
+        side = "d"
       )
 
     invisible(
@@ -346,18 +351,20 @@ munge_cleaned_play_by_play <-
 
 auto_munge_cleaned_play_by_play <-
   purrr::partial(
-    munge_cleaned_play_by_play,
-    season = args$season,
+    munge_cleaned_play_by_play,\
     path_play_by_play_format = args$path_play_by_play_format,
-    poss_min = args$poss_min,
-    gp_min = args$gp_min,
-    mp_min = args$mp_min,
     path_possession_data_o_format = args$path_possession_data_o_format,
     path_possession_data_d_format = args$path_possession_data_d_format,
     path_players_summary_format = args$path_players_summary_format,
     path_players_format = args$path_players_format,
+    season = args$season,
+    poss_min = args$poss_min,
+    gp_min = args$gp_min,
+    mp_min = args$mp_min,
     skip = args$skip_munge,
     verbose = args$verbose,
-    export = args$export_munge
-
+    export = args$export,
+    backup = args$backup,
+    clean = args$clean,
+    n_keep = args$n_keep
   )

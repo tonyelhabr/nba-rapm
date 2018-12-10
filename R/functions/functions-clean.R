@@ -1,24 +1,66 @@
 
 .filter_season_type <-
-  function(play_by_play, season_type = .SEASON_TYPES, ...) {
-    season_type <- match.arg(season_type)
+  function(play_by_play, season_typeS, ...) {
+    season_type <- .validate_season_type(season_type)
+
     if (season_type == .SEASON_TYPES[3] |
         (season_type != .SEASON_TYPES[1] &
         season_type != .SEASON_TYPES[2])) {
       return(play_by_play)
     }
+
     play_by_play %>% filter(season_type %in% !!season_type)
   }
 
+# Note that this was split out into its own function because it could
+# be useful for raw data sources beyond just "Ryan Davis".
+.get_game_summary <-
+  function(path_raw_game_summary_format,
+           path_game_summary_format,
+           season,
+           ...) {
+
+    raw_game_summary <-
+      .import_data_from_path_format(
+        path_format = path_raw_game_summary_format,
+        season = season,
+        ...
+      )
+
+    game_summary <-
+      raw_game_summary %>%
+      .filter_season_type(season_type = !!season_type) %>%
+
+      game_summary <-
+      game_summary %>%
+      select(
+        game_id,
+        # season,
+        # season_type,
+        tm_id_home = home_team_id,
+        tm_id_away = away_team_id
+      )
+
+    path_export <-
+      .export_data_from_path_format(
+        data = play_by_play,
+        path_format = path_play_by_play_format,
+        season = season,
+        ...
+      )
+    invisible(game_summary)
+
+  }
+
 clean_raw_play_by_play <-
-  function(season,
-           path_raw_play_by_play_format,
+  function(path_raw_play_by_play_format,
            path_raw_game_summary_format,
-           ...,
+           path_play_by_play_format,
+           path_game_summary_format,
+           season = .SEASON,
+           season_type = .SEASON_TYPE,
            skip = .SKIP,
-           verbose = .VERBOSE,
-           export = .EXPORT,
-           path_play_by_play_format) {
+           ...) {
 
     will_skip <-
       .try_skip(
@@ -34,7 +76,6 @@ clean_raw_play_by_play <-
             path_play_by_play_format
           ),
         verbose = verbose,
-        # call_name = rlang::call_name(), # Haven't really tested this.
         ...
       )
     if(will_skip) {
@@ -45,20 +86,14 @@ clean_raw_play_by_play <-
       .import_data_from_path_format(
         path_format = path_raw_play_by_play_format,
         season = season,
-        verbose = verbose
-      )
-
-    raw_game_summary <-
-      .import_data_from_path_format(
-        path_format = path_raw_game_summary_format,
-        season = season,
-        verbose = verbose
+        verbose = verbose,
+        ...
       )
 
     # TODO: Implement some kind of checking of column names/types for this function?
     play_by_play <-
       raw_play_by_play %>%
-      .filter_season_type() %>%
+      .filter_season_type(season_type = !!season_type) %>%
       filter(!is.na(player1team_id))
 
     play_by_play <-
@@ -112,20 +147,25 @@ clean_raw_play_by_play <-
       mutate_at(vars(matches("^pts|mp")), funs(coalesce(., 0))) %>%
       mutate_at(vars(matches("^pts")), funs(as.integer))
 
-    game_summary <-
-      raw_game_summary %>%
-      .filter_season_type()
-
-    game_summary <-
-      game_summary %>%
-      select(
-        game_id,
-        # season,
-        # season_type,
-        tm_id_home = home_team_id,
-        tm_id_away = away_team_id
+    .import_game_summary_possibly <-
+      purrr::possibly(
+        ~.import_data_from_path_format(
+          path_format = path_game_summary_format,
+          season = season,
+          ...
+        ),
+        otherwise = NULL
       )
+    game_summary <- .import_game_summary_possibly()
 
+    if(is.null(game_summary)) {
+      game_summary <-
+        .get_game_summary(
+          path_players_format = path_raw_game_summary_format,
+          season = season,
+          ...
+        )
+    }
 
     play_by_play <-
       play_by_play %>%
@@ -172,24 +212,31 @@ clean_raw_play_by_play <-
         data = play_by_play,
         path_format = path_play_by_play_format,
         season = season,
-        verbose = verbose,
-        export = export,
         ...
       )
 
-    invisible(play_by_play)
+    invisible(
+      list(
+        play_by_play = play_by_play,
+        game_summary = game_summary
+      )
+    )
   }
 
 auto_clean_raw_play_by_play <-
   purrr::partial(
     clean_raw_play_by_play,
-    season = args$season,
     path_raw_play_by_play_format = args$path_raw_play_by_play_format,
     path_raw_game_summary_format = args$path_raw_game_summary_format,
     path_play_by_play_format = args$path_play_by_play_format,
+    path_game_summary_format = args$path_game_summary_format,
+    season = args$season,
     season_type = args$season_type,
     skip = args$skip_clean,
     verbose = args$verbose,
-    export = args$export_clean
+    export = args$export,
+    backup = args$backup,
+    clean = args$clean,
+    n_keep = args$n_keep
   )
 

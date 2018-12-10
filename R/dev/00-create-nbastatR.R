@@ -35,18 +35,18 @@ players
 #   unnest(data_table) %>%
 #   select(minutes)
 
-tms_raw <-
+team_raw <-
   nbastatR::get_nba_teams()
-tms_raw
+team_raw
 
-tms <-
-  tms_raw %>%
+team <-
+  team_raw %>%
   janitor::clean_names() %>%
   filter(is_non_nba_team == 0L) %>%
-  filter(year_played_last >= season %>%
+  filter(year_played_last >= season) %>%
   select(
     id = id_team,
     name = name_team,
     slug = slug_team
   )
-tms
+team

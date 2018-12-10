@@ -1,8 +1,7 @@
 
 .extract_estimates <-
   function(fit, ...) {
-    estimates <-
-      fit %>%
+    fit %>%
       broom::tidy() %>%
       filter(term != "(Intercept)") %>%
       mutate_at(vars(term), funs(str_replace(., "^.", ""))) %>%
@@ -12,21 +11,17 @@
       ) %>%
       arrange(desc(estimate)) %>%
       select(id = term, rapm = estimate)
-    estimates
   }
 
 .extract_rapm_estimates <-
-  function(season,
-           path_rapm_fit_side_format,
-           ...,
-           verbose = .VERBOSE,
-           export = .EXPORT,
-           path_rapm_estimates_side_format) {
+  function(path_rapm_fit_side_format,
+           path_rapm_estimates_side_format,
+           season,
+           ...) {
     fit <-
       .import_data_from_path_format(
         path_format = path_rapm_fit_side_format,
         season = season,
-        verbose = verbose,
         ...
       )
 
@@ -34,20 +29,16 @@
       .extract_estimates(
         fit = fit,
         ...
-
       )
+
     .export_data_from_path_format(
       data = estimates,
       path_format = path_rapm_estimates_side_format,
       season = season,
-      verbose = verbose,
-      export = export,
       ...
     )
-    estimates <-
-      estimates %>%
-      arrange(desc(rapm))
-    estimates
+
+    invisible(estimates)
   }
 
 .get_cols_estimates_pretty <-
@@ -80,16 +71,14 @@
 
 .join_estimates_with_players_summary <-
   function(estimates,
-           season,
            path_players_summary_format,
-           ...,
-           verbose = .VERBOSE) {
+           season,
+           ... {
 
     players_summary <-
       .import_data_from_path_format(
         path_format = path_players_summary_format,
         season = season,
-        verbose = verbose,
         ...
       )
 
@@ -103,24 +92,20 @@
       # estimates_pretty %>%
       .get_cols_estimates_pretty()
 
-    estimates_pretty <-
-      estimates_pretty %>%
+    estimates_pretty %>%
       select(one_of(cols_estimates_pretty))
-    estimates_pretty
   }
 
 extract_rapm_estimates <-
-  function(season,
-           path_rapm_fit_o_format,
+  function(path_rapm_fit_o_format,
            path_rapm_fit_d_format,
            path_players_summary_format,
-           ...,
-           skip = .SKIP,
-           verbose = .VERBOSE,
-           export = .EXPORT,
            path_rapm_estimates_o_format,
            path_rapm_estimates_d_format,
-           path_rapm_estimates_format) {
+           path_rapm_estimates_format,
+           season = .SEASON,
+           skip = .SKIP,
+           ...) {
 
     will_skip <-
       .try_skip(
@@ -150,8 +135,6 @@ extract_rapm_estimates <-
       purrr::partial(
         .extract_rapm_estimates,
         season = season,
-        verbose = verbose,
-        export = export,
         ...
       )
 
@@ -179,8 +162,7 @@ extract_rapm_estimates <-
 
     .join_estimates_with_players_summary_possibly <-
       purrr::possibly(
-        purrr::partial(
-          .join_estimates_with_players_summary,
+        ~.join_estimates_with_players_summary(
           estimates = estimates,
           path_players_summary_format = path_players_summary_format,
           season = season,
@@ -197,12 +179,12 @@ extract_rapm_estimates <-
       estimates <- estimates_pretty
       .display_info(
         "Successfully joined `players_summary` with `estimates`.",
-        verbose = verbose
+        ...
       )
     } else {
       .display_warning(
         "Could not join `estimates` with `players_summary`.",
-        verbose = verbose
+        ...
       )
     }
 
@@ -211,8 +193,6 @@ extract_rapm_estimates <-
         data = estimates,
         path_format = path_rapm_estimates_format,
         season = season,
-        verbose = verbose,
-        export = export,
         ...
       )
     invisible(estimates)
@@ -221,14 +201,17 @@ extract_rapm_estimates <-
 auto_extract_rapm_estimates <-
   purrr::partial(
     extract_rapm_estimates,
-    season = args$season,
     path_rapm_fit_o_format = args$path_rapm_fit_o_format,
     path_rapm_fit_d_format = args$path_rapm_fit_d_format,
     path_players_summary_format = args$path_players_summary_format,
     path_rapm_estimates_o_format = args$path_rapm_estimates_o_format,
     path_rapm_estimates_d_format = args$path_rapm_estimates_d_format,
     path_rapm_estimates_format = args$path_rapm_estimates_format,
+    season = args$season,
     skip = args$skip_fit,
     verbose = args$verbose,
-    export = args$export_fit
+    export = args$export,
+    backup = args$backup,
+    clean = args$clean,
+    n_keep = args$n_keep
   )

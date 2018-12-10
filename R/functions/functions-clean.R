@@ -1,7 +1,7 @@
 
 .filter_season_type <-
   function(play_by_play, season_type = .SEASON_TYPES, ...) {
-    season_type = match.arg(season_type)
+    season_type <- match.arg(season_type)
     if (season_type == .SEASON_TYPES[3] |
         (season_type != .SEASON_TYPES[1] &
         season_type != .SEASON_TYPES[2])) {
@@ -66,11 +66,16 @@ clean_raw_play_by_play <-
       select(
         game_id,
         period,
-        event_number,
+        # Rename as "compromise" between differently named column between sources.
+        event_num = event_number,
         sec_elapsed = time_elapsed,
-        matches("_score$"),
-        player1team_id,
-        matches("^team_id"),
+        # matches("_score$"),
+        pts_home = home_score,
+        pts_away = away_score,
+        player1_tm_id = player1team_id,
+        # matches("^team_id"),
+        tm_id1 = team_id1,
+        tm_id2 = team_id2,
         matches("team1player[1-5]id$"),
         matches("team2player[1-5]id$"),
         play_type,
@@ -79,16 +84,10 @@ clean_raw_play_by_play <-
       unite(lineup1, matches("team1player"), sep = "-") %>%
       unite(lineup2, matches("team2player"), sep = "-") %>%
       mutate(
-        is_off1 = if_else(player1team_id == team_id1, 1L, 0L)
+        is_off1 = if_else(player1_tm_id == tm_id1, 1L, 0L)
       ) %>%
-      rename(
-        pts_home = home_score,
-        pts_away = away_score,
-        tm_id1 = team_id1,
-        tm_id2 = team_id2
-      ) %>%
-      arrange(game_id, period, event_number) %>%
-      select(-event_number, -player1team_id)
+      arrange(game_id, period, event_num) %>%
+      select(-matches("^event_num$|^player1_tm_id$"))
 
     play_by_play <-
       play_by_play %>%

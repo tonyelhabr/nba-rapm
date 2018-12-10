@@ -18,8 +18,14 @@ default:
   season:
     default: 2017
     help: "NBA season to process. Used as \"suffix\" for all path formats 
-    (where it is subsituted in placed for the \"sprintf\"-style format \"04d\")."
-    
+    (where it is subsituted in placed for the \"sprintf\"-style format \"%04d\")."
+  raw_data_source:
+    default: "http://eightthirtyfour.com"
+    help: "An indication of where the raw data is coming from. This is important
+    for the data cleaning process (for identifying column names, etc.) because
+    more than one data sources were tested during development.
+    Valid choices include \"http://eightthirtyfour.com\" and \"Ryan Davis\"."
+  
   # Data pre-processing (i.e. cleaning) parameters.
   skip_clean:
     default: false
@@ -27,11 +33,11 @@ default:
     and goes immediately to \"intermediate\" data processing steps.
     In this case, intermediate data for given season MUST exist."
   path_raw_play_by_play_format:
-    default: "data-raw/play_by_play_with_lineup/play_by_play_with_lineup_%s.csv"
+    default: "data_raw/play_by_play_with_lineup/play_by_play_with_lineup_%s.csv"
     help: "Path format of raw play-by-play data file to clean. (Here, \"data\"
     refers to play-by-play data.)"
   path_raw_game_summary_format:
-    default: "data-raw/raw_game_summary/raw_game_summary_%s.csv"
+    default: "data_raw/raw_game_summary/raw_game_summary_%s.csv"
     help: "Path format of raw game summary data file. Needed solely for identifying
     home and away teams, which is not defined in `play_by_play_raw` data from source."
   export_clean:
@@ -39,7 +45,7 @@ default:
     help: "If `TRUE`, cleaned `play_by_play` data is exported. This is what
     is being referenced by `data` in all parameters/varaibles afterwards."
   path_play_by_play_format:
-    default: "data/data-clean-%04d.csv"
+    default: "data/play_by_play_%04d.csv"
     help: "Path formatt of cleaned play-by-play data file to export.
     Only relevant if `export_clean = TRUE` or if `import_munge = TRUE` (in which
     case, it is used as the \"input\" to the intermediate processing)."
@@ -55,12 +61,12 @@ default:
     help: "If `TRUE`, exports \"wide\" intermediary data (i.e. `possession_data_*`) 
     and player data (i.e. `players_*`)."
   path_possession_data_o_format:
-    default: "data/data-wide-o-%04d.rds"
+    default: "data/posession_data_o_%04d.rds"
     help: "Path format of \"wide\" offensive possession data. 
     Only relevant if `export_munge = TRUE` OR if `import_fit = TRUE` (in which
     case, it is used as the \"input\" to the model fitting step)."
   path_possession_data_d_format:
-    default: "data/data-wide-d-%04d.rds"
+    default: "data/posession_data_d_%04d.rds"
     help: "Analogous to `path_possession_data_o_format`."
   path_players_format:
     default: "data/players-%04d.csv"
@@ -83,11 +89,11 @@ default:
     help: "If `TRUE`, exports fitted regularized models for possession data.
     (The same caveat about setting `skip_fit = TRUE` is applicable here as well.)"
   path_rapm_fit_o_format:
-    default: "data/rapm-fit-o-%04d.rds"
+    default: "data/rapm_fit_o_%04d.rds"
     help: "Path format of RAPM model fitted for offensive possession data.
     Only relevent if `export_fit = `TRUE`."
   path_rapm_fit_d_format:
-    default: "data/rapm-fit-d-%04d.rds"
+    default: "data/rapm_fit_d_%04d.rds"
     help: "Analogous to `path_rapm_fit_o_format`."
     
   skip_finalize:
@@ -100,20 +106,21 @@ default:
     default: true
     help: "If `TRUE`, exports offensive, defensive, and combined RAPM estimates."
   path_rapm_estimates_o_format:
-    default: "data/rapm-estimates-o-%04d.csv"
+    default: "data/rapm_estimates_o_%04d.csv"
     help: "Path format of final the player-specific offensive RAPM estimates.
     Only relevent if `export_finalize = `TRUE`."
   path_rapm_estimates_d_format:
-    default: "data/rapm-estimates-d-%04d.csv"
+    default: "data/rapm_estimates_d_%04d.csv"
     help: "Analogous to `path_rapm_estimates_o_format`."
   path_rapm_estimates_format:
-    default: "data/rapm-estimates-%04d.csv"
+    default: "data/rapm_estimates_%04d.csv"
     help: "Combined offensive and defensive RAPM estimates."
 
   # Model-fitting parameters.
   season_type:
     default: "RegularSeason"
-    help: "Valid choices include \"RegularSeason\", \"Playoffs\", or \"Both\"."
+    help: "Valid choices include \"RegularSeason\", \"Playoffs\", or \"Both\".
+    (Note that \"Both\" is used if the other two options are not specified explicitly.)"
   poss_min:
     default: 200
     help: "Minimum number of possession in which a player must have 

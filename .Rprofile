@@ -25,6 +25,8 @@ suppressWarnings(suppressPackageStartupMessages(library("argparser")))
 .EXPORT <- TRUE
 .BACKUP <- FALSE # TODO
 .CLEAN <- FALSE # TODO
+.RAW_DATA_SOURCES <- c("eightthirtyfour", "Ryan Davis")
+.RAW_DATA_SOURCE <- .RAW_DATA_SOURCES[1]
 .SEASON_TYPES <- c("Regular Season", "Playoffs", "Any")
 .SEASON_TYPE <- .SEASON_TYPES[1]
 .OPTIMIZE <- FALSE

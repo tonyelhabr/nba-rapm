@@ -9,7 +9,7 @@
         name = name
       )
 
-    this_if_exists_else <- function(x, nm, default) {
+    .this_if_exists_else <- function(x, nm, default) {
       if(length(x[[nm]]) == 1L) {
         return(x[[nm]])
       } else {
@@ -19,8 +19,8 @@
 
     for(name in names(x)) {
       arg <- x[[name]]
-      default <- this_if_exists_else(arg, "default", NULL)
-      optional <- this_if_exists_else(arg, "optional", .optional)
+      default <- .this_if_exists_else(arg, "default", NULL)
+      optional <- .this_if_exists_else(arg, "optional", .optional)
       if(is.null(default) & is.null(optional)) {
         # No value to work with, so don't add argument.
         next
@@ -36,13 +36,13 @@
         arg_prefix <- "--"
       }
 
-      help <- this_if_exists_else(arg, "help", .help) # "No \"help\" message available.")
+      help <- .this_if_exists_else(arg, "help", .help) # "No \"help\" message available.")
       # type <- typeof(arg)
-      # type <- this_if_exists_else(arg, "type", typeof(arg))
-      type <- this_if_exists_else(arg, "type", NULL)
-      nargs <- this_if_exists_else(arg, "nargs", NULL)
-      flag <- this_if_exists_else(arg, "flag", NULL)
-      short <- this_if_exists_else(arg, "short", NULL)
+      # type <- .this_if_exists_else(arg, "type", typeof(arg))
+      type <- .this_if_exists_else(arg, "type", NULL)
+      nargs <- .this_if_exists_else(arg, "nargs", NULL)
+      flag <- .this_if_exists_else(arg, "flag", NULL)
+      short <- .this_if_exists_else(arg, "short", NULL)
 
       parser <-
         argparser::add_argument(
@@ -74,15 +74,50 @@ get_args <-
   }
 
 # files ----
-# Make this more like `httr::build_url()`?
-.get_path_from_format <- function(path_format, season) {
-  stopifnot(is.numeric(season))
-  if(str_detect(path_format, "%s")) {
-    season_suffix <- sprintf("%02d", (season + 1) %% 2000)
-    season <- paste0(season, "-", season_suffix)
+.validate_raw_data_source <-
+  function(raw_data_source = .RAW_DATA_SOURCES, ...) {
+    raw_data_source <- match.arg(raw_data_source)
+    # .display_error(
+    #   sprintf("\"%s\" is Not a valid `raw_data_source`.", raw_data_source)
+    # )
+    raw_data_source
   }
+
+# Make this more like `httr::build_url()`?
+.get_path_from_format <- function(path_format, season, raw_data_source = NULL) {
+  stopifnot(is.numeric(season))
+  # if(str_detect(path_format, "%s")) {
+  #   if(!is.null(raw_data_source)) {
+  #     raw_data_source <- .validate_raw_data_source(raw_data_source)
+  #     if(raw_data_source == .RAW_DATA_SOURCES[1]) {
+  #
+  #     }
+  #   } else {
+  #
+  #   }
+  #
+  #   season_suffix <- sprintf("%02d", (season + 1) %% 2000)
+  #   season <- paste0(season, "-", season_suffix)
+  # }
+
   path <- sprintf(path_format, season)
 }
+
+.create_dir_ifnecessary <-
+  function(dir, verbose = .VERBOSE, execute = TRUE) {
+    if(!execute) {
+      return(invisible(NULL))
+    }
+    if(!dir.exists(dir)) {
+      invisible(dir.create(dir, recursive = TRUE))
+      .display_info(
+        sprintf("Created %s folder at %s.", dir, Sys.time()),
+        verbose = verbose
+      )
+    }
+    invisible(dir)
+  }
+s
 
 # Straight copy-paste of `tools::file_ext()`.
 .file_ext <-
@@ -130,7 +165,7 @@ get_args <-
     if(!import) {
       return(invisible(NULL))
     }
-    path <- .get_path_from_format(path_format, season)
+    path <- .get_path_from_format(path_format, season, ...)
     if(!file.exists(path)) {
       .display_error(
         sprintf("%s does not exist.", path),
@@ -202,10 +237,12 @@ get_args <-
 
 .display_warning <- function(...) {
   .display_msg(..., type = "warning")
+  # warning(call. = FALSE)
 }
 
 .display_error <- function(...) {
   .display_msg(..., type = "error")
+  # stop(call. = FALSE)
 }
 
 # tetidy package ----

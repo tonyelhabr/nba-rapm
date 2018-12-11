@@ -50,9 +50,9 @@ setup_cores <-
 auto_setup_cores <-
   purrr::partial(
     setup_cores,
-    multi_core = ifelse(interactive(), FALSE, args$multi_core),
-    n_core = args$n_core,
-    verbose = args$verbose
+    multi_core = ifelse(interactive(), FALSE, config$multi_core),
+    n_core = config$n_core,
+    verbose = config$verbose
   )
 
 # from other projects ----

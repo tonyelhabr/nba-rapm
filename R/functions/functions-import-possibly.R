@@ -1,0 +1,255 @@
+
+# .get ----
+# Note that paths are "hard-coded" here to allow for flexible "offline"
+# execution of this function. This design choice should/could be reconsidered in the future.
+.get_players_nbastatr <-
+  function(..., path, season = .SEASON) {
+    .validate_season(season)
+
+    res <-
+      nbastatR::nba_players() %>%
+      janitor::clean_names()
+
+    res <-
+      res %>%
+      filter(
+        year_season_first <= season,
+        year_season_last >= season
+      )
+
+    path_export <-
+      .export_data_from_path(
+        ...,
+        data = res,
+        path = path,
+        season = season
+      )
+    invisible(res)
+  }
+
+.get_teams_nbastatr <-
+  function(..., path, season = .SEASON) {
+    .validate_season(season)
+
+    res <-
+      nbastatR::nba_teams() %>%
+      janitor::clean_names() %>%
+      filter(is_non_nba_team == 0L)
+
+    res <-
+      res %>%
+      filter(year_played_last >= season)
+
+    path_export <-
+      .export_data_from_path(
+        ...,
+        data = res,
+        path = path,
+        season = season
+      )
+    invisible(res)
+  }
+
+.get_game_logs_team_nbastatr <-
+  function(...,
+           path,
+           season = .SEASON,
+           season_type = .SEASON_TYPE) {
+    .validate_season(season)
+    .validate_season_type(season_type)
+    season_type_nm <- .convert_season_type(season_type)
+
+    # TODO: Better handle case where `season_type` is `NULL`?
+    # Not exactly sure how this would be done, since `{nbastatR}`
+    # has a default value for this parameter.
+    res <-
+      nbastatR::game_logs(
+        seasons = season + 1,
+        result_types = "team",
+        season_types = season_type_nm,
+        assign_to_environment = FALSE,
+        return_message = FALSE
+      ) %>%
+      janitor::clean_names()
+
+    # # Note that this is done soley to get `id_team_opponent`.
+    res <-
+      res %>%
+      left_join(
+        res %>%
+          select(id_game, id_opponent = id_team, slug_opponent = slug_team),
+        by = c("id_game", "slug_opponent")
+      ) %>%
+      arrange(id_game, id_team)
+
+    path_export <-
+      .export_data_from_path(
+        ...,
+        data = res,
+        path = path,
+        season = season #,
+        # season_type = season_type
+      )
+
+    invisible(res)
+  }
+
+.get_game_logs_player_nbastatr <-
+  function(...,
+           path,
+           season = .SEASON,
+           season_type = .SEASON_TYPE) {
+    .validate_season(season)
+    .validate_season_type(season_type)
+    season_type_nm <- .convert_season_type(season_type)
+
+    res <-
+      nbastatR::game_logs(
+        seasons = season + 1,
+        result_types = "player",
+        season_types = season_type_nm,
+        assign_to_environment = FALSE,
+        return_message = FALSE
+      ) %>%
+      janitor::clean_names()
+
+    path_export <-
+      .export_data_from_path(
+        ...,
+        data = res,
+        path = path,
+        season = season #,
+        # season_type = season_type
+      )
+
+    invisible(res)
+  }
+
+
+.get_teams_summary_nbastatr <-
+  function(..., path, season = .SEASON) {
+    res <-
+      nbastatR::bref_teams_stats(
+        seasons = season,
+        assign_to_environment = FALSE,
+        return_message = FALSE
+      ) %>%
+      janitor::clean_names()
+
+    .export_data_from_path(
+      ...,
+      data = res,
+      path = path_game
+    )
+    invisible(res)
+  }
+
+.get_players_summary_nbastatr <-
+  function(..., path, season = .SEASON) {
+
+    res <-
+      nbastatR::bref_players_stats(
+        seasons = season,
+        assign_to_environment = FALSE,
+        return_message = FALSE
+      ) %>%
+      janitor::clean_names()
+
+    .export_data_from_path(
+      ...,
+      data = res,
+      path = path
+    )
+    invisible(res)
+  }
+
+# .try_import_thing ----
+.try_import_thing <-
+  function(path,
+           f_import = .import_data_from_path,
+           f_get,
+           ...) {
+
+    # f <- purrr::possibly(.f = f_import(..., path = path), otherwise = NULL)
+    # res <- f()
+    res <- attempt::try_catch(expr = f_import(..., path = path), .e = NULL)
+
+    if(!is.null(res)) {
+      return(invisible(res))
+    }
+
+    .display_info(
+      glue::glue("Could not get data with `f_import`. Trying `f_get`"),
+      ...
+    )
+
+    # f <- purrr::possibly(.f = f_get(..., path = path), otherwise = NULL)
+    # res <- f()
+    res <- attempt::try_catch(expr = f_get(..., path = path), .e = NULL)
+
+    if(!is.null(res)) {
+      return(invisible(res))
+    }
+
+    .display_error(
+      glue::glue("Could not get data with `f_get` after failing with `f_import`."),
+      ...
+    )
+    stop(call. = FALSE)
+  }
+
+.try_import_players <-
+  function(...) {
+    .try_import_thing(
+      path = config$path_players,
+      f_get = .get_players,
+      ...
+    )
+  }
+
+.try_import_teams <-
+  function(...) {
+    .try_import_thing(
+      path = config$path_teams,
+      f_get = .get_teams_nbastatr,
+      ...
+    )
+  }
+
+.try_import_game_logs_player_nbastatr <-
+  function(...) {
+    .try_import_thing(
+      path = config$path_game_logs_player_nbastatr,
+      f_get = .get_game_logs_player_nbastatr,
+      ...
+    )
+  }
+
+.try_import_game_logs_team_nbastatr <-
+  function(...) {
+    .try_import_thing(
+      path = config$path_game_logs_team_nbastatr,
+      f_get = .get_game_logs_team_nbastatr,
+      ...
+    )
+  }
+
+.try_import_players_summary <-
+  function(...) {
+    .try_import_thing(
+      path = config$path_players_summary_nbastatr,
+      f_get = .get_players_summary_nbastatr,
+      ...
+    )
+  }
+
+
+.try_import_teams_summary <-
+  function(...) {
+    .try_import_thing(
+      path = config$path_teams_summary_nbastatr,
+      f_get = .get_teams_summary_nbastatr,
+      ...
+    )
+  }
+

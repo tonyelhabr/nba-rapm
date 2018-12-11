@@ -17,8 +17,8 @@
 .try_skip <-
   function(skip,
            season,
-           path_format_deps,
-           path_format_reqs = NULL,
+           path_deps,
+           path_reqs = NULL,
            ...,
            verbose = .VERBOSE,
            call_name = NULL,
@@ -28,12 +28,12 @@
     }
     if (!skip) {
       # return(invisible(FALSE))
-      if(!is.null(path_format_reqs)) {
+      if(!is.null(path_reqs)) {
         path_reqs_exist <-
           purrr::map_lgl(
-            path_format_reqs,
-            ~.get_path_from_format(
-              path_format = .x,
+            path_reqs,
+            ~.get_path_from(
+              path = .x,
               season = season
             ) %>%
               file.exists()
@@ -55,14 +55,14 @@
       return(invisible(FALSE))
     }
 
-    for (path_format in path_format_deps) {
+    for (path in path_deps) {
       path <-
-        .get_path_from_format(path_format = path_format, season = season)
+        .get_path_from(path = path, season = season)
       if (!file.exist(path)) {
 
         msg <-
           sprintf(
-            "Can't skip %s because up-stream file dependency %s does not exist!",
+            "Cant skip %s because up-stream file dependency %s does not exist!",
             call_name,
             path
           )

@@ -1,61 +1,34 @@
 
 season <- 2017L
-players_raw <-
-  nbastatR::get_nba_players()
-players_raw
 
-players <-
-  players_raw %>%
-  janitor::clean_names() %>%
-  janitor::clean_names() %>%
-  filter(
-    year_season_first <= season,
-    year_season_last >= season
-  ) %>%
-  select(
-    id = id_player,
-    name = name_player
-  ) %>%
-  arrange(id)
-players
-# players %>% arrange(desc(id))
+game_logs_player <-
+  .try_import_game_logs_player(season = season)
 
-# nbastatR::get_players_tables_data()
-# players_active <-
-#   df_dict_nba_players %>%
-#   janitor::clean_names() %>%
-#   filter(is_active)
-# players_active
+players_summary_nbastatr <-
+  game_logs_player %>%
+  select_at(vars(matches("^id_(player|team)$|^f[a-z]+$"))) %>%
+  group_by(id_player, id_team) %>%
+  summarise_if(is.numeric, funs(mean(.))) %>%
+  ungroup()
+players_summary_nbastatr
+
+
+game_logs_team <-
+  .try_import_game_logs_team(season = season)
 #
-# player_career_stats <-
-#   nbastatR::get_players_career_stats(player_ids = 200746)
-# player_career_stats %>%
-#   janitor::clean_names() %>%
-#   filter(mode_search == "Totals", str_detect(name_table, "SeasonTotalsRegularSeason")) %>%
-#   unnest(data_table) %>%
-#   select(minutes)
+# game_ids <-
+#   game_logs_team %>%
+#   distinct(id_game) %>%
+#   arrange(id_game)
+#
+# raw_play_by_play <-
+#   game_ids %>%
+#   pull() %>%
+#   .[1:2] %>%
+#   nbastatR::play_by_play(
+#     game_ids = .,
+#     nest_data = FALSE,
+#     return_message = FALSE
+#   )
+# raw_play_by_play
 
-team_raw <-
-  nbastatR::get_nba_teams()
-team_raw
-
-team <-
-  team_raw %>%
-  janitor::clean_names() %>%
-  filter(is_non_nba_team == 0L) %>%
-  filter(year_played_last >= season) %>%
-  select(
-    id = id_team,
-    name = name_team,
-    slug = slug_team
-  )
-team
-
-
-# library("nbastatR")
-# library("future")
-future::plan(multiprocess) 
-game_logs <-
-  nbastatR::game_logs(seasons = 2018, result_types = c("team", "player"))
-
-  

@@ -20,6 +20,22 @@
     match.arg(x)
   }
 
+.convert_season_type <-
+  function(x = .SEASON_TYPES) {
+    # switch(
+    #   regular = "Regular Season",
+    #   playoffs = "Playoffs",
+    #   all = "All"
+    # )
+    case_when(
+      x == "regular" ~ "Regular Season",
+      x == "playoffs" ~ "Playoffs",
+      TRUE ~ "All"
+    )
+  }
+
+# Note that `side` isn't actually exposed to the user, so this validation
+# is purely for the developer.
 .validate_side <-
   function(x = .SIDES) {
     match.arg(x)

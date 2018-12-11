@@ -14,13 +14,13 @@
   }
 
 .extract_rapm_estimates <-
-  function(path_rapm_fit_side_format,
-           path_rapm_estimates_side_format,
+  function(path_rapm_fit_side,
+           path_rapm_estimates_side,
            season,
            ...) {
     fit <-
-      .import_data_from_path_format(
-        path_format = path_rapm_fit_side_format,
+      .import_data_from_path(
+        path = path_rapm_fit_side,
         season = season,
         ...
       )
@@ -31,9 +31,9 @@
         ...
       )
 
-    .export_data_from_path_format(
+    .export_data_from_path(
       data = estimates,
-      path_format = path_rapm_estimates_side_format,
+      path = path_rapm_estimates_side,
       season = season,
       ...
     )
@@ -51,13 +51,13 @@
         paste0(.PREFIX_COLS_ESTIMATES_ORDER, "rapm_rnk")
       )
 
-    cols_players_summary <-
-      .get_cols_players_summary()
+    cols_players_summary_calc <-
+      .get_cols_players_summary_calc()
 
     cols_raw <-
       c(
         .COLS_ESIMATES_ORDER,
-        cols_players_summary
+        cols_players_summary_calc
       )
     cols_fct <-
       cols_raw %>%
@@ -69,15 +69,15 @@
     cols
   }
 
-.join_estimates_with_players_summary <-
+.join_estimates_with_players_summary_calc <-
   function(estimates,
-           path_players_summary_format,
+           path_players_summary_calc,
            season,
            ...) {
 
-    players_summary <-
-      .import_data_from_path_format(
-        path_format = path_players_summary_format,
+    players_summary_calc <-
+      .import_data_from_path(
+        path = path_players_summary_calc,
         season = season,
         ...
       )
@@ -85,7 +85,7 @@
     estimates_pretty <-
       estimates %>%
       mutate_at(vars(matches("rapm$")), funs(rnk = row_number(desc(.)))) %>%
-      left_join(players_summary, by = "id")
+      left_join(players_summary_calc, by = "id")
 
 
     cols_estimates_pretty <-
@@ -97,29 +97,29 @@
   }
 
 extract_rapm_estimates <-
-  function(path_rapm_fit_o_format,
-           path_rapm_fit_d_format,
-           path_players_summary_format,
-           path_rapm_estimates_o_format,
-           path_rapm_estimates_d_format,
-           path_rapm_estimates_format,
+  function(path_rapm_fit_o,
+           path_rapm_fit_d,
+           path_players_summary_calc,
+           path_rapm_estimates_o,
+           path_rapm_estimates_d,
+           path_rapm_estimates,
            season = .SEASON,
            ...) {
 
     will_skip <-
       .try_skip(
         season = season,
-        path_format_reqs =
+        path_reqs =
           c(
-            path_rapm_fit_o_format,
-            path_rapm_fit_d_format,
-            path_players_summary_format
+            path_rapm_fit_o,
+            path_rapm_fit_d,
+            path_players_summary_calc
           ),
-        path_format_deps =
+        path_deps =
           c(
-            path_rapm_estimates_o_format,
-            path_rapm_estimates_d_format,
-            path_rapm_estimates_format
+            path_rapm_estimates_o,
+            path_rapm_estimates_d,
+            path_rapm_estimates
           ),
         ...
       )
@@ -137,13 +137,13 @@ extract_rapm_estimates <-
 
     estimates_o <-
       .extract_rapm_estimates_partially(
-        path_rapm_fit_side_format = path_rapm_fit_o_format,
-        path_rapm_estimates_side_format = path_rapm_estimates_o_format
+        path_rapm_fit_side = path_rapm_fit_o,
+        path_rapm_estimates_side = path_rapm_estimates_o
       )
     estimates_d <-
       .extract_rapm_estimates_partially(,
-        path_rapm_fit_side_format = path_rapm_fit_d_format,
-        path_rapm_estimates_side_format = path_rapm_estimates_d_format
+        path_rapm_fit_side = path_rapm_fit_d,
+        path_rapm_estimates_side = path_rapm_estimates_d
       )
 
     # browser()
@@ -157,11 +157,11 @@ extract_rapm_estimates <-
       mutate(rapm = orapm + drapm) %>%
       arrange(desc(rapm))
 
-    .join_estimates_with_players_summary_possibly <-
+    .join_estimates_with_players_summary_calc_possibly <-
       purrr::possibly(
-        ~.join_estimates_with_players_summary(
+        ~.join_estimates_with_players_summary_calc(
           estimates = estimates,
-          path_players_summary_format = path_players_summary_format,
+          path_players_summary_calc = path_players_summary_calc,
           season = season,
           verbose = verbose,
           ...
@@ -170,25 +170,25 @@ extract_rapm_estimates <-
       )
 
     estimates_pretty <-
-      .join_estimates_with_players_summary_possibly()
+      .join_estimates_with_players_summary_calc_possibly()
 
     if(!is.null(estimates_pretty)) {
       estimates <- estimates_pretty
       .display_info(
-        "Successfully joined `players_summary` with `estimates`.",
+        "Successfully joined `players_summary_calc` with `estimates`.",
         ...
       )
     } else {
       .display_warning(
-        "Could not join `estimates` with `players_summary`.",
+        "Could not join `estimates` with `players_summary_calc`.",
         ...
       )
     }
 
     path_export <-
-      .export_data_from_path_format(
+      .export_data_from_path(
         data = estimates,
-        path_format = path_rapm_estimates_format,
+        path = path_rapm_estimates,
         season = season,
         ...
       )
@@ -198,18 +198,18 @@ extract_rapm_estimates <-
 auto_extract_rapm_estimates <-
   purrr::partial(
     extract_rapm_estimates,
-    path_rapm_fit_o_format = args$path_rapm_fit_o_format,
-    path_rapm_fit_d_format = args$path_rapm_fit_d_format,
-    path_players_summary_format = args$path_players_summary_format,
-    path_rapm_estimates_o_format = args$path_rapm_estimates_o_format,
-    path_rapm_estimates_d_format = args$path_rapm_estimates_d_format,
-    path_rapm_estimates_format = args$path_rapm_estimates_format,
-    season = args$season,
-    skip = args$skip_fit,
-    debug = args$debug,
-    verbose = args$verbose,
-    export = args$export,
-    backup = args$backup,
-    clean = args$clean,
-    n_keep = args$n_keep
+    path_rapm_fit_o = config$path_rapm_fit_o,
+    path_rapm_fit_d = config$path_rapm_fit_d,
+    path_players_summary_calc = config$path_players_summary_calc,
+    path_rapm_estimates_o = config$path_rapm_estimates_o,
+    path_rapm_estimates_d = config$path_rapm_estimates_d,
+    path_rapm_estimates = config$path_rapm_estimates,
+    season = config$season,
+    skip = config$skip_fit,
+    debug = config$debug,
+    verbose = config$verbose,
+    export = config$export,
+    backup = config$backup,
+    clean = config$clean,
+    n_keep = config$n_keep
   )

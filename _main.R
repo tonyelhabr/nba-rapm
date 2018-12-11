@@ -15,7 +15,6 @@ pre_auto()
 # setup ----
 auto_setup_cores()
 
-# debug(auto_clean_raw_play_by_play)
 auto_clean_raw_play_by_play()
 
 auto_munge_cleaned_play_by_play()

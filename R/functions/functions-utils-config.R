@@ -21,7 +21,7 @@
       default <- .this_if_exists_else(arg, "default", NULL)
       optional <- .this_if_exists_else(arg, "optional", .optional)
       if(is.null(default) & is.null(optional)) {
-        # No value to work with, so don't add argument.
+        # No value to work with, so dont add argument.
         next
       } else if (is.null(default)) {
         # Assume it is NOT optional, regardless of the value of `optional`.
@@ -64,10 +64,21 @@
     args_parsed <- argparser::parse_args(args_preparsed)
   }
 
-get_args <-
-  function(config = NULL, ...) {
+.import_config <-
+  function(config = NULL, ..., file) {
     if(is.null(config)) {
-      config <- config::get()
+      stopifnot(file.exists(file))
+      config <- config::get(..., file = file)
     }
     .convert_config_to_args(config)
+  }
+
+import_config <-
+  function(..., file_cli = "config-cli.yml", file_static = "config-static.yml") {
+    config_cli <- .import_config(file = file_cli, ...)
+    config_static <- .import_config(file = file_static, ...)
+    config::merge(
+      config_cli,
+      config_static
+    )
   }

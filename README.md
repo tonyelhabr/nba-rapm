@@ -96,5 +96,10 @@ level of significance as the "side"-effect set of paremeters.
 TODO
 ====
 
-+ Improve `skip` logic/messages?
-+ Batch clean all raw files and skip them in the future?
++ Convert all usage of `sprintf()` to `glue::glue()` (and experiment with `glue_fmt()`).
++ Change order of `...` relative to other arguments in functions so
+that `...` comes first (always(?)). If this were done, then the user MUST be explicit
+about all arguments.
++ Test all the munge stuff.
++ ...
++ Batch clean all raw files and skip them in the future? (Update: Do this only after everything is tested.)

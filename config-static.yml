@@ -1,0 +1,81 @@
+ default:
+
+  raw_data_source:
+    # default: 'etf'
+    default: 'rd'
+    help: 'An indication of where the raw data is coming from. This is important
+    for the data cleaning process (for identifying column names, etc.) because
+    more than one data sources were tested during development.
+    Valid choices include "etf" and "rd".'
+    
+  path_raw_play_by_play:
+    default: 'data-raw/raw_play_by_play.csv'
+    help: 'Path format of raw play-by-play data file to clean.'
+  path_raw_game_summary:
+    default: 'data-raw/raw_game_summary.csv'
+    help: 'Path format of raw game summary data file. Needed solely for identifying
+    home and away teams, which is not defined in `play_by_play_raw` data from source.'
+  path_play_by_play:
+    default: 'data/play_by_play.csv'
+    help: 'Path format of cleaned play-by-play data file to export.
+    Only relevant if `export = TRUE` or if `import_munge = TRUE` (in which
+    case, it is used as the "input" to the intermediate processing).'
+ 
+  path_players_nbastatr:
+    default: 'data/players.csv'
+    help: 'Path format of cleaned player data to export.
+    Only relevant if `export = TRUE`.
+    Not a dependency for any other data processing. Simply useful for informative purposes.'
+  path_teams_nbastatr:
+    default: 'data/teams.csv'
+    help: 'Analogous to `path_players` for cleaned team data to export.'
+  path_game_logs_team_nbastatr:
+    default: 'data/game_logs_team_nbastatr.csv'
+    help: 'Path format for game logs data. Retrieved from `{nbastatR}` package.'
+  path_game_logs_player_nbastatr:
+    default: 'data/game_logs_player_nbastatr.csv'
+    help: 'Analogous to `path_game_logs_team` for individual players.'
+  path_teams_summary_nbastatr:
+    default: 'data/teams_summary_nbastatr.csv'
+    help: 'Path format for team season-aggregated data. Retrieved from `{nbastatR}` package.'
+  path_players_summary_nbastatr:
+    default: 'data/players_summary_nbastatr.csv'
+    help: 'Analogous to `path_teams_summary` for individual players.'
+  
+  path_possession_data_o:
+    default: 'data/posession_data_o.rds'
+    help: 'Path format of "wide" offensive possession data. 
+    Only relevant if `export = TRUE` OR if `import_fit = TRUE` (in which
+    case, it is used as the "input" to the model fitting step).'
+  path_possession_data_d:
+    default: 'data/posession_data_d.rds'
+    help: 'Analogous to `path_possession_data_o`.'
+  path_players_summary_calc:
+    default: 'data/players_summary_calc.csv'
+    help: 'Path format of summarized cleaned player data to export.
+     Relevant in the same cases as `path_possession_data_o`.
+     Used to add names and other player-relevant information to final output.'
+  path_teams_summary_calc:
+    default: 'data/teams_summary_calc.csv'
+    help: 'Analogous to `path_players_summary_calc` for team data.'
+   
+  path_rapm_fit_o:
+    default: 'data/rapm_fit_o.rds'
+    help: 'Path format of RAPM model fitted for offensive possession data.
+    Only relevent if `export = `TRUE`.'
+  path_rapm_fit_d:
+    default: 'data/rapm_fit_d.rds'
+    help: 'Analogous to `path_rapm_fit_o`.'
+
+  path_rapm_estimates_o:
+    default: 'data/rapm_estimates_o.csv'
+    help: 'Path format of final the player-specific offensive RAPM estimates.
+    Only relevent if `export = `TRUE`.'
+  path_rapm_estimates_d:
+    default: 'data/rapm_estimates_d.csv'
+    help: 'Analogous to `path_rapm_estimates_o`.'
+  path_rapm_estimates:
+    default: 'data/rapm_estimates.csv'
+    help: 'Path format of final combined offensive and defensive RAPM estimates.'
+
+production:

@@ -71,8 +71,8 @@ download_rda_file <-
     }
 
     if(is.null(path)) {
-      .get_path_from_format(
-        path_format = file.path(dir, sprintf("%s.%s", "raw_play_by_play", .EXT_EIGHTYTHIRTYFOUR)),
+      .get_path_from(
+        path = file.path(dir, sprintf("%s.%s", "raw_play_by_play", .EXT_EIGHTYTHIRTYFOUR)),
         season = season,
         # season_type = "Any",
         raw_data_source = "eightthirtyfour"
@@ -111,7 +111,7 @@ download_rda_file <-
 
 download_raw_data <-
   function(raw_data_source = .RAW_DATA_SOURCES, ..., verbose = .VERBOSE) {
-    raw_data_source <- .validate_raw_data_source(raw_data_source)
+    .validate_raw_data_source(raw_data_source)
     if(raw_data_source == .RAW_DATA_SOURCES[1]) {
       download_rda_file(verbose = verbose, ...)
     } else if (raw_data_source == .RAW_DATA_SOURCES[2]) {

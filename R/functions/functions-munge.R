@@ -59,7 +59,7 @@
       .export_data_from_path(
         ...,
         data = player_summary_debug,
-        path = glue::glue{"data/game_logs_player_debug.csv"}
+        path = glue::glue("data/game_logs_player_debug.csv")
       )
 
     }

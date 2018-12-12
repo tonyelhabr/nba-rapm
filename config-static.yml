@@ -1,4 +1,4 @@
- default:
+default:
 
   raw_data_source:
     # default: 'etf'
@@ -11,10 +11,6 @@
   path_raw_play_by_play:
     default: 'data-raw/raw_play_by_play.csv'
     help: 'Path format of raw play-by-play data file to clean.'
-  path_raw_game_summary:
-    default: 'data-raw/raw_game_summary.csv'
-    help: 'Path format of raw game summary data file. Needed solely for identifying
-    home and away teams, which is not defined in `play_by_play_raw` data from source.'
   path_play_by_play:
     default: 'data/play_by_play.csv'
     help: 'Path format of cleaned play-by-play data file to export.
@@ -77,5 +73,6 @@
   path_rapm_estimates:
     default: 'data/rapm_estimates.csv'
     help: 'Path format of final combined offensive and defensive RAPM estimates.'
-
+    
 production:
+

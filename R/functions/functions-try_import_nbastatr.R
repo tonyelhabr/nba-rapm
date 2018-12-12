@@ -3,7 +3,7 @@
 # Note that paths are "hard-coded" here to allow for flexible "offline"
 # execution of this function. This design choice should/could be reconsidered in the future.
 .get_players_nbastatr <-
-  function(..., path, season = .SEASON) {
+  function(..., season = .SEASON, path = config$path_players_nbastatr) {
     .validate_season(season)
 
     res <-
@@ -20,15 +20,15 @@
     path_export <-
       .export_data_from_path(
         ...,
+        season = season,
         data = res,
-        path = path,
-        season = season
+        path = path
       )
     invisible(res)
   }
 
 .get_teams_nbastatr <-
-  function(..., path, season = .SEASON) {
+  function(..., season = .SEASON, path = config$path_teams_nbastatr) {
     .validate_season(season)
 
     res <-
@@ -43,18 +43,18 @@
     path_export <-
       .export_data_from_path(
         ...,
+        season = season,
         data = res,
-        path = path,
-        season = season
+        path = path
       )
     invisible(res)
   }
 
 .get_game_logs_team_nbastatr <-
   function(...,
-           path,
            season = .SEASON,
-           season_type = .SEASON_TYPE) {
+           season_type = .SEASON_TYPE,
+           path = config$path_game_logs_team_nbastatr) {
     .validate_season(season)
     .validate_season_type(season_type)
     season_type_nm <- .convert_season_type(season_type)
@@ -85,10 +85,10 @@
     path_export <-
       .export_data_from_path(
         ...,
+        season = season,
+        season_type = season_type,
         data = res,
-        path = path,
-        season = season #,
-        # season_type = season_type
+        path = path
       )
 
     invisible(res)
@@ -96,9 +96,9 @@
 
 .get_game_logs_player_nbastatr <-
   function(...,
-           path,
            season = .SEASON,
-           season_type = .SEASON_TYPE) {
+           season_type = .SEASON_TYPE,
+           path = config$path_game_logs_player_nbastatr) {
     .validate_season(season)
     .validate_season_type(season_type)
     season_type_nm <- .convert_season_type(season_type)
@@ -116,10 +116,10 @@
     path_export <-
       .export_data_from_path(
         ...,
+        season = season,
+        season_type = season_type,
         data = res,
-        path = path,
-        season = season #,
-        # season_type = season_type
+        path = path
       )
 
     invisible(res)
@@ -127,25 +127,27 @@
 
 
 .get_teams_summary_nbastatr <-
-  function(..., path, season = .SEASON) {
+  function(..., season = .SEASON, path = config$path_players_summary_nbastatr) {
     res <-
       nbastatR::bref_teams_stats(
         seasons = season,
         assign_to_environment = FALSE,
         return_message = FALSE
       ) %>%
+      unnest() %>%
       janitor::clean_names()
 
     .export_data_from_path(
       ...,
+      season = season,
       data = res,
-      path = path_game
+      path = path
     )
     invisible(res)
   }
 
 .get_players_summary_nbastatr <-
-  function(..., path, season = .SEASON) {
+  function(..., season = .SEASON, path = config$path_teams_summary_nbastatr) {
 
     res <-
       nbastatR::bref_players_stats(
@@ -153,10 +155,12 @@
         assign_to_environment = FALSE,
         return_message = FALSE
       ) %>%
+      unnest() %>%
       janitor::clean_names()
 
     .export_data_from_path(
       ...,
+      season = season,
       data = res,
       path = path
     )
@@ -172,7 +176,7 @@
 
     # f <- purrr::possibly(.f = f_import(..., path = path), otherwise = NULL)
     # res <- f()
-    res <- attempt::try_catch(expr = f_import(..., path = path), .e = NULL)
+    res <- attempt::try_catch(expr = f_import(...), .e = NULL)
 
     if(!is.null(res)) {
       return(invisible(res))
@@ -185,7 +189,7 @@
 
     # f <- purrr::possibly(.f = f_get(..., path = path), otherwise = NULL)
     # res <- f()
-    res <- attempt::try_catch(expr = f_get(..., path = path), .e = NULL)
+    res <- attempt::try_catch(expr = f_get(...), .e = NULL)
 
     if(!is.null(res)) {
       return(invisible(res))
@@ -198,19 +202,17 @@
     stop(call. = FALSE)
   }
 
-.try_import_players <-
+.try_import_players_nbastatr <-
   function(...) {
     .try_import_thing(
-      path = config$path_players,
-      f_get = .get_players,
+      f_get = .get_players_nbastatr,
       ...
     )
   }
 
-.try_import_teams <-
+.try_import_teams_nbastatr <-
   function(...) {
     .try_import_thing(
-      path = config$path_teams,
       f_get = .get_teams_nbastatr,
       ...
     )
@@ -219,7 +221,6 @@
 .try_import_game_logs_player_nbastatr <-
   function(...) {
     .try_import_thing(
-      path = config$path_game_logs_player_nbastatr,
       f_get = .get_game_logs_player_nbastatr,
       ...
     )
@@ -228,26 +229,23 @@
 .try_import_game_logs_team_nbastatr <-
   function(...) {
     .try_import_thing(
-      path = config$path_game_logs_team_nbastatr,
       f_get = .get_game_logs_team_nbastatr,
       ...
     )
   }
 
-.try_import_players_summary <-
+.try_import_players_summary_nbastatr <-
   function(...) {
     .try_import_thing(
-      path = config$path_players_summary_nbastatr,
       f_get = .get_players_summary_nbastatr,
       ...
     )
   }
 
 
-.try_import_teams_summary <-
+.try_import_teams_summary_nbastatr <-
   function(...) {
     .try_import_thing(
-      path = config$path_teams_summary_nbastatr,
       f_get = .get_teams_summary_nbastatr,
       ...
     )

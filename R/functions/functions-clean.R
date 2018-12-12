@@ -27,7 +27,10 @@
   }
 
 .clean_raw_play_by_play.rd <-
-  function(raw_play_by_play, path_game_logs_team_nbastatr = config$path_game_logs_team_nbastatr, ...) {
+  function(raw_play_by_play,
+           ...,
+           path_teams_game_logs_nbastatr = config$path_teams_game_logs_nbastatr,
+           debug = config$debug) {
 
     # TODO: Implement some kind of checking of column names/types for this function?
     play_by_play <-
@@ -87,23 +90,29 @@
       mutate_at(vars(matches("^pts|mp")), funs(coalesce(., 0))) %>%
       mutate_at(vars(matches("^pts")), funs(as.integer))
 
-    game_logs_team_nbastatr <-
-      .try_import_game_logs_team_nbastatr(...)
+    teams_game_logs_nbastatr <-
+      .try_import_teams_game_logs_nbastatr(...)
 
     # Need to join just to get the home/away data.
-    n_row_before <- nrow(play_by_play)
+    if(debug) {
+      n_row_before <- nrow(play_by_play)
+    }
+
+    # Do this just to `location_game`.
     play_by_play <-
       play_by_play %>%
       inner_join(
-        game_logs_team_nbastatr %>% select(id_game, id_team, location_game),
+        teams_game_logs_nbastatr %>% select(id_game, id_team, location_game),
         by = c("game_id" = "id_game", "team_id1" = "id_team")
       )
-    n_row_after <- nrow(play_by_play)
 
-    .compare_n_row_eq(
-      n1 = n_row_before,
-      n2 = n_row_after
-    )
+    if(debug) {
+      n_row_after <- nrow(play_by_play)
+      .compare_n_row_eq(
+        n1 = n_row_before,
+        n2 = n_row_after
+      )
+    }
 
     play_by_play <-
       play_by_play %>%
@@ -174,7 +183,7 @@ clean_raw_play_by_play <-
     play_by_play <-
       .clean_raw_play_by_play(
         raw_play_by_play = raw_play_by_play,
-        path_raw_game_logs_team_nbastatr = path_raw_game_logs_team_nbastatr,
+        path_raw_teams_game_logs_nbastatr = path_raw_teams_game_logs_nbastatr,
         ...
       )
 
@@ -196,7 +205,6 @@ auto_clean_raw_play_by_play <-
     season_type = config$season_type,
     # raw_data_source = config$raw_data_source,
     skip = config$skip_clean,
-    debug = config$debug,
     verbose = config$verbose,
     export = config$export,
     backup = config$backup,

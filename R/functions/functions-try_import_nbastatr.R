@@ -3,7 +3,7 @@
 # Note that paths are "hard-coded" here to allow for flexible "offline"
 # execution of this function. This design choice should/could be reconsidered in the future.
 .get_players_nbastatr <-
-  function(..., season = .SEASON, path = config$path_players_nbastatr) {
+  function(..., season = .SEASON, path) {
     .validate_season(season)
 
     res <-
@@ -28,7 +28,7 @@
   }
 
 .get_teams_nbastatr <-
-  function(..., season = .SEASON, path = config$path_teams_nbastatr) {
+  function(..., season = .SEASON, path) {
     .validate_season(season)
 
     res <-
@@ -50,11 +50,11 @@
     invisible(res)
   }
 
-.get_game_logs_team_nbastatr <-
+.get_teams_game_logs_nbastatr <-
   function(...,
            season = .SEASON,
            season_type = .SEASON_TYPE,
-           path = config$path_game_logs_team_nbastatr) {
+           path) {
     .validate_season(season)
     .validate_season_type(season_type)
     season_type_nm <- .convert_season_type(season_type)
@@ -94,11 +94,11 @@
     invisible(res)
   }
 
-.get_game_logs_player_nbastatr <-
+.get_players_game_logs_nbastatr <-
   function(...,
            season = .SEASON,
            season_type = .SEASON_TYPE,
-           path = config$path_game_logs_player_nbastatr) {
+           path) {
     .validate_season(season)
     .validate_season_type(season_type)
     season_type_nm <- .convert_season_type(season_type)
@@ -127,7 +127,7 @@
 
 
 .get_teams_summary_nbastatr <-
-  function(..., season = .SEASON, path = config$path_players_summary_nbastatr) {
+  function(..., season = .SEASON, path) {
     res <-
       nbastatR::bref_teams_stats(
         seasons = season,
@@ -147,7 +147,7 @@
   }
 
 .get_players_summary_nbastatr <-
-  function(..., season = .SEASON, path = config$path_teams_summary_nbastatr) {
+  function(..., season = .SEASON, path) {
 
     res <-
       nbastatR::bref_players_stats(
@@ -169,27 +169,23 @@
 
 # .try_import_thing ----
 .try_import_thing <-
-  function(path,
+  function(...,
+           path,
            f_import = .import_data_from_path,
-           f_get,
-           ...) {
+           f_get) {
 
-    # f <- purrr::possibly(.f = f_import(..., path = path), otherwise = NULL)
-    # res <- f()
-    res <- attempt::try_catch(expr = f_import(...), .e = NULL)
+    res <- attempt::try_catch(expr = f_import(..., path = path), .e = NULL)
 
     if(!is.null(res)) {
       return(invisible(res))
     }
 
     .display_info(
-      glue::glue("Could not get data with `f_import`. Trying `f_get`"),
+      glue::glue("Could not get data with `f_import`. Trying `f_get`."),
       ...
     )
 
-    # f <- purrr::possibly(.f = f_get(..., path = path), otherwise = NULL)
-    # res <- f()
-    res <- attempt::try_catch(expr = f_get(...), .e = NULL)
+    res <- attempt::try_catch(expr = f_get(..., path = path), .e = NULL)
 
     if(!is.null(res)) {
       return(invisible(res))
@@ -205,40 +201,45 @@
 .try_import_players_nbastatr <-
   function(...) {
     .try_import_thing(
+      ...,
       f_get = .get_players_nbastatr,
-      ...
+      path = config$path_players_nbastatr
     )
   }
 
 .try_import_teams_nbastatr <-
   function(...) {
     .try_import_thing(
+      ...,
       f_get = .get_teams_nbastatr,
-      ...
+      path = config$path_teams_nbastatr
     )
   }
 
-.try_import_game_logs_player_nbastatr <-
+.try_import_players_game_logs_nbastatr <-
   function(...) {
     .try_import_thing(
-      f_get = .get_game_logs_player_nbastatr,
-      ...
+      ...,
+      f_get = .get_players_game_logs_nbastatr,
+      path = config$path_players_game_logs_nbastatr
     )
   }
 
-.try_import_game_logs_team_nbastatr <-
+.try_import_teams_game_logs_nbastatr <-
   function(...) {
     .try_import_thing(
-      f_get = .get_game_logs_team_nbastatr,
-      ...
+      ...,
+      f_get = .get_teams_game_logs_nbastatr,
+      path = config$path_teams_game_logs_nbastatr
     )
   }
 
 .try_import_players_summary_nbastatr <-
   function(...) {
     .try_import_thing(
+      ...,
       f_get = .get_players_summary_nbastatr,
-      ...
+      path = config$path_players_summary_nbastatr
     )
   }
 
@@ -246,8 +247,9 @@
 .try_import_teams_summary_nbastatr <-
   function(...) {
     .try_import_thing(
+      ...,
       f_get = .get_teams_summary_nbastatr,
-      ...
+      path = config$path_teams_summary_nbastatr
     )
   }
 

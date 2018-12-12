@@ -2,7 +2,6 @@
 # Links derived from public google drive folders at
 # https://drive.google.com/drive/folders/1GMiP-3Aoh2AKFCoGZ8f0teMYNlkm87dm.
 .ID_GOOGLEDRIVE_RAW_PLAY_BY_PLAY <- "1iXxovZCf1QcHfiDXWBV3aWURkg1ymqh9"
-.ID_GOOGLEDRIVE_RAW_GAME_SUMMARY <- "1_DvoCC-p5vCCOB4q379AFXJTszeFpKie"
 .DIR_DL <- "data-raw"
 .OVERWRITE <- FALSE
 .download_googledrive_files <-
@@ -35,16 +34,6 @@
 
     # TODO: Rename?
     invisible(dribble_raw)
-  }
-
-
-download_raw_game_summary_files <-
-  function(id = .ID_GOOGLEDRIVE_RAW_GAME_SUMMARY, ..., verbose = .VERBOSE) {
-    .download_googledrive_files(
-      id = id,
-      verbose = verbose,
-      ...
-    )
   }
 
 download_raw_play_by_play_files <-
@@ -110,12 +99,11 @@ download_rda_file <-
   }
 
 download_raw_data <-
-  function(raw_data_source = .RAW_DATA_SOURCES, ..., verbose = .VERBOSE) {
+  function(raw_data_source = .RAW_DATA_SOURCES, ...) {
     .validate_raw_data_source(raw_data_source)
     if(raw_data_source == .RAW_DATA_SOURCES[1]) {
-      download_rda_file(verbose = verbose, ...)
+      download_rda_file(...)
     } else if (raw_data_source == .RAW_DATA_SOURCES[2]) {
-      download_raw_game_summary_files(...)
       download_raw_play_by_play_files(...)
     } else {
       return(invisible(NULL))

@@ -1,7 +1,7 @@
 
 # season <- 2017L
-# game_logs_player_nbastatr <- .try_import_game_logs_player_nbastatr(season = season)
-# game_logs_team_nbastatr <- .try_import_game_logs_team_nbastatr(season = season)
+# players_game_logs_nbastatr <- .try_import_players_game_logs_nbastatr(season = season)
+# teams_game_logs_nbastatr <- .try_import_teams_game_logs_nbastatr(season = season)
 
 .COLS_GAME_LOGS_PLAYER_NBASTATR_ALL <-
   c(

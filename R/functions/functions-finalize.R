@@ -206,7 +206,6 @@ auto_extract_rapm_estimates <-
     path_rapm_estimates = config$path_rapm_estimates,
     season = config$season,
     skip = config$skip_fit,
-    debug = config$debug,
     verbose = config$verbose,
     export = config$export,
     backup = config$backup,

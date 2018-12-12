@@ -16,11 +16,9 @@
 
 .try_skip <-
   function(skip,
-           season,
            path_deps,
            path_reqs = NULL,
            ...,
-           verbose = .VERBOSE,
            call_name = NULL,
            safe = TRUE) {
     if (is.null(call_name)) {
@@ -30,48 +28,43 @@
       # return(invisible(FALSE))
       if(!is.null(path_reqs)) {
         path_reqs_exist <-
-          purrr::map_lgl(
-            path_reqs,
+          purrr::pmap_lgl(
+            list(path_reqs, ...),
             ~.get_path_from(
-              path = .x,
-              season = season
+              ...,
+              path = ..1
             ) %>%
               file.exists()
           )
         if(all(path_reqs_exist)) {
-          msg <- sprintf("Could skip %s since all required input files exist.", call_name)
+          # msg <- glue::glue("Could skip {call_name} since all required input files exist.")
         } else {
-          msg <-
-            sprintf(
-              paste0(
-                "Would not be able to skip %s anyways (if `skip = TRUE` ",
-                "were true) since not all required input files exist."
-              ),
-              call_name
-            )
+          .display_info(
+            glue::glue(
+              "You would have to skip {call_name} anyways since not all required input files exist."
+            ),
+            ...
+          )
         }
-        .display_info(msg, verbose = verbose)
+
       }
       return(invisible(FALSE))
     }
 
     for (path in path_deps) {
       path <-
-        .get_path_from(path = path, season = season)
+        .get_path_from(..., path = path)
       if (!file.exist(path)) {
-
         msg <-
-          sprintf(
-            "Cant skip %s because up-stream file dependency %s does not exist!",
-            call_name,
-            path
-          )
+          glue::glue(
+            "Can't skip {call_name} because up-stream file dependency at {path} does not exist."
+           )
         if (safe) {
-          msg <- sprintf("%s\nOver-ruling `skip = TRUE` and continuing.", msg)
-          .display_warning(msg, verbose = verbose)
+          msg <- glue::glue("{msg} Over-ruling `skip = TRUE` and continuing (because `safe = TRUE`).")
+          .display_warning(msg, ...)
           return(invisible(FALSE))
         } else {
-          .display_error(msg, verbose = verbose)
+          .display_error(msg, ...)
           stop(call. = FALSE)
         }
       }

@@ -1,11 +1,6 @@
 default:
 
   # General parameters.
-  debug:
-    default: true
-    help: 'If `TRUE`, exports data at developer pre-defined places
-    (primarily in the cleaining and munging functions) with "hard-coded" file names.
-    This really should only be set to `TRUE` during development.)'
   verbose:
     default: true
     help: 'If `TRUE`, INFO messages are dispayed.
@@ -28,6 +23,7 @@ default:
   n_keep:
     default: 1
     help: 'Number of backup files to NOT delete when "clean"-ing backup files.'
+  
   dir:
     default: 'C:/Users/aelhabr/Documents/projects/nba-rapm/R'
     help: 'Working directory. MUST exist. (Note that the user most certainly will need

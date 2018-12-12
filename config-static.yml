@@ -1,5 +1,11 @@
 default:
 
+  debug:
+    default: true
+    help: 'If `TRUE`, exports data at developer pre-defined places
+    (primarily in the cleaining and munging functions) with "hard-coded" file names.
+    This really should only be set to `TRUE` during development.)'
+
   raw_data_source:
     # default: 'etf'
     default: 'rd'
@@ -7,7 +13,6 @@ default:
     for the data cleaning process (for identifying column names, etc.) because
     more than one data sources were tested during development.
     Valid choices include "etf" and "rd".'
-    
   path_raw_play_by_play:
     default: 'data-raw/raw_play_by_play.csv'
     help: 'Path format of raw play-by-play data file to clean.'
@@ -25,11 +30,11 @@ default:
   path_teams_nbastatr:
     default: 'data/teams.csv'
     help: 'Analogous to `path_players` for cleaned team data to export.'
-  path_game_logs_team_nbastatr:
-    default: 'data/game_logs_team_nbastatr.csv'
+  path_teams_game_logs_nbastatr:
+    default: 'data/teams_game_logs_nbastatr.csv'
     help: 'Path format for game logs data. Retrieved from `{nbastatR}` package.'
-  path_game_logs_player_nbastatr:
-    default: 'data/game_logs_player_nbastatr.csv'
+  path_players_game_logs_nbastatr:
+    default: 'data/players_game_logs_nbastatr.csv'
     help: 'Analogous to `path_game_logs_team` for individual players.'
   path_teams_summary_nbastatr:
     default: 'data/teams_summary_nbastatr.csv'

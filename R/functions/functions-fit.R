@@ -185,7 +185,6 @@ auto_fit_rapm_models <-
     lambda_o = config$lambda_o,
     lambda_d = config$lambda_d,
     skip = config$skip_fit,
-    debug = config$debug,
     verbose = config$verbose,
     export = config$export,
     backup = config$backup,

@@ -149,56 +149,64 @@
     play_by_play <-
       play_by_play %>%
       mutate(
-        is_off1 = if_else(player1_id_team == id_team1, 1L, 0L)
-      )
-
-    play_by_play <-
-      play_by_play %>%
-      group_by(id_game) %>%
-      mutate(poss_num = row_number()) %>%
-      mutate(mp = (sec_elapsed - dplyr::lag(sec_elapsed, 1)) / 60) %>%
-      fill(pts_home) %>%
-      fill(pts_away) %>%
-      ungroup() %>%
-      select(-sec_elapsed) %>%
-      mutate_at(vars(matches("^pts|mp")), funs(coalesce(., 0))) %>%
-      mutate_at(vars(matches("^pts")), funs(as.integer))
-
-
-    play_by_play <-
-      play_by_play %>%
-      mutate(
+        is_off1 = if_else(player1_id_team == id_team1, 1L, 0L),
         is_home1 = if_else(location_game == "H", TRUE, FALSE)
       ) %>%
       mutate(
         pts_team1 = if_else(is_home1, pts_home, pts_away),
         pts_team2 = if_else(!is_home1, pts_home, pts_away)
       ) %>%
-      select(-is_home1) %>%
+      select(-is_home1)
+
+    play_by_play <-
+      play_by_play %>%
+      group_by(id_game) %>%
+      mutate(poss_num = row_number()) %>%
+      mutate(mp = (sec_elapsed - dplyr::lag(sec_elapsed, 1)) / 60) %>%
+      # fill(pts_home) %>%
+      # fill(pts_away) %>%
+      fill(pts_team1) %>%
+      fill(pts_team2) %>%
+      ungroup() %>%
+      select(-sec_elapsed) %>%
+      mutate_at(vars(matches("^pts|mp")), funs(coalesce(., 0))) %>%
+      mutate_at(vars(matches("^pts")), funs(as.integer))
+
+    play_by_play <-
+      play_by_play %>%
       group_by(id_game) %>%
       mutate(
         pts1 = pts_team1 - dplyr::lag(pts_team1, default = 0L),
         pts2 = pts_team2 - dplyr::lag(pts_team2, default = 0L)
       ) %>%
-      ungroup()
+      ungroup() %>%
+      mutate(pts = pts1 + pts2)
+
+    # play_by_play <-
+    #   play_by_play %>%
+    #   mutate(pts = pts1 + pts2) %>%
+    #   select(
+    #     id_game,
+    #     period,
+    #     # poss_num,
+    #     mp,
+    #     is_off = is_off1,
+    #     # team_id1,
+    #     # team_id2,
+    #     # pts1,
+    #     # pts2,
+    #     pts,
+    #     lineup1,
+    #     lineup2
+    #   )
+    nms <- play_by_play %>% names()
+    nms_last <- nms %>% str_subset("^lineup[12]$|^id_team[12]$|^player1_id")
+    nms_first <- nms %>% setdiff(nms_last)
 
     play_by_play <-
       play_by_play %>%
-      mutate(pts = pts1 + pts2) %>%
-      select(
-        id_game,
-        period,
-        # poss_num,
-        mp,
-        is_off = is_off1,
-        # team_id1,
-        # team_id2,
-        # pts1,
-        # pts2,
-        pts,
-        lineup1,
-        lineup2
-      )
+      select(one_of(c(nms_first, nms_last)))
+
     play_by_play
   }
 

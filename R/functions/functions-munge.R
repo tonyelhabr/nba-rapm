@@ -373,28 +373,30 @@ munge_cleaned_play_by_play <-
     # if(debug) {
     if(FALSE) {
 
-      players_nbastatr <- .try_import_players_nbastatr(season = .SEASON)
-      # players_nbastatr <- .try_import_players_nbastatr(...)
+      # players_nbastatr <- .try_import_players_nbastatr(season = .SEASON)
+      players_nbastatr <- .try_import_players_nbastatr(...)
 
       play_by_play_debug <-
         play_by_play %>%
-        mutate_at(vars(pts), funs(if_else(is_off == 1, -., .))) %>%
+        filter(id_game == dplyr::first(id_game)) %>%
+        mutate_at(vars(pts), funs(if_else(is_off1 == 1, -., .))) %>%
         rename(pts_calc = pts) %>%
         left_join(
           # To get `name_player`. Keep `id_team` to use for sorting.
-          players_nbastatr %>% select(id_player, name_player, id_team),
+          players_nbastatr %>%
+            select(id_player, name_player, id_team) %>%
+            mutate_at(vars(name_player), funs(str_replace_all(., "^.*\\s+", ""))),
           by = c("id_player")
         ) %>%
         arrange(id_game, poss_num, id_team, id_player) %>%
         group_by(id_game, poss_num) %>%
         mutate(player_num = row_number()) %>%
         ungroup() %>%
-        mutate_at(vars(player_num), funs(sprintf("x%02d", .))) %>%
-        select(id_game, poss_num, pts_calc, player_num, name_player)
+        mutate_at(vars(player_num), funs(sprintf("x%02d", .)))
 
-      play_by_play_debug <-
+      play_by_play_debug_wide <-
         play_by_play_debug %>%
-        # filter(id_game == dplyr::first(id_game)) %>%
+        select(id_game, poss_num, pts_calc, player_num, name_player) %>%
         spread(player_num, name_player)
 
       # .unite_lineup <-
@@ -414,16 +416,30 @@ munge_cleaned_play_by_play <-
       #       unite(!!col, matches(glue::glue("{prefix}[{suffix}")), sep = sep)
       #   }
 
-      play_by_play_debug <-
-        play_by_play_debug %>%
+      play_by_play_debug_wide <-
+        play_by_play_debug_wide %>%
         # .unite_lineup(lineup1, "1") %>%
         # .unite_lineup(lineup2, "2")
         unite(lineup1, matches("x0[1-5]"), sep = "-") %>%
         unite(lineup2, matches("x[0-1][06-9]"), sep = "-")
 
+      play_by_play_debug <-
+        play_by_play_debug %>%
+        # Make this distinct.
+        select(-matches("^(id|name)_player$|^id_team$|^player_num$")) %>%
+        # distinct() %>%
+        # Or just do this...
+        group_by(id_game, poss_num) %>%
+        filter(row_number() == 1) %>%
+        ungroup() %>%
+        inner_join(
+          play_by_play_debug_wide,
+          by = c("id_game", "poss_num", "pts_calc")
+        )
 
       .export_data_from_path(
-        ...,
+        # ...,
+        season = .SEASON,
         data = play_by_play_debug,
         path = glue::glue("data/debug/play_by_play_debug.csv")
       )
@@ -431,7 +447,7 @@ munge_cleaned_play_by_play <-
 
     play_by_play <-
       play_by_play %>%
-      mutate(side = if_else(is_off == 0L, "d", "o")) %>%
+      mutate(side = if_else(is_off1 == 0L, "d", "o")) %>%
       mutate(xid_player = sprintf("%s%07d", side, as.integer(id_player))) %>%
       select(-is_off) %>%
       mutate(dummy = 1L)

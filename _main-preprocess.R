@@ -13,8 +13,8 @@ purrr::invoke_map(
     # .try_import_teams_nbastatr,
     # .try_import_players_game_logs_nbastatr,
     # .try_import_teams_game_logs_nbastatr,
-    # .try_import_players_summary_nbastatr,
-    # .try_import_teams_summary_nbastatr
+    .try_import_players_summary_nbastatr,
+    .try_import_teams_summary_nbastatr
   ),
   .x = list(list(season = .SEASON))
 )

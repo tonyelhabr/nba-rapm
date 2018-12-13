@@ -126,32 +126,32 @@
   }
 
 
-.get_teams_summary_nbastatr <-
-  function(..., season = .SEASON, path) {
-    res <-
-      nbastatR::bref_teams_stats(
-        seasons = season,
-        assign_to_environment = FALSE,
-        return_message = FALSE
-      ) %>%
-      unnest() %>%
-      janitor::clean_names()
-
-    .export_data_from_path(
-      ...,
-      season = season,
-      data = res,
-      path = path
-    )
-    invisible(res)
-  }
+# .get_teams_summary_nbastatr <-
+#   function(..., season = .SEASON, path) {
+#     res <-
+#       nbastatR::bref_teams_stats(
+#         seasons = season + 1,
+#         assign_to_environment = FALSE,
+#         return_message = FALSE
+#       ) %>%
+#       unnest() %>%
+#       janitor::clean_names()
+#
+#     .export_data_from_path(
+#       ...,
+#       season = season,
+#       data = res,
+#       path = path
+#     )
+#     invisible(res)
+#   }
 
 .get_players_summary_nbastatr <-
   function(..., season = .SEASON, path) {
 
     res <-
       nbastatR::bref_players_stats(
-        seasons = season,
+        seasons = season + 1,
         assign_to_environment = FALSE,
         return_message = FALSE
       ) %>%
@@ -243,13 +243,13 @@
     )
   }
 
-
-.try_import_teams_summary_nbastatr <-
-  function(...) {
-    .try_import_thing(
-      ...,
-      f_get = .get_teams_summary_nbastatr,
-      path = config$path_teams_summary_nbastatr
-    )
-  }
+# Not working for 2017 and beyond...
+# .try_import_teams_summary_nbastatr <-
+#   function(...) {
+#     .try_import_thing(
+#       ...,
+#       f_get = .get_teams_summary_nbastatr,
+#       path = config$path_teams_summary_nbastatr
+#     )
+#   }
 

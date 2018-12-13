@@ -47,12 +47,12 @@
 
 
 .create_dir_ifnecessary <-
-  function(dir, verbose = .VERBOSE) {
+  function(dir, ...) {
     if(!dir.exists(dir)) {
       invisible(dir.create(dir, recursive = TRUE))
       .display_info(
         glue::glue("Created {dir} folder at {Sys.time()}."),
-        verbose = verbose
+        ...
       )
     }
     invisible(dir)
@@ -145,11 +145,12 @@
     if (backup) {
       path_backup <- .create_backup(...,path = path)
     }
+    .create_dir_ifnecessary(..., dir = dirname(path))
     path_export <-
       .export_data(
+        ...,
         data = data,
-        path = path,
-        ...
+        path = path
       )
     .display_info(
       glue::glue("Successfully exported data to  {path}."),

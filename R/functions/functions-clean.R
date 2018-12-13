@@ -32,57 +32,131 @@
            path_teams_game_logs_nbastatr = config$path_teams_game_logs_nbastatr,
            debug = config$debug) {
 
-    # TODO: Implement some kind of checking of column names/types for this function?
+    # raw_play_by_play <- .import_data_from_path(season = .SEASON, path = config$path_raw_play_by_play)
+    # teams_game_logs_nbastatr <- .try_import_teams_game_logs_nbastatr(season = .SEASON)
+    # teams_nbastatr <- .try_import_teams_nbastatr(season = .SEASON)
+    # players_nbastatr <- .try_import_players_nbastatr(season = .SEASON)
+    teams_game_logs_nbastatr <- .try_import_teams_game_logs_nbastatr(...)
+    teams_nbastatr <- .try_import_teams_nbastatr(...)
+    players_nbastatr <- .try_import_players_nbastatr(...)
+
+
     play_by_play <-
       raw_play_by_play %>%
       # .filter_season_type(...)
-      filter(season_type == "Regular Season")
-
-    play_by_play <-
-      play_by_play %>%
+      filter(season_type == "Regular Season") %>%
+      filter(event_action_type != 0) %>%
       filter(!is.na(player1team_id)) %>%
+      mutate_at(vars(matches("description$")), funs(na_if(., ""))) %>%
+      mutate(
+        description = coalesce(home_description, away_description)
+      ) %>%
       select(
-        game_id,
+        id_game = game_id,
         period,
         # Rename as "compromise" between differently named column between sources.
         event_num = event_number,
+        # pc_time_string,
         sec_elapsed = time_elapsed,
         # matches("_score$"),
         pts_home = home_score,
         pts_away = away_score,
-        player1_team_id = player1team_id,
+        player1_id = player1id,
+        player1_id_team = player1team_id,
         # matches("^team_id"),
-        team_id1 = team_id1,
-        team_id2 = team_id2,
-        matches("team1player[1-5]id$"),
-        matches("team2player[1-5]id$"),
+        id_team1 = team_id1,
+        id_team2 = team_id2,
         play_type,
-        matches("_description$")
+        description,
+        matches("team1player[1-5]id$"),
+        matches("team2player[1-5]id$")
       ) %>%
       unite(lineup1, matches("team1player"), sep = "-") %>%
       unite(lineup2, matches("team2player"), sep = "-") %>%
-      mutate(
-        is_off1 = if_else(player1_team_id == team_id1, 1L, 0L)
+      arrange(id_game, period, sec_elapsed, event_num)
+
+    # Do all this for better readability.
+    play_by_play <-
+      play_by_play %>%
+      left_join(
+        teams_game_logs_nbastatr %>%
+          select(
+            id_game,
+            id_team1 = id_team,
+            id_team2 = id_opponent,
+            slug_team1 = slug_team,
+            slug_team2 = slug_opponent,
+            location_game
+          ),
+        by = c("id_game", "id_team1", "id_team2")
       ) %>%
-      arrange(game_id, period, event_num) %>%
-      select(-matches("^event_num$|^player1_team_id$"))
+      left_join(
+        players_nbastatr %>% select(player1_id = id_player, name_player1 = name_player),
+        by = c("player1_id")
+      ) %>%
+      left_join(
+        teams_nbastatr %>% select(player1_id_team = id_team, slug_team_player1 = slug_team),
+        by = c("player1_id_team")
+      ) %>%
+      select(
+        id_game,
+        slug_team1,
+        slug_team2,
+        name_player1,
+        slug_team_player1,
+        play_type,
+        description,
+        everything()
+      )
 
     play_by_play <-
       play_by_play %>%
-      filter(play_type %in% c("Make", "Miss", "FreeThrow")) %>%
-      mutate_at(vars(play_type), funs(if_else(. == "FreeThrow", "Make", .)))
+      # filter(play_type %in% c("Make", "Miss", "FreeThrow")) %>%
+      filter(!play_type %in% c("Foul", "Rebound")) %>%
+      mutate_at(
+        vars(play_type),
+        funs(case_when(
+          . == "FreeThrow" ~ "Make",
+          . == "Turnover" ~ "Miss",
+          TRUE ~ .
+          )
+          )
+        ) %>%
+      # Aggregate free throws.
+      group_by(id_game, sec_elapsed) %>%
+      filter(row_number() == n()) %>%
+      ungroup() %>%
+      mutate(rn = row_number()) %>%
+      select(rn, everything())
+
+    # Checking time intervals.
+    # play_by_play %>%
+    #   filter(
+    #     id_game == dplyr::lead(id_game) &
+    #     period == dplyr::lead(period),
+    #     (sec_elapsed > dplyr::lead(sec_elapsed))
+    #     # (sec_elapsed < dplyr::lag(sec_elapsed))
+    #   )
+    # play_by_play %>%
+    #   filter(
+    #     id_game == dplyr::lag(id_game) &
+    #     period == dplyr::lag(period) &
+    #     # (sec_elapsed > dplyr::lead(sec_elapsed))
+    #     (sec_elapsed < dplyr::lag(sec_elapsed))
+    #   )
+
+    # This is the key step/assumption (but it SHOULD be correct due to the pre-processing).
+    play_by_play <-
+      play_by_play %>%
+      mutate(
+        is_off1 = if_else(player1_id_team == id_team1, 1L, 0L)
+      )
 
     play_by_play <-
       play_by_play %>%
-      group_by(game_id, period, sec_elapsed) %>%
-      summarise_at(vars(matches("^pts_|^team_|is_off1|^lineup")), funs(dplyr::last)) %>%
-      ungroup()
-
-    play_by_play <-
-      play_by_play %>%
-      group_by(game_id) %>%
+      group_by(id_game) %>%
       mutate(poss_num = row_number()) %>%
-      mutate(mp = (sec_elapsed - lag(sec_elapsed, 1)) / 60) %>%
+      mutate(mp = (sec_elapsed - dplyr::lag(sec_elapsed, 1)) / 60) %>%
       fill(pts_home) %>%
       fill(pts_away) %>%
       ungroup() %>%
@@ -90,42 +164,18 @@
       mutate_at(vars(matches("^pts|mp")), funs(coalesce(., 0))) %>%
       mutate_at(vars(matches("^pts")), funs(as.integer))
 
-    teams_game_logs_nbastatr <-
-      .try_import_teams_game_logs_nbastatr(...)
-
-    # Need to join just to get the home/away data.
-    if(debug) {
-      n_row_before <- nrow(play_by_play)
-    }
-
-    # Do this just to `location_game`.
-    play_by_play <-
-      play_by_play %>%
-      inner_join(
-        teams_game_logs_nbastatr %>% select(id_game, id_team, location_game),
-        by = c("game_id" = "id_game", "team_id1" = "id_team")
-      )
-
-    if(debug) {
-      n_row_after <- nrow(play_by_play)
-      .compare_n_row_eq(
-        n1 = n_row_before,
-        n2 = n_row_after
-      )
-    }
 
     play_by_play <-
       play_by_play %>%
       mutate(
         is_home1 = if_else(location_game == "H", TRUE, FALSE)
       ) %>%
-      select(-matches("^team_id_")) %>%
       mutate(
         pts_team1 = if_else(is_home1, pts_home, pts_away),
         pts_team2 = if_else(!is_home1, pts_home, pts_away)
       ) %>%
       select(-is_home1) %>%
-      group_by(game_id) %>%
+      group_by(id_game) %>%
       mutate(
         pts1 = pts_team1 - dplyr::lag(pts_team1, default = 0L),
         pts2 = pts_team2 - dplyr::lag(pts_team2, default = 0L)
@@ -136,7 +186,7 @@
       play_by_play %>%
       mutate(pts = pts1 + pts2) %>%
       select(
-        game_id,
+        id_game,
         period,
         # poss_num,
         mp,

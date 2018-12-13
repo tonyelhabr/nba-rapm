@@ -1,10 +1,10 @@
 
 # Reference: http://eightthirtyfour.com/data
 # path_dl <- download_rda_file(season = 2017)
-path_dl <- "data-raw/raw_play_by_play_2017_etf.Rda"
+path_dl <- "data-raw/raw_play_by_play_2017.Rda"
 
-.import_data(path_dl)
-
+# .import_data(path_dl)
+load(path_dl)
 # pbp %>% names()
 
 play_by_play0 <-
@@ -45,8 +45,9 @@ rgx_players_away <- "^(away)(_player_id_)([1-5])$"
 play_by_play2 <-
   play_by_play1 %>%
   filter(!is.na(player1_team_id)) %>%
+  filter(game_id == 21700013) %>%
   select(
-    game_id,
+    id_game = game_id,
     period,
     # Rename as "compromise" between differently named column between sources.
     event_num = eventnum,
@@ -54,35 +55,35 @@ play_by_play2 <-
     time_run = pctimestring,
     pts_home = home_score,
     pts_away = away_score,
-    tm_home = home_team,
-    tm_away = away_team,
+    team_home = home_team,
+    team_away = away_team,
     sec = time, # running time elapsed
     play_type,
-    player1_tm_id = player1_team_id,
-    player1_tm_nickname = player1_team_nickname,
+    player1_team_id,
+    description,
+    # player1_team_nickname,
     # team,  # always `NA`
     # points_scored, # always `NA`
     # period_start,  # either "True" or ""
     # period_end,  # either "True" or ""
     # matches(rgx_players)
     matches(rgx_players_home),
-    matches(rgx_players_away),
-    matches("description")
+    matches(rgx_players_away)
   ) %>%
   unite(lineup_home, matches(rgx_players_home), sep = "-") %>%
   unite(lineup_away, matches(rgx_players_away), sep = "-") %>%
   mutate(
-    home_is_off = if_else(player1_tm_id == tm_home, 1L, 0L)
+    home_is_off = if_else(player1_team_id == team_home, 1L, 0L)
   ) %>%
-  arrange(game_id, period, event_num) %>%
+  arrange(id_game, period, event_num) %>%
   select(-matches("^event_num$|^player1_tm_id$"))
 play_by_play2
 
 # play_by_play2 %>% count(play_type, pts_home - lag(pts_home), sort = TRUE)
-gms <-
+games <-
   play_by_play2 %>%
-  distinct(game_id, tm_home, tm_away) %>%
-  arrange(game_id)
+  distinct(id_game, team_home, team_away) %>%
+  arrange(id_game)
 
 play_by_play2 %>% glimpse()
 

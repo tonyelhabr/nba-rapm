@@ -21,18 +21,19 @@
 #   }
 
 # TODO: Check if this works.s
-.clean_raw_play_by_play <-
+.clean_play_by_play <-
   function(raw_play_by_play, ...) {
-    UseMethod(".clean_raw_play_by_play")
+    UseMethod(".clean_play_by_play")
   }
 
-.clean_raw_play_by_play.rd <-
+.clean_play_by_play.rd <-
   function(raw_play_by_play,
            ...,
            path_teams_game_logs_nbastatr = config$path_teams_game_logs_nbastatr,
-           debug = config$debug) {
+           debug = FALSE) {
 
     # raw_play_by_play <- .import_data_from_path(season = .SEASON, path = config$path_raw_play_by_play)
+
     # teams_game_logs_nbastatr <- .try_import_teams_game_logs_nbastatr(season = .SEASON)
     # teams_nbastatr <- .try_import_teams_nbastatr(season = .SEASON)
     # players_nbastatr <- .try_import_players_nbastatr(season = .SEASON)
@@ -40,6 +41,50 @@
     teams_nbastatr <- .try_import_teams_nbastatr(...)
     players_nbastatr <- .try_import_players_nbastatr(...)
 
+    if(debug) {
+      raw_game_final_scores <-
+        raw_play_by_play %>%
+        filter(season_type == "Regular Season") %>%
+        filter(play_type == "EndOfPeriod") %>%
+        arrange(game_id, period, desc(time_elapsed))  %>%
+        group_by(game_id) %>%
+        filter(period == max(period)) %>%
+        ungroup() %>%
+        select(
+          id_game = game_id,
+          id_team1 = team_id1,
+          id_team2 = team_id2,
+          pts_home = home_score,
+          pts_away = away_score
+        ) %>%
+        mutate_at(vars(matches("pts")), funs(as.integer))
+      raw_game_final_scores
+      game_logs_final_scores <-
+        left_join(
+          teams_game_logs_nbastatr %>%
+            group_by(id_game) %>%
+            filter(location_game == "H") %>%
+            ungroup() %>%
+            select(id_game, id_team_home = id_team, slug_home = slug_team, pts_home = pts_team),
+          teams_game_logs_nbastatr %>%
+            group_by(id_game) %>%
+            filter(location_game == "A") %>%
+            ungroup() %>%
+            select(id_game, id_team_away = id_team, slug_away = slug_team, pts_away = pts_team),
+          by = c("id_game")
+        )
+      game_logs_final_scores
+      game_final_scores_debug <-
+        raw_game_final_scores %>%
+        left_join(
+          game_logs_final_scores,
+          by = c("id_game", "pts_home", "pts_away")
+        )
+    }
+    # raw_play_by_play <-
+    #   raw_play_by_play %>%
+    #   filter(game_id == 21700007) %>%
+    #   arrange(period, time_elapsed)
 
     play_by_play <-
       raw_play_by_play %>%
@@ -56,11 +101,13 @@
         period,
         # Rename as "compromise" between differently named column between sources.
         event_num = event_number,
-        # pc_time_string,
+        pc_time_string,
         sec_elapsed = time_elapsed,
         # matches("_score$"),
-        pts_home = home_score,
-        pts_away = away_score,
+        # pts_home = home_score,
+        # pts_away = away_score,
+        pts_home = away_score,
+        pts_away = home_score,
         player1_id = player1id,
         player1_id_team = player1team_id,
         # matches("^team_id"),
@@ -80,22 +127,27 @@
       play_by_play %>%
       left_join(
         teams_game_logs_nbastatr %>%
+          group_by(id_game) %>%
+          filter(id_team == min(id_team)) %>%
+          ungroup() %>%
           select(
             id_game,
             id_team1 = id_team,
             id_team2 = id_opponent,
             slug_team1 = slug_team,
             slug_team2 = slug_opponent,
-            location_game
+            location_game1 = location_game
           ),
         by = c("id_game", "id_team1", "id_team2")
       ) %>%
       left_join(
-        players_nbastatr %>% select(player1_id = id_player, name_player1 = name_player),
+        players_nbastatr %>%
+          select(player1_id = id_player, name_player1 = name_player),
         by = c("player1_id")
       ) %>%
       left_join(
-        teams_nbastatr %>% select(player1_id_team = id_team, slug_team_player1 = slug_team),
+        teams_nbastatr %>%
+          select(player1_id_team = id_team, slug_team_player1 = slug_team),
         by = c("player1_id_team")
       ) %>%
       select(
@@ -119,9 +171,9 @@
           . == "FreeThrow" ~ "Make",
           . == "Turnover" ~ "Miss",
           TRUE ~ .
-          )
-          )
-        ) %>%
+        )
+        )
+      ) %>%
       # Aggregate free throws.
       group_by(id_game, sec_elapsed) %>%
       filter(row_number() == n()) %>%
@@ -150,19 +202,23 @@
       play_by_play %>%
       mutate(
         is_off1 = if_else(player1_id_team == id_team1, 1L, 0L),
-        is_home1 = if_else(location_game == "H", TRUE, FALSE)
+        is_home1 = if_else(location_game1 == "H", TRUE, FALSE)
       ) %>%
       mutate(
         pts_team1 = if_else(is_home1, pts_home, pts_away),
-        pts_team2 = if_else(!is_home1, pts_home, pts_away)
+        pts_team2 = if_else(is_home1, pts_away, pts_home)
       ) %>%
-      select(-is_home1)
+      select(matches("pts"), everything())
+
+    play_by_play <-
+      play_by_play %>%
+      select(-matches("^is_home1$|^pts_home[12]$"))
 
     play_by_play <-
       play_by_play %>%
       group_by(id_game) %>%
       mutate(poss_num = row_number()) %>%
-      mutate(mp = (sec_elapsed - dplyr::lag(sec_elapsed, 1)) / 60) %>%
+      mutate(mp = (sec_elapsed - dplyr::lag(sec_elapsed, n = 1L, default = 0L)) / 60) %>%
       # fill(pts_home) %>%
       # fill(pts_away) %>%
       fill(pts_team1) %>%
@@ -200,17 +256,23 @@
     #     lineup2
     #   )
     nms <- play_by_play %>% names()
-    nms_last <- nms %>% str_subset("^lineup[12]$|^id_team[12]$|^player1_id")
-    nms_first <- nms %>% setdiff(nms_last)
+    nms_last <-
+      c(
+        nms %>% str_subset("^lineup[12]$"),
+        nms %>% str_subset("^id_team[12]$"),
+        nms %>% str_subset("^player1_id")
+      )
+    nms_first <- nms %>% str_subset("^pts|is_off")
+    nms_mid <- nms %>% setdiff(c(nms_first, nms_last))
 
     play_by_play <-
       play_by_play %>%
-      select(one_of(c(nms_first, nms_last)))
+      select(one_of(c(nms_first, nms_mid, nms_last)))
 
     play_by_play
   }
 
-clean_raw_play_by_play <-
+clean_play_by_play <-
   function(path_raw_play_by_play,
            path_play_by_play = config$path_play_by_play,
            raw_data_source = .RAW_DATA_SOURCE,
@@ -239,7 +301,7 @@ clean_raw_play_by_play <-
 
     class(raw_play_by_play) <- append(class(raw_play_by_play), raw_data_source)
     play_by_play <-
-      .clean_raw_play_by_play(
+      .clean_play_by_play(
         raw_play_by_play = raw_play_by_play,
         path_raw_teams_game_logs_nbastatr = path_raw_teams_game_logs_nbastatr,
         ...
@@ -255,9 +317,9 @@ clean_raw_play_by_play <-
     invisible(play_by_play)
   }
 
-auto_clean_raw_play_by_play <-
+auto_clean_play_by_play <-
   purrr::partial(
-    clean_raw_play_by_play,
+    clean_play_by_play,
     path_raw_play_by_play = config$path_raw_play_by_play,
     season = config$season,
     season_type = config$season_type,

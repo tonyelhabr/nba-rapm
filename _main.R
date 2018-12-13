@@ -15,9 +15,9 @@ pre_auto()
 # setup ----
 auto_setup_cores()
 
-auto_clean_raw_play_by_play()
+auto_clean_play_by_play()
 
-auto_munge_cleaned_play_by_play()
+auto_munge_play_by_play()
 
 auto_fit_rapm_models()
 

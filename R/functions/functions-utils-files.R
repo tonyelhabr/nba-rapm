@@ -165,7 +165,7 @@
            ...,
            file = tools::file_path_sans_ext(path),
            ext = tools::file_ext(path),
-           suffix_backup = format(Sys.time(), "%Y-%m-%d_%H-%M-%S"),
+           suffix_backup = format(Sys.time(), "%Y%m%d%H%M%S"),
            path_backup = sprintf("%s-%s.%s", file, suffix_backup, ext),
            clean = .CLEAN,
            verbose = .VERBOSE) {
@@ -191,7 +191,7 @@
     invisible(file.copy(from = path, to = path_backup))
     .display_info(
       glue::glue(
-        "Backed up file at {path_backup} before exporting to data to {path}."
+        "Backed up file at {path_backup} before exporting data to {path}."
         ),
       verbose = verbose
     )
@@ -203,13 +203,10 @@
 
 .clean_backup <-
   function(path,
-           n_keep = .N_KEEP,
-           decreasing = TRUE,
            ...,
+           n_keep = .N_KEEP,
            dir = dirname(path),
-           rgx = paste0(tools::file_path_sans_ext(basename(path)),
-                               "-.*",
-                               tools::file_ext(path)),
+           rgx = paste0(tools::file_path_sans_ext(basename(path)),"-.*", tools::file_ext(path)),
            verbose = .VERBOSE) {
     paths_like_backup <-
       list.files(
@@ -239,7 +236,7 @@
       return(path)
     }
     paths_to_keep <-
-      sort(paths_like_backup, decreasing = decreasing)[1L:n_keep]
+      sort(paths_like_backup, decreasing = TRUE)[1L:n_keep]
     paths_to_delete <- setdiff(paths_like_backup, paths_to_keep)
     invisible(sapply(
       paths_to_delete,

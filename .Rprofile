@@ -13,7 +13,9 @@ if(file.exists(path_r_profile)) {
 }
 rm("path_r_profile")
 
+# suppressWarnings(suppressPackageStartupMessages(library("rlang")))
 suppressWarnings(suppressPackageStartupMessages(library("tidyverse")))
+suppressWarnings(suppressPackageStartupMessages(library("rlang")))
 suppressWarnings(suppressPackageStartupMessages(library("argparser")))
 # Don't load this explicitly in order to avoid name conflicts with base R.
 # suppressWarnings(suppressPackageStartupMessages(library("config")))
@@ -30,13 +32,14 @@ suppressWarnings(suppressPackageStartupMessages(library("nbastatR")))
 .EXPORT <- TRUE
 .BACKUP <- TRUE
 .CLEAN <- TRUE
-.N_KEEP <- 1L
+.N_KEEP <- 0L
 .OPTIMIZE <- FALSE
 .SEED <- 42
 .LAMBDA <- 200
 
-.SEASONS <- 2017L
+.SEASONS <- 2016:2017
 .SEASON <- .SEASONS[1]
+.ID_GAME_DEBUG <- 21600001
 .RAW_DATA_SOURCES <- c("rd","etf")
 .RAW_DATA_SOURCE <- .RAW_DATA_SOURCES[1]
 .SEASON_TYPES <- "regular"

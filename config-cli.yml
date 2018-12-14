@@ -9,7 +9,7 @@ default:
     default: true
     help: 'If `TRUE`, always exports data to appropriate files.'
   backup:
-    default: true
+    default: false
     help: 'If `TRUE`, backup files are created (for all files exported).
     By default, a timestamp is appended to the name of the backup file 
     to distinguish it from the most recent version.'
@@ -21,7 +21,7 @@ default:
     Note that `backup`, `clean`, and `n_keep` can/should be
     used synchronously as an alternative to a generic `overwrite` option.'
   n_keep:
-    default: 1
+    default: 0
     help: 'Number of backup files to NOT delete when "clean"-ing backup files.'
   
   dir:
@@ -36,7 +36,7 @@ default:
     help: 'Number of cores to use. Only relevant if `multi_core = TRUE`.
     (Requires `{parallel}` package, as well as `{doParallel}` package on Windows.)'
   season:
-    default: 2017
+    default: 2016
     help: 'NBA season to process. Used as "suffix" for all path formats 
     (where it is subsituted in placed for the "sprintf"-style format "%04d").'
 

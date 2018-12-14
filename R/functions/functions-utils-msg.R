@@ -23,7 +23,8 @@
   # stop(call. = FALSE)
 }
 
-sprintf_transformer <- function(text, envir) {
+# Reference: `glue` package vignette.
+.sprintf_transformer <- function(text, envir) {
   m <- regexpr(":.+$", text)
   if (m != -1) {
     format <- substring(regmatches(text, m), 2)
@@ -35,7 +36,7 @@ sprintf_transformer <- function(text, envir) {
   }
 }
 
-glue_fmt <- function(..., .envir = parent.frame()) {
+.glue_fmt <- function(..., .envir = parent.frame()) {
   glue::glue(..., .transformer = sprintf_transformer, .envir = .envir)
 }
 # glue_fmt("x = {pi:0.4.01}")

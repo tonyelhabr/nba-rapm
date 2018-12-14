@@ -153,7 +153,7 @@
         path = path
       )
     .display_info(
-      glue::glue("Successfully exported data to  {path}."),
+      glue::glue("Successfully exported data to {path}."),
       ...
     )
     invisible(path_export)
@@ -196,7 +196,7 @@
       verbose = verbose
     )
     if(clean) {
-      .clean_backup(path = path, verbose = verbose, ...)
+      .clean_backup(..., path = path, verbose = verbose)
     }
     invisible(path_backup)
   }

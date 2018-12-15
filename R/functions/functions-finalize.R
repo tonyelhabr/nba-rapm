@@ -1,6 +1,6 @@
 
 .extract_estimates <-
-  function(fit, ...) {
+  function(..., fit) {
     fit %>%
       broom::tidy() %>%
       filter(term != "(Intercept)") %>%
@@ -14,28 +14,25 @@
   }
 
 .extract_rapm_estimates <-
-  function(path_rapm_fit_side,
-           path_rapm_estimates_side,
-           season,
-           ...) {
+  function(...,
+           path_rapm_fit_side,
+           path_rapm_estimates_side) {
     fit <-
       .import_data_from_path(
-        path = path_rapm_fit_side,
-        season = season,
-        ...
+        ...,
+        path = path_rapm_fit_side
       )
 
     estimates <-
       .extract_estimates(
-        fit = fit,
-        ...
+        ...,
+        fit = fit
       )
 
     .export_data_from_path(
+      ...,
       data = estimates,
-      path = path_rapm_estimates_side,
-      season = season,
-      ...
+      path = path_rapm_estimates_side
     )
 
     invisible(estimates)
@@ -43,12 +40,11 @@
 
 .get_cols_estimates_pretty <-
   function(...) {
-    .PREFIX_COLS_ESTIMATES_ORDER <- c("o", "d", "")
-    .COLS_ESIMATES_ORDER <-
+    cols_estimates_order <-
       c("name",
         "id",
-        paste0(.PREFIX_COLS_ESTIMATES_ORDER, "rapm"),
-        paste0(.PREFIX_COLS_ESTIMATES_ORDER, "rapm_rnk")
+        paste0(c("o", "d", ""), "rapm"),
+        paste0(c("o", "d", ""), "rapm_rnk")
       )
 
     cols_players_summary_calc <-
@@ -56,7 +52,7 @@
 
     cols_raw <-
       c(
-        .COLS_ESIMATES_ORDER,
+        cols_estimates_order,
         cols_players_summary_calc
       )
     cols_fct <-
@@ -70,16 +66,14 @@
   }
 
 .join_estimates_with_players_summary_calc <-
-  function(estimates,
-           path_players_summary_calc,
-           season,
-           ...) {
+  function(...,
+           estimates,
+           path_players_summary_calc) {
 
     players_summary_calc <-
       .import_data_from_path(
-        path = path_players_summary_calc,
-        season = season,
-        ...
+        ...,
+        path = path_players_summary_calc
       )
 
     estimates_pretty <-
@@ -97,18 +91,17 @@
   }
 
 extract_rapm_estimates <-
-  function(path_rapm_fit_o,
-           path_rapm_fit_d,
-           path_players_summary_calc,
-           path_rapm_estimates_o,
-           path_rapm_estimates_d,
-           path_rapm_estimates,
-           season = .SEASON,
-           ...) {
+  function(...,
+           path_rapm_fit_o = config$path_rapm_fit_o,
+           path_rapm_fit_d = config$path_rapm_fit_d,
+           path_players_summary_calc = config$path_players_summary_calc,
+           path_rapm_estimates_o = config$path_rapm_estimates_o,
+           path_rapm_estimates_d = config$path_rapm_estimates_d,
+           path_rapm_estimates) {
 
     will_skip <-
       .try_skip(
-        season = season,
+        ...,
         path_reqs =
           c(
             path_rapm_fit_o,
@@ -120,8 +113,7 @@ extract_rapm_estimates <-
             path_rapm_estimates_o,
             path_rapm_estimates_d,
             path_rapm_estimates
-          ),
-        ...
+          )
       )
 
     if(will_skip) {
@@ -131,7 +123,6 @@ extract_rapm_estimates <-
     .extract_rapm_estimates_partially <-
       purrr::partial(
         .extract_rapm_estimates,
-        season = season,
         ...
       )
 
@@ -160,11 +151,9 @@ extract_rapm_estimates <-
     .join_estimates_with_players_summary_calc_possibly <-
       purrr::possibly(
         ~.join_estimates_with_players_summary_calc(
+          ...,
           estimates = estimates,
-          path_players_summary_calc = path_players_summary_calc,
-          season = season,
-          verbose = verbose,
-          ...
+          path_players_summary_calc = path_players_summary_calc
         ),
         otherwise = NULL
       )
@@ -187,10 +176,9 @@ extract_rapm_estimates <-
 
     path_export <-
       .export_data_from_path(
+        ...,
         data = estimates,
-        path = path_rapm_estimates,
-        season = season,
-        ...
+        path = path_rapm_estimates
       )
     invisible(estimates)
   }
@@ -198,13 +186,8 @@ extract_rapm_estimates <-
 auto_extract_rapm_estimates <-
   purrr::partial(
     extract_rapm_estimates,
-    path_rapm_fit_o = config$path_rapm_fit_o,
-    path_rapm_fit_d = config$path_rapm_fit_d,
-    path_players_summary_calc = config$path_players_summary_calc,
-    path_rapm_estimates_o = config$path_rapm_estimates_o,
-    path_rapm_estimates_d = config$path_rapm_estimates_d,
-    path_rapm_estimates = config$path_rapm_estimates,
     season = config$season,
+    path_rapm_estimates = config$path_rapm_estimates,
     skip = config$skip_fit,
     verbose = config$verbose,
     export = config$export,

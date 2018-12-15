@@ -23,12 +23,12 @@ default:
     case, it is used as the "input" to the intermediate processing).'
  
   path_players_nbastatr:
-    default: 'data/players.csv'
+    default: 'data/players_nbastatr.csv'
     help: 'Path format of cleaned player data to export.
     Only relevant if `export = TRUE`.
     Not a dependency for any other data processing. Simply useful for informative purposes.'
   path_teams_nbastatr:
-    default: 'data/teams.csv'
+    default: 'data/teams_nbastatr.csv'
     help: 'Analogous to `path_players` for cleaned team data to export.'
   path_teams_game_logs_nbastatr:
     default: 'data/teams_game_logs_nbastatr.csv'

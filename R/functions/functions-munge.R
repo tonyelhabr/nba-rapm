@@ -388,7 +388,7 @@
             # ...,
             season = .SEASON,
             data = dups_n_aug,
-            path = glue::glue("data/n_dups.csv"),
+            path = glue::glue("data/debug/n_dups.csv"),
           )
       }
 

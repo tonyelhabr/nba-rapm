@@ -55,7 +55,6 @@
         ...,
         path = path_possession_data_side
       )
-    browser()
     x_glmnet <-
       possession_data %>%
       .get_x_glmnet()

@@ -223,7 +223,7 @@
     play_by_play <-
       play_by_play %>%
       mutate(
-        is_off1 = if_else(player1_id_team == id_team1, 1L, 0L),
+        is_off1 = if_else(player1_id_team == id_team1, TRUE, FALSE),
         is_home1 = if_else(location_game1 == "H", TRUE, FALSE)
       ) %>%
       mutate(
@@ -294,10 +294,11 @@
   }
 
 clean_play_by_play <-
-  function(path_raw_play_by_play,
+  function(...,
+           path_raw_play_by_play,
            path_play_by_play = config$path_play_by_play,
-           raw_data_source = .RAW_DATA_SOURCE,
-           ...) {
+           raw_data_source = .RAW_DATA_SOURCE) {
+
     will_skip <-
       .try_skip(
         ...,

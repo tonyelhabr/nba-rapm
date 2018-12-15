@@ -1,26 +1,12 @@
 
-.FMLA <- "pts ~ ."
+.FMLA <- formula("pts ~ .")
 .get_x_glmnet <-
-  function(possession_data, fmla = .FMLA, ...) {
-    fmla %>%
-      model.matrix(possession_data)
-  }
-
-.get_y_glmnet <-
-  function(possession_data, ...) {
-    possession_data %>%
-      pull(pts)
-  }
-
-.get_x_glmnet <-
-  function(possession_data, fmla = .FMLA, ...) {
-    fmla %>%
-      model.matrix(possession_data)
+  function(possession_data, fmla = .FMLA) {
+    fmla %>% model.matrix(possession_data)
   }
 .get_y_glmnet <-
-  function(possession_data, ...) {
-    possession_data %>%
-      pull(pts)
+  function(possession_data) {
+    possession_data %>% pull(pts)
   }
 
 .get_lambda_optm <-
@@ -37,12 +23,11 @@
   }
 
 .fit_rapm_model_side <-
-  function(x,
+  function(...,
+           x,
            y,
            lambda,
-           path_rapm_fit_side,
-           season,
-           ...) {
+           path_rapm_fit_side) {
     fit <-
       glmnet::glmnet(
         intercept = TRUE,
@@ -52,30 +37,25 @@
         lambda = lambda
       )
     .export_data_from_path(
+      ...,
       data = fit,
-      path = path_rapm_fit_side,
-      season = season,
-      ...
+      path = path_rapm_fit_side
     )
     invisible(fit)
   }
 
 .fit_rapm_model_byside <-
-  function(path_possession_data_side,
+  function(...,
+           path_possession_data_side,
            path_rapm_fit_side,
-           season,
            optimize = .OPTIMIZE,
-           lambda = .LAMBDA,
-           ...) {
-
+           lambda = .LAMBDA) {
     possession_data <-
       .import_data_from_path(
-        path = path_possession_data_side,
-        season = season,
-        verbose = verbose,
-        ...
+        ...,
+        path = path_possession_data_side
       )
-
+    browser()
     x_glmnet <-
       possession_data %>%
       .get_x_glmnet()
@@ -86,9 +66,9 @@
     if(optimize) {
       lambda <-
         .get_lambda_optm(
+          ...,
           x = x_glmnet,
-          y = y_glmnet,
-          ...
+          y = y_glmnet
         )
       msg <- sprintf("Found %f to be the optimal `lambda`.", lambda)
     } else {
@@ -98,22 +78,21 @@
 
     fit <-
       .fit_rapm_model_side(
+        ...,
         x = x_glmnet,
         y = y_glmnet,
         lambda = lambda,
-        path_rapm_fit_side = path_rapm_fit_side,
-        season = season,
-        ...
+        path_rapm_fit_side = path_rapm_fit_side
       )
     fit
   }
 
 fit_rapm_models <-
-  function(path_possession_data_o,
-           path_possession_data_d,
-           path_rapm_fit_o,
-           path_rapm_fit_d,
-           season,
+  function(...,
+           path_possession_data_o = config$path_possession_data_o,
+           path_possession_data_d = config$path_possession_data_d,
+           path_rapm_fit_o = config$path_rapm_fit_o,
+           path_rapm_fit_d = config$path_rapm_fit_d,
            # Unfortunately, these cant be abstracted away with `...`
            # because they have _[o|d]` suffixes.
            optimize_o = .OPTIMIZE,
@@ -121,12 +100,11 @@ fit_rapm_models <-
            seed_o = .SEED,
            seed_d = .SEED,
            lambda_o = .LAMBDA,
-           lambda_d = .LAMBDA,
-           ...) {
+           lambda_d = .LAMBDA) {
 
     will_skip <-
       .try_skip(
-        season = season,
+        ...,
         path_reqs =
           c(
             path_possession_data_o,
@@ -136,8 +114,7 @@ fit_rapm_models <-
           c(
             path_rapm_fit_o,
             path_rapm_fit_d
-          ),
-        ...
+          )
       )
 
     if(will_skip) {
@@ -147,7 +124,6 @@ fit_rapm_models <-
     .fit_rapm_model_byside_partially <-
       purrr::partial(
         .fit_rapm_model_byside,
-        season = season,
         ...
       )
 
@@ -173,10 +149,6 @@ fit_rapm_models <-
 auto_fit_rapm_models <-
   purrr::partial(
     fit_rapm_models,
-    path_possession_data_o = config$path_possession_data_o,
-    path_possession_data_d = config$path_possession_data_d,
-    path_rapm_fit_o = config$path_rapm_fit_o,
-    path_rapm_fit_d = config$path_rapm_fit_d,
     season = config$season,
     optimize_o = config$optimize_o,
     optimize_d = config$optimize_d,

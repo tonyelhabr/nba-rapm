@@ -1,7 +1,7 @@
 id_game,lineup2,poss_calc,mp,pts1_calc,pts2_calc,pm_calc
 21600001,C. Anthony-J. Noah-D. Rose-C. Lee-K. Porzingis,61,11.9666666666667,27,16,-11
-21600001,C. Anthony-J. Noah-D. Rose-J. Holiday-K. Porzingis,21,4.68333333333333,10,17,7
-21600001,B. Jennings-L. Thomas-K. O'Quinn-J. Holiday-W. Hernangomez,19,3.75,6,4,-2
+21600001,C. Anthony-J. Noah-D. Rose-J. Holiday-K. Porzingis,21,4.68333333333333,10,18,8
+21600001,B. Jennings-L. Thomas-K. O'Quinn-J. Holiday-W. Hernangomez,18,3.55,5,4,-1
 21600001,C. Anthony-D. Rose-L. Thomas-J. Holiday-K. Porzingis,16,3.48333333333333,13,4,-9
 21600001,B. Jennings-K. O'Quinn-W. Hernangomez-R. Baker-M. Kuzminskas,16,3.11666666666667,8,8,0
 21600001,J. Noah-D. Rose-B. Jennings-J. Holiday-M. Kuzminskas,12,2.81666666666667,7,7,0
@@ -14,6 +14,7 @@ id_game,lineup2,poss_calc,mp,pts1_calc,pts2_calc,pm_calc
 21600001,S. Vujacic-B. Jennings-J. Holiday-K. Porzingis-M. Kuzminskas,4,1.08333333333333,4,1,-3
 21600001,D. Rose-L. Thomas-K. O'Quinn-J. Holiday-K. Porzingis,5,1,2,2,0
 21600001,C. Anthony-C. Lee-B. Jennings-K. O'Quinn-K. Porzingis,5,1,1,0,-1
-21600001,C. Anthony-D. Rose-C. Lee-J. Holiday-K. Porzingis,6,0.983333333333333,2,1,-1
+21600001,C. Anthony-D. Rose-C. Lee-J. Holiday-K. Porzingis,6,0.983333333333333,2,0,-2
+21600001,C. Lee-B. Jennings-L. Thomas-K. O'Quinn-J. Holiday,1,0.2,1,0,-1
 21600001,B. Jennings-L. Thomas-K. O'Quinn-J. Holiday-K. Porzingis,1,0.166666666666667,0,2,2
 21600001,C. Lee-B. Jennings-L. Thomas-J. Holiday-W. Hernangomez,2,0.15,3,0,-3

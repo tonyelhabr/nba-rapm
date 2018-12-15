@@ -45,17 +45,17 @@ default:
     default: 'regular'
     help: 'Valid choices include "regular". ("playoffs" and "all" have not been implemented).'
   poss_min:
-    default: 200
+    default: 500
     help: 'Minimum number of possession in which a player must have 
     participated  (offense and defense combined) in order to qualify for model fitting process.
     (Model quality generally improves if players with less time played are removed
     from consideration because they can represent outliers and have high leverage on 
     the model fitting.)'
   gp_min:
-    default: 0
+    default: 20
     help: 'Analogous to `poss_min` for games played.'
   mp_min:
-    default: 0
+    default: 250
     help: 'Analogous to `poss_min` for minutes played.'
   optimize_o:
     default: false

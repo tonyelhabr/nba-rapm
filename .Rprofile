@@ -30,7 +30,7 @@ suppressWarnings(suppressPackageStartupMessages(library("nbastatR")))
 .DEBUG <- TRUE
 .VERBOSE <- TRUE
 .EXPORT <- TRUE
-.BACKUP <- TRUE
+.BACKUP <- FALSE
 .CLEAN <- TRUE
 .N_KEEP <- 0L
 .OPTIMIZE <- FALSE

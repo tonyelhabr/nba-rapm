@@ -1,14 +1,11 @@
 
-# Make this more like `httr:::compose_url()`?
-# (See https://github.com/r-lib/httr/blob/af25ebd0e3b72d2dc6e1423242b94efc25bc97cc/R/url-query.r)
-# Update: Done.
+
 .SEP <- "_"
 .get_path_from <-
   function(...,
            path,
            season,
            # season_type = NULL,
-           # raw_data_source = NULL,
            sep = .SEP) {
     ext <- tools::file_ext(path)
     path_noext <-
@@ -16,23 +13,17 @@
     if (ext == "") {
      .display_error(
        glue::glue(
-         "Bad path name ({path}). Should include a recognizable file extension."
+         "Bad path name ({usethis::ui_path(path)}). Should include a recognizable file extension."
        ),
        ...
      )
       stop(call. = FALSE)
     }
-    # if (!is.null(season)) {
-    #   .validate_season(season)
-    # }
-    # Ignore `season_type` and `raw_data_source` for now.
+    # Ignore `season_type` for now.
     # if (!is.null(season_type)) {
     #   .validate_season_type(season_type)
     # }
-    # if (!is.null(raw_data_source)) {
-    #   .validate_raw_data_source(raw_data_source)
-    # }
-    # basename_suffix <- purrr::compact(list(season, season_type, raw_data_source))
+    # basename_suffix <- purrr::compact(list(season, season_type))
     .validate_season(season)
     basename_suffix <- purrr::compact(list(season))
     # Check that at least one is non-`NULL`.
@@ -51,7 +42,7 @@
     if(!dir.exists(dir)) {
       invisible(dir.create(dir, recursive = TRUE))
       .display_info(
-        glue::glue("Created {dir} folder at {Sys.time()}."),
+        glue::glue("Created {usethis::ui_path(dir)} at {Sys.time()}."),
         ...
       )
     }
@@ -61,7 +52,7 @@
 # path <- "data-raw/play_by_play_with_lineup/play_by_play_with_lineup_2017-18.csv"
 # Add `verbose`, etc. (i.e. `backup`) to this(?).
 .import_data <-
-  function(path, ...) {
+  function(..., path) {
     ext <- tools::file_ext(path)
 
     if(ext == "csv") {
@@ -93,7 +84,6 @@
 .import_data_from_path <-
   function(...,
            path,
-           verbose = .VERBOSE,
            # `import` is only included here in order to be analogous with `export`
            # for `.export_*()`. In reality, `skip` is used before this function
            # is ever called, so `import` is irrelevant.
@@ -106,16 +96,16 @@
     path <- .get_path_from(..., path = path)
     if(!file.exists(path)) {
       .display_error(
-        glue::glue("No file at {path} exists."),
-        verbose = verbose
+        glue::glue("No file at {usethis::ui_path(path)} exists."),
+        ...
       )
       # stop(call. = FALSE)
       return(invisible(NULL))
     }
-    data <- .import_data(..., path = path, verbose = verbose)
+    data <- .import_data(..., path = path)
     .display_info(
-      glue::glue("Successfully imported data from {path}."),
-      verbose = verbose
+      glue::glue("Successfully imported data from {usethis::ui_path(path)}."),
+      ...
     )
     invisible(data)
   }
@@ -134,16 +124,13 @@
            path,
            ...,
            backup = .BACKUP,
-           # clean = .CLEAN,
-           # n_keep = .N_KEEP,
-           # verbose = .VERBOSE,
            export = .EXPORT) {
     if(!export) {
       return(invisible(NULL))
     }
     path <- .get_path_from(..., path = path)
     if (backup) {
-      path_backup <- .create_backup(...,path = path)
+      path_backup <- .create_backup(..., apath = path)
     }
     .create_dir_ifnecessary(..., dir = dirname(path))
     path_export <-
@@ -153,7 +140,7 @@
         path = path
       )
     .display_info(
-      glue::glue("Successfully exported data to {path}."),
+      glue::glue("Successfully exported data to {usethis::ui_path(path)}."),
       ...
     )
     invisible(path_export)
@@ -167,16 +154,15 @@
            ext = tools::file_ext(path),
            suffix_backup = format(Sys.time(), "%Y%m%d%H%M%S"),
            path_backup = sprintf("%s-%s.%s", file, suffix_backup, ext),
-           clean = .CLEAN,
-           verbose = .VERBOSE) {
+           clean = .CLEAN) {
     if (!file.exists(path)) {
       .display_info(
         glue::glue(
-          "Backup file at {path_backup} cannot be created because file to copy at {path} cannot be found."
+          "Backup file at {path_backup} cannot be created because file to copy at {usethis::ui_path(path)} cannot be found."
         ),
-        verbose = verbose
+        ...
       )
-      return(path_backup)
+      return(invisble(path_backup))
     }
 
     if (file.exists(path_backup)) {
@@ -184,19 +170,19 @@
         glue::glue(
           "Backup file at {path_backup} already exists. Are you sure you want to overwrite it?"
           ),
-        verbose = verbose
+        ...
       )
-      stop(call. = FALSE)
+      return(invisible(NULL))
     }
     invisible(file.copy(from = path, to = path_backup))
     .display_info(
       glue::glue(
-        "Backed up file at {path_backup} before exporting data to {path}."
+        "Backed up file at {path_backup} before exporting data to {usethis::ui_path(path)}."
         ),
-      verbose = verbose
+      ...
     )
     if(clean) {
-      .clean_backup(..., path = path, verbose = verbose)
+      .clean_backup(..., path = path)
     }
     invisible(path_backup)
   }
@@ -206,8 +192,7 @@
            ...,
            n_keep = .N_KEEP,
            dir = dirname(path),
-           rgx = paste0(tools::file_path_sans_ext(basename(path)),"-.*", tools::file_ext(path)),
-           verbose = .VERBOSE) {
+           rgx = paste0(tools::file_path_sans_ext(basename(path)),"-.*", tools::file_ext(path))) {
     paths_like_backup <-
       list.files(
         path = dir,
@@ -220,7 +205,7 @@
       if (n == 0L) {
         .display_info(
           glue::glue("No backup files to delete."),
-          verbose = verbose
+          ...
         )
         return(path)
       }
@@ -231,7 +216,7 @@
             "`n_keep` ({sprintf('%.0f', n_keep)}), ",
             "so not deleting any backup files."
           ),
-        verbose = verbose
+        ...
       )
       return(path)
     }
@@ -247,7 +232,7 @@
 
     .display_info(
       glue::glue("Deleted {sprintf('%.0f', length(paths_to_delete))} backup files at {Sys.time()}."),
-      verbose = verbose
+      ...
     )
     invisible(path)
   }

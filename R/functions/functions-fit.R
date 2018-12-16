@@ -155,7 +155,7 @@ auto_fit_rapm_models <-
     seed_d = config$seed_d,
     lambda_o = config$lambda_o,
     lambda_d = config$lambda_d,
-    skip = config$skip_fit,
+    skip = config$skip,
     verbose = config$verbose,
     export = config$export,
     backup = config$backup,

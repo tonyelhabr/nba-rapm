@@ -22,8 +22,14 @@ default:
     used synchronously as an alternative to a generic `overwrite` option.'
   n_keep:
     default: 0
-    help: 'Number of backup files to NOT delete when "clean"-ing backup files.'
-  
+    help: 'Number of backup files to NOT delete when "clean"-ing backup files.
+    (Not relevant if `clean = FALSE`.'
+  skip:
+    default: false
+    help: 'If `TRUE`, skips any step that can be skipped by checking that
+    downstread dependencies of the step already exist. If they do not exist,
+    then the step is not skipped.'
+    
   dir:
     default: 'C:/Users/aelhabr/Documents/projects/nba-rapm/R'
     help: 'Working directory. MUST exist. (Note that the user most certainly will need
@@ -78,88 +84,6 @@ default:
   lambda_d:
     default: 200
     help: 'Analogous to `lambda_optm_o`.'
-    
-  # Data pre-processing (i.e. cleaning) parameters.
-  skip_clean:
-    default: false
-    help: 'If `TRUE`, skips process of cleaning the raw data
-    and goes immediately to "intermediate" data processing steps.
-    In this case, intermediate data for given season MUST exist.'
-  path_raw_play_by_play:
-    default: 'data-raw/raw_play_by_play.csv'
-    help: 'Path format of raw play-by-play data file to clean.)'
-  path_raw_game_summary:
-    default: 'data-raw/raw_game_summary.csv'
-    help: 'Path format of raw game summary data file. Needed solely for identifying
-    home and away teams, which is not defined in `play_by_play_raw` data from source.'
-  path_play_by_play:
-    default: 'data/play_by_play.csv'
-    help: 'Path format of cleaned play-by-play data file to export.
-    Only relevant if `export = TRUE` or if `import_munge = TRUE` (in which
-    case, it is used as the "input" to the intermediate processing).'
-  path_game_summary:
-    default: 'data/game_summary.csv'
-    help: 'Analogous to `path_play_by_play`. Note that, even though
-    this comes from the "Ryan Davis" raw data source, it can/should be used
-    for comparisons with other raw data sources.'
-  
-  skip_munge:
-    default: false
-    help: 'If `TRUE`, skips "munging" of cleaned data
-    and goes immediately to "fit" (i.e. model fitting) steps.
-    In this case "post"-munging data for given season MUST exist.
-    (In all, its functionality is analogous to `import_clean`.)'
-  path_possession_data_o:
-    default: 'data/posession_data_o.rds'
-    help: 'Path format of "wide" offensive possession data. 
-    Only relevant if `export = TRUE` OR if `import_fit = TRUE` (in which
-    case, it is used as the "input" to the model fitting step).'
-  path_possession_data_d:
-    default: 'data/posession_data_d.rds'
-    help: 'Analogous to `path_possession_data_o`.'
-  path_players:
-    default: 'data/players.csv'
-    help: 'Path format of cleaned player data to export.
-    Only relevant if `export = TRUE`.
-    Not a dependency for any other data processing. Simply useful for informative purposes.'
-  path_teams:
-    default: 'data/teams.csv'
-    help: 'Analogous to `path_players` for cleaned team data to export.'
-  path_players_summary:
-    default: 'data/players_summary.csv'
-    help: 'Path format of summarized cleaned player data to export.
-     Relevant in the same cases as `path_possession_data_o`.
-     Used to add names and other player-relevant information to final output.'
-   
-  skip_fit:
-    default: false
-    help: 'If `TRUE`, then skips model fitting steps.
-    (There is probably no case in which the user would want to set this to `FALSE`, 
-    but it can be useful to set this to `FALSE` for development/debugging purposes.)'
-  path_rapm_fit_o:
-    default: 'data/rapm_fit_o.rds'
-    help: 'Path format of RAPM model fitted for offensive possession data.
-    Only relevent if `export = `TRUE`.'
-  path_rapm_fit_d:
-    default: 'data/rapm_fit_d.rds'
-    help: 'Analogous to `path_rapm_fit_o`.'
-    
-  skip_finalize:
-    default: false
-    help: 'If `TRUE`, then skips final steps of extracting RAPM estimates from 
-    fitted models. (More specifically, assumes that
-    `path_rapm_estimates_*` files exist, and combines these two data sets (`rapm_estimates_*`)
-    to create `rapm_estimates`.)'
-  path_rapm_estimates_o:
-    default: 'data/rapm_estimates_o.csv'
-    help: 'Path format of final the player-specific offensive RAPM estimates.
-    Only relevent if `export = `TRUE`.'
-  path_rapm_estimates_d:
-    default: 'data/rapm_estimates_d.csv'
-    help: 'Analogous to `path_rapm_estimates_o`.'
-  path_rapm_estimates:
-    default: 'data/rapm_estimates.csv'
-    help: 'Path format of final combined offensive and defensive RAPM estimates.'
 
 production:
 

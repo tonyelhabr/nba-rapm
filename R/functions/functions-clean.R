@@ -20,116 +20,110 @@
 #     play_by_play %>% filter(season_type == "Regular Season")
 #   }
 
-# TODO: Check if this works.s
-.clean_play_by_play <-
-  function(raw_play_by_play, ...) {
-    UseMethod(".clean_play_by_play")
-  }
+clean_play_by_play <-
+  function(...,
+           path_raw_play_by_play = config$path_raw_play_by_play,
+           path_play_by_play = config$path_play_by_play,
+           path_game_final_scores_compare = config$path_game_final_scores_compare,
+           path_play_by_play_error = config$path_play_by_play_error) {
 
-.clean_play_by_play.rd <-
-  function(raw_play_by_play,
-           ...,
-           path_teams_game_logs_nbastatr = config$path_teams_game_logs_nbastatr,
-           debug = TRUE) {
+    will_skip <-
+      .try_skip(
+        ...,
+        path_reqs =
+          c(path_raw_play_by_play),
+        path_deps =
+          c(path_play_by_play)
+      )
 
-    # Use these if running interactively.
+    if(will_skip) {
+      return(invisible(NULL))
+    }
+
+    raw_play_by_play <-
+      .import_data_from_path(
+        ...,
+        path = path_raw_play_by_play
+      )
+
+    eams_game_logs_nbastatr <- .try_import_teams_game_logs_nbastatr(...)
+    teams_nbastatr <- .try_import_teams_nbastatr(...)
+    players_nbastatr <- .try_import_players_nbastatr(...)
+
+    # Check that final scores are correct.
+    raw_game_final_scores <-
+      raw_play_by_play %>%
+      # .filter_season_type(...) %>%
+      filter(season_type == "Regular Season") %>%
+      filter(play_type == "EndOfPeriod") %>%
+      arrange(game_id, period, desc(time_elapsed))  %>%
+      group_by(game_id) %>%
+      filter(period == max(period)) %>%
+      ungroup() %>%
+      # Note that `score` columns are flipped.
+      select(
+        id_game = game_id,
+        id_team1 = team_id1,
+        id_team2 = team_id2,
+        # pts_home = home_score,
+        # pts_away = away_score
+        pts_home = away_score,
+        pts_away = home_score
+      ) %>%
+      mutate_at(vars(matches("pts")), funs(as.integer))
+
+    game_logs_final_scores <-
+      left_join(
+        teams_game_logs_nbastatr %>%
+          group_by(id_game) %>%
+          filter(location_game == "H") %>%
+          ungroup() %>%
+          select(
+            id_game,
+            id_team_home = id_team,
+            slug_home = slug_team,
+            pts_home = pts_team
+          ),
+        teams_game_logs_nbastatr %>%
+          group_by(id_game) %>%
+          filter(location_game == "A") %>%
+          ungroup() %>%
+          select(
+            id_game,
+            id_team_away = id_team,
+            slug_away = slug_team,
+            pts_away = pts_team
+          ),
+        by = c("id_game")
+      )
+
+    game_final_scores_compare <-
+      raw_game_final_scores %>%
+      anti_join(
+        game_logs_final_scores,
+        by = c("id_game", "pts_home", "pts_away")
+      )
+
+    id_game_bad <-
+      game_final_scores_debug %>%
+      pull(id_game)
+
+    path_export <-
+      .export_data_from_path(
+        ...,
+        data = game_final_scores_compare,
+        path = path_game_final_scores_compare
+      )
+
     if(FALSE) {
       raw_play_by_play <-
         .import_data_from_path(season = .SEASON, path = config$path_raw_play_by_play)
-      teams_game_logs_nbastatr <- .try_import_teams_game_logs_nbastatr(season = .SEASON)
-      teams_nbastatr <- .try_import_teams_nbastatr(season = .SEASON)
-      players_nbastatr <- .try_import_players_nbastatr(season = .SEASON)
-    } else {
-      teams_game_logs_nbastatr <- .try_import_teams_game_logs_nbastatr(...)
-      teams_nbastatr <- .try_import_teams_nbastatr(...)
-      players_nbastatr <- .try_import_players_nbastatr(...)
-    }
-
-    if(debug) {
-      # Check that final scores are correct.
-      raw_game_final_scores <-
-        raw_play_by_play %>%
-        filter(season_type == "Regular Season") %>%
-        filter(play_type == "EndOfPeriod") %>%
-        arrange(game_id, period, desc(time_elapsed))  %>%
-        group_by(game_id) %>%
-        filter(period == max(period)) %>%
-        ungroup() %>%
-        select(
-          id_game = game_id,
-          id_team1 = team_id1,
-          id_team2 = team_id2,
-          # pts_home = home_score,
-          # pts_away = away_score
-          pts_home = away_score,
-          pts_away = home_score
-        ) %>%
-        mutate_at(vars(matches("pts")), funs(as.integer))
-
-      game_logs_final_scores <-
-        left_join(
-          teams_game_logs_nbastatr %>%
-            group_by(id_game) %>%
-            filter(location_game == "H") %>%
-            ungroup() %>%
-            select(
-              id_game,
-              id_team_home = id_team,
-              slug_home = slug_team,
-              pts_home = pts_team
-            ),
-          teams_game_logs_nbastatr %>%
-            group_by(id_game) %>%
-            filter(location_game == "A") %>%
-            ungroup() %>%
-            select(
-              id_game,
-              id_team_away = id_team,
-              slug_away = slug_team,
-              pts_away = pts_team
-            ),
-          by = c("id_game")
-        )
-
-      game_final_scores_debug <-
-        raw_game_final_scores %>%
-        anti_join(
-          game_logs_final_scores,
-          by = c("id_game", "pts_home", "pts_away")
-        )
-
-      id_game_bad <-
-        game_final_scores_debug %>%
-        # filter(id_game == 21600236)
-        pull(id_game)
-
-      path_export <-
-        .export_data_from_path(
-          ...,
-          # season = .SEASON,
-          data = game_final_scores_debug,
-          path = glue::glue("data/debug/game_final_scores_debug.csv")
-        )
-    }
-
-    if(FALSE) {
-      raw_play_by_play <-
-        .import_data_from_path(season = .SEASON, path = config$path_raw_play_by_play)
       raw_play_by_play <-
         raw_play_by_play %>%
-        # filter(game_id == 21700007) %>%
         filter(game_id == .ID_GAME_DEBUG) %>%
         arrange(period, time_elapsed)
     }
-    # ns <-
-    #   raw_play_by_play %>%
-    #   count(play_type, event_action_type) %>%
-    #   group_by(play_type) %>%
-    #   mutate(n_frac = n / sum(n)) %>%
-    #   ungroup() %>%
-    #   filter(event_action_type == 0) %>%
-    #   arrange(desc(n_frac))
-    # raw_play_by_play %>% filter(game_id == 21600236) -> z
+
     play_by_play <-
       raw_play_by_play %>%
       # .filter_season_type(...)
@@ -147,18 +141,13 @@
       select(
         id_game = game_id,
         period,
-        # Rename as "compromise" between differently named column between sources.
         event_num = event_number,
         pc_time_string,
         sec_elapsed = time_elapsed,
-        # matches("_score$"),
-        # pts_home = home_score,
-        # pts_away = away_score,
         pts_home = away_score,
         pts_away = home_score,
         player1_id = player1id,
         player1_id_team = player1team_id,
-        # matches("^team_id"),
         id_team1 = team_id1,
         id_team2 = team_id2,
         play_type,
@@ -176,7 +165,8 @@
       fill(pts_away) %>%
       ungroup()
 
-    # Do all this for better readability.
+    # Do this for better readability, as well as to get the all important
+    # `location_game`, which cannot be derived directly from the raw data.
     play_by_play <-
       play_by_play %>%
       left_join(
@@ -223,24 +213,9 @@
       # Note that somehow things may become unsorted a bit.
       arrange(id_game, period, sec_elapsed, pts_total, event_num)
 
-    # play_by_play %>% filter(id_game == 21601080) -> z
-    # raw_play_by_play %>% filter(game_id == 21601125) %>% filter(period == 3) %>% arrange(time_elapsed) -> z
-    # play_by_play %>% filter(id_game == 21601125) %>% filter(period == 3) -> z
     play_by_play <-
       play_by_play %>%
-      # filter(play_type %in% c("Make", "Miss", "FreeThrow")) %>%
       filter(!play_type %in% c("Foul", "Rebound")) %>%
-      # This isn't really necessary since `play_type` isn't explicitly used
-      # to distinguish makes and misses.
-      # mutate_at(
-      #   vars(play_type),
-      #   funs(case_when(
-      #     . == "FreeThrow" ~ "Make",
-      #     . == "Turnover" ~ "Miss",
-      #     TRUE ~ .
-      #   )
-      #   )
-      # ) %>%
       # Aggregate free throws.
       group_by(id_game, player1_id, play_type, sec_elapsed) %>%
       # Be careful with missed second/third free-throws!
@@ -249,24 +224,6 @@
       ungroup() %>%
       mutate(rn = row_number()) %>%
       select(rn, everything())
-
-    if(FALSE) {
-      # Checking time intervals at ends of periods/games.
-      play_by_play %>%
-        filter(
-          id_game == dplyr::lead(id_game) &
-            period == dplyr::lead(period),
-          (sec_elapsed > dplyr::lead(sec_elapsed))
-          # (sec_elapsed < dplyr::lag(sec_elapsed))
-        )
-      play_by_play %>%
-        filter(
-          id_game == dplyr::lag(id_game) &
-            period == dplyr::lag(period) &
-            # (sec_elapsed > dplyr::lead(sec_elapsed))
-            (sec_elapsed < dplyr::lag(sec_elapsed))
-        )
-    }
 
     # This is the key step/assumption (but it SHOULD be correct due to the pre-processing).
     play_by_play <-
@@ -279,17 +236,10 @@
         pts_team1 = if_else(is_home1, pts_home, pts_away),
         pts_team2 = if_else(is_home1, pts_away, pts_home)
       ) %>%
+      # Re-order the columns just to make things easier to debug.
+      # (This is done in other places that follow as well.)
       select(matches("^is_"), everything()) %>%
       select(matches("^pts"), everything())
-
-    if(debug) {
-      .export_data_from_path(
-        # ...,
-        season = .SEASON,
-        data = play_by_play %>% filter(id_game == .ID_GAME_DEBUG),
-        path = glue::glue("data/debug/play_by_play_clean1_filt.csv")
-      )
-    }
 
     play_by_play <-
       play_by_play %>%
@@ -313,23 +263,17 @@
       ungroup() %>%
       select(matches("pts"), everything())
 
-    if(debug) {
-
-      # Not sure if there is really a good way to fix this.
-      # Checked one game on bref and it seemed to be a record error.
-      play_by_play_filt_debug <-
-        play_by_play %>%
-        filter(pts1 > 0, pts2 > 0)
-
-      play_by_play_filt_debug
+    # Not sure if there is really a good way to fix this.
+    # Checked one game on bref and it seemed to be a record error.
+    path_export <-
       .export_data_from_path(
-        # ...,
-        season = .SEASON,
-        data = play_by_play_filt_debug,
-        path = glue::glue("data/debug/play_by_play_filt_debug.csv")
+        ...,
+        data = play_by_play %>% filter(pts1 > 0, pts2 > 0),
+        path = path_play_by_play_error
       )
-    }
 
+    # TODO: Figure out a better way to do this.
+    browser()
     play_by_play <-
       play_by_play %>%
       select(-matches("^pts_(home|away|total|team[12])$|^player1_id|_player1$|^event_num$|^play_type$|^location_game1$")) %>%
@@ -339,70 +283,6 @@
       select(matches("^pts[12]|^mp$"), everything()) %>%
       select(matches("^is_"), everything()) %>%
       select(matches("rn"), everything())
-
-    # nms <- play_by_play %>% names()
-    # nms_drop <-
-    #   c(,
-    #     nms %>% str_subset("^id_team[12]$")
-    #   )
-    # nms_last <-
-    #   c(
-    #     nms %>% str_subset("^lineup[12]$")
-    #   )
-    # nms_first <- nms %>% str_subset("^pts|^is_off")
-    # nms_mid <- nms %>% setdiff(c(nms_first, nms_last, nms_drop))
-    # nms_keep <- c(nms_first, nms_mid, nms_last)
-    #
-    # play_by_play <-
-    #   play_by_play %>%
-    #   select(one_of(nms_keep))
-
-    if(debug) {
-      .export_data_from_path(
-        ...,
-        data = play_by_play %>% filter(id_game == .ID_GAME_DEBUG),
-        path = glue::glue("data/debug/play_by_play_clean2_filt.csv")
-      )
-    }
-
-    play_by_play
-  }
-
-clean_play_by_play <-
-  function(...,
-           path_raw_play_by_play,
-           path_play_by_play = config$path_play_by_play,
-           raw_data_source = .RAW_DATA_SOURCE) {
-
-    will_skip <-
-      .try_skip(
-        ...,
-        path_reqs =
-          c(path_raw_play_by_play),
-        path_deps =
-          c(path_play_by_play)
-      )
-
-    if(will_skip) {
-      return(invisible(NULL))
-    }
-    path_from <- .get_path_from(path = path_raw_play_by_play, ...)
-
-    raw_play_by_play <-
-      .import_data_from_path(
-        ...,
-        path = path_raw_play_by_play
-      )
-
-    .validate_raw_data_source(raw_data_source)
-
-    class(raw_play_by_play) <- append(class(raw_play_by_play), raw_data_source)
-    play_by_play <-
-      .clean_play_by_play(
-        raw_play_by_play = raw_play_by_play,
-        path_raw_teams_game_logs_nbastatr = path_raw_teams_game_logs_nbastatr,
-        ...
-      )
 
     path_export <-
       .export_data_from_path(
@@ -420,8 +300,7 @@ auto_clean_play_by_play <-
     path_raw_play_by_play = config$path_raw_play_by_play,
     season = config$season,
     season_type = config$season_type,
-    # raw_data_source = config$raw_data_source,
-    skip = config$skip_clean,
+    skip = config$skip,
     verbose = config$verbose,
     export = config$export,
     backup = config$backup,

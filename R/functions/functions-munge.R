@@ -5,23 +5,18 @@
       separate(!!enquo(col), into = paste0(prefix, suffix), sep = sep)
   }
 
-.get_cols_players_summary_calc <-
-  function(...) {
-
-  }
-
-
 .summarise_players <-
   function(...,
            play_by_play,
            path_players_summary_calc = config$path_players_summary_calc,
-           path_teams_summary_calc = config$path_teams_summary_calc,
+           path_players_game_logs_compare = config$path_players_game_logs_compare,
+           path_players_summary_compare = config$path_players_summary_compare,
            debug = config$debug) {
 
     .f_summarise <-
       function(.data) {
         .data %>%
-          group_by(id_game, id_player, side = side) %>%
+          group_by(id_game, id_player, side) %>%
           summarise(
             poss_calc = n(),
             mp_calc = sum(mp),
@@ -44,7 +39,7 @@
       players_game_logs_calc %>%
       gather(metric, value, matches("_calc$"))
 
-    players_game_logs_calc_debug <-
+    players_game_logs_calc_compare <-
       left_join(
         players_game_logs_calc_tidy %>%
           unite(metric_side, metric, side, sep = "_") %>%
@@ -59,13 +54,8 @@
       mutate(pm_calc = pts_calc_o - pts_calc_d) %>%
       arrange(id_game, id_player)
 
-    if(FALSE) {
-      players_game_logs_nbastatr <-
-        .try_import_players_game_logs_nbastatr(season = .SEASON)
-    } else {
-      players_game_logs_nbastatr <-
-        .try_import_players_game_logs_nbastatr(...)
-    }
+     players_game_logs_nbastatr <-
+       .try_import_players_game_logs_nbastatr(...)
 
     players_game_logs_nbastatr_slim <-
       players_game_logs_nbastatr %>%
@@ -82,8 +72,8 @@
         pm_game_logs_nbastatr = plusminus
       )
 
-    players_game_logs_debug <-
-      players_game_logs_calc_debug %>%
+    players_game_logs_compare <-
+      players_game_logs_calc_compare %>%
       left_join(
         players_game_logs_nbastatr_slim,
         by = c("id_player", "id_game")
@@ -111,30 +101,7 @@
       )
 
     # TODO: Should probably exclude the inaccurate `pm` results identified
-    # with `players_game_logs_debug`.
-    if(FALSE) {
-      players_game_logs_debug %>%
-        filter(id_game == .ID_GAME_DEBUG)
-      players_game_logs_debug %>%
-        ggplot(aes(x = pm_calc)) +
-        geom_histogram()
-      players_game_logs_debug %>%
-        ggplot(aes(x = pm_diff)) +
-        geom_histogram()
-      players_game_logs_debug %>%
-        select(pm_calc, pm_game_logs_nbastatr) %>%
-        corrr::correlate()
-      players_game_logs_debug %>% arrange(desc(abs(pm_diff)))
-    }
-
-    if(debug) {
-      .export_data_from_path(
-        # ...,
-        season = .SEASON,
-        data = players_game_logs_debug,
-        path = glue::glue("data/debug/players_game_logs_debug.csv")
-      )
-    }
+    # with `players_game_logs_compare`.
 
     players_summary_calc_base <-
       players_game_logs_calc %>%
@@ -148,13 +115,9 @@
       ungroup() %>%
       gather(metric, value, matches("_calc$"))
 
-    if(FALSE) {
-      players_nbastatr <-
-        .try_import_players_nbastatr(season = .SEASON)
-    } else {
-      players_nbastatr <-
-        .try_import_players_nbastatr(...)
-    }
+    players_nbastatr <-
+      .try_import_players_nbastatr(...)
+
     cols_players_summary_calc <-
       c("id_player",
         "name_player",
@@ -185,68 +148,63 @@
       arrange(desc(pm_calc)) %>%
       select(one_of(cols_players_summary_calc))
 
-    if(FALSE) {
-      players_summary_nbastatr <-
-        .try_import_players_summary_nbastatr(season = .SEASON)
-    } else {
-      players_summary_nbastatr <-
-        .try_import_players_summary_nbastatr(...)
-    }
-
-    players_summary_nbastatr_slim <-
-      players_summary_nbastatr %>%
-      select(
-        id_player = id_player_nba,
-        name_player_summary_nbastatr = name_player_bref,
-        gp_summary_nbastatr = count_games,
-        mp_summary1_nbastatr = minutes,
-        mp_summary2_nbastatr = minutes_totals
-      )
-
-    players_game_logs_nbastatr_slim_summ <-
-      players_game_logs_nbastatr_slim %>%
-      group_by(id_player, name_player) %>%
-      summarise(
-        gp_game_logs_nbastatr = n(),
-        mp_game_logs_nbastatr = sum(mp_game_logs_nbastatr),
-        pm_game_logs_nbastatr = sum(pm_game_logs_nbastatr)
-      ) %>%
-      ungroup() %>%
-      arrange(id_player)
-
-    cols_players_summary_calc_debug <-
-      c("id_player",
-        paste0("name_player", c("", "_summary_nbastatr")),
-        paste0("gp", c("_calc_total", "_summary_nbastatr")),
-        paste0("poss", c("_calc_o", "_calc_d", "_calc_total")),
-        paste0("mp",
-               c(c("_calc_o", "_calc_d", "_calc_total"),
-                 "_game_logs_nbastatr",
-                 "_summary1_nbastatr",
-                 "_summary2_nbastatr")),
-        paste0("pts", c("_calc_o", "_calc_d", "_o_per100_calc")),
-        paste0("pm", c("_calc", "_game_logs_nbastatr"))
-      )
-
-    players_summary_debug <-
-      players_summary_calc %>%
-      left_join(
-        players_game_logs_nbastatr_slim_summ,
-        by = c("id_player", "name_player")
-      ) %>%
-      left_join(
-        players_summary_nbastatr_slim,
-        by = c("id_player")
-      ) %>%
-      arrange(desc(pm_calc)) %>%
-      select(cols_players_summary_calc_debug)
 
     if(debug) {
+      players_summary_nbastatr <-
+        .try_import_players_summary_nbastatr(...)
+
+      players_summary_nbastatr_slim <-
+        players_summary_nbastatr %>%
+        select(
+          id_player = id_player_nba,
+          name_player_summary_nbastatr = name_player_bref,
+          gp_summary_nbastatr = count_games,
+          mp_summary1_nbastatr = minutes,
+          mp_summary2_nbastatr = minutes_totals
+        )
+
+      players_game_logs_nbastatr_slim_summ <-
+        players_game_logs_nbastatr_slim %>%
+        group_by(id_player, name_player) %>%
+        summarise(
+          gp_game_logs_nbastatr = n(),
+          mp_game_logs_nbastatr = sum(mp_game_logs_nbastatr),
+          pm_game_logs_nbastatr = sum(pm_game_logs_nbastatr)
+        ) %>%
+        ungroup() %>%
+        arrange(id_player)
+
+      cols_players_summary_calc_compare <-
+        c("id_player",
+          paste0("name_player", c("", "_summary_nbastatr")),
+          paste0("gp", c("_calc_total", "_summary_nbastatr")),
+          paste0("poss", c("_calc_o", "_calc_d", "_calc_total")),
+          paste0("mp",
+                 c(c("_calc_o", "_calc_d", "_calc_total"),
+                   "_game_logs_nbastatr",
+                   "_summary1_nbastatr",
+                   "_summary2_nbastatr")),
+          paste0("pts", c("_calc_o", "_calc_d", "_o_per100_calc")),
+          paste0("pm", c("_calc", "_game_logs_nbastatr"))
+        )
+
+      players_summary_compare <-
+        players_summary_calc %>%
+        left_join(
+          players_game_logs_nbastatr_slim_summ,
+          by = c("id_player", "name_player")
+        ) %>%
+        left_join(
+          players_summary_nbastatr_slim,
+          by = c("id_player")
+        ) %>%
+        arrange(desc(pm_calc)) %>%
+        select(cols_players_summary_calc_compare)
+
       .export_data_from_path(
-        # ...,
-        season = .SEASON,
-        data = players_summary_debug,
-        path = glue::glue("data/debug/players_summary_debug.csv")
+        ...,
+        data = players_summary_compare,
+        path = path_players_summary_compare
       )
     }
 
@@ -264,59 +222,48 @@
   function(...,
            players_summary_calc,
            path_teams_summary_calc = config$path_teams_summary_calc,
-           debug = config$debug) {
+           path_teams_summary_compare = config$path_teams_summary_compare) {
 
-      if(FALSE) {
-        players_nbastatr <- .try_import_players_nbastatr(season = .SEASON)
-      } else {
-        players_nbastatr <- .try_import_players_nbastatr(...)
-      }
+    players_nbastatr <- .try_import_players_nbastatr(...)
 
-      players_summary_calc_aug <-
-        players_summary_calc %>%
-        left_join(
-          players_nbastatr %>% select(id_player, id_team, team_name),
-          by = c("id_player" = "id_player")
-        )
+    players_summary_calc_aug <-
+      players_summary_calc %>%
+      left_join(
+        players_nbastatr %>% select(id_player, id_team, team_name),
+        by = c("id_player" = "id_player")
+      )
 
-      teams_summary_calc <-
-        players_summary_calc_aug %>%
-        group_by(id_team, team_name) %>%
-        summarise_if(is.numeric, funs(sum)) %>%
-        ungroup() %>%
-        arrange(id_team, team_name)
+    teams_summary_calc <-
+      players_summary_calc_aug %>%
+      group_by(id_team, team_name) %>%
+      summarise_if(is.numeric, funs(sum)) %>%
+      ungroup() %>%
+      arrange(id_team, team_name)
 
-      if(FALSE) {
-        teams_summary_nbastatr <- .try_import_teams_summary_nbastatr(season = .SEASON)
-      } else {
-        teams_summary_nbastatr <- .try_import_teams_summary_nbastatr(...)
-      }
+    teams_summary_nbastatr <- .try_import_teams_summary_nbastatr(...)
 
-      teams_summary_nbastatr_slim <-
-        teams_summary_nbastatr %>%
-        select(
-          id_team,
-          gp_summary_nbastatr = gp,
-          pts_summary_nbastatr = pts
-        )
+    teams_summary_nbastatr_slim <-
+      teams_summary_nbastatr %>%
+      select(
+        id_team,
+        gp_summary_nbastatr = gp,
+        pts_summary_nbastatr = pts
+      )
 
-      # TODO: Re-arrange the columns to closer to those of similar names.
-      teams_summary_debug <-
-        teams_summary_calc %>%
-        left_join(
-          teams_summary_nbastatr_slim,
-          by = c("id_team")
-        ) %>%
-        arrange(desc(pm_calc))
+    # TODO: Re-arrange the columns to closer to those of similar names.
+    teams_summary_compare <-
+      teams_summary_calc %>%
+      left_join(
+        teams_summary_nbastatr_slim,
+        by = c("id_team")
+      ) %>%
+      arrange(desc(pm_calc))
 
-      if(debug) {
-        .export_data_from_path(
-          # ...,
-          season = .SEASON,
-          data = teams_summary_debug,
-          path = glue::glue("data/debug/teams_summary_debug.csv")
-        )
-      }
+    .export_data_from_path(
+        ...,
+        data = teams_summary_compare,
+        path = path_teams_summary_compare
+      )
     invisible(players_summary_calc)
   }
 
@@ -408,10 +355,10 @@
 
     possession_data <-
       play_by_play %>%
-      # filter(str_detect(xid_player, paste0("^", side))) %>%
       filter(side == !!side) %>%
       anti_join(dups_n, by = c("rn", "xid_player")) %>%
       arrange(rn, xid_player) %>%
+      mutate(dummy = 1L) %>%
       select(rn, xid_player, pts, mp, dummy) %>%
       # semi_join(xid_players_filt) %>%
       spread(xid_player, dummy, fill = 0L) %>%
@@ -471,20 +418,20 @@ munge_play_by_play <-
       return(invisible(NULL))
     }
 
-    play_by_play_import <-
+    play_by_play <-
       .import_data_from_path(
         ...,
         path = path_play_by_play
       )
 
     if(FALSE) {
-      play_by_play_import <-
+      play_by_play <-
         .import_data_from_path(season = .SEASON, path = config$path_play_by_play)
     }
 
-    play_by_play_join <-
+    play_by_play <-
       full_join(
-        play_by_play_import %>%
+        play_by_play %>%
           filter(is_off1) %>%
           select(
             rn1 = rn,
@@ -500,7 +447,7 @@ munge_play_by_play <-
             lineup_o = lineup1,
             lineup_d = lineup2
           ),
-        play_by_play_import %>%
+        play_by_play %>%
           mutate(is_home2 = !is_home1, is_off2 = !is_off1) %>%
           filter(is_off2) %>%
           select(
@@ -523,14 +470,14 @@ munge_play_by_play <-
       select(rn, everything()) %>%
       arrange(rn)
 
-    play_by_play_sep <-
-      play_by_play_join %>%
+    play_by_play <-
+      play_by_play %>%
       .separate_lineup(lineup_o, suffix = 1:5) %>%
       .separate_lineup(lineup_d, suffix = 6:10) %>%
       mutate_at(vars(matches("^x")), funs(as.integer))
 
-    play_by_play_tidy <-
-      play_by_play_sep %>%
+    play_by_play <-
+      play_by_play %>%
       group_by(id_game) %>%
       mutate(poss_num = row_number()) %>%
       ungroup() %>%
@@ -539,14 +486,8 @@ munge_play_by_play <-
       group_by(id_game, poss_num) %>%
       mutate(player_num = row_number()) %>%
       ungroup() %>%
-      # mutate(is_off = if_else(player_num <= 5L, TRUE, FALSE)) %>%
       mutate(side = if_else(player_num <= 5L, "o", "d")) %>%
       arrange(rn, player_num)
-
-    # play_by_play_tidy <-
-    #   play_by_play_tidy %>%
-    #   mutate(is_team1 = if_else(id_player <= 5L, TRUE, FALSE)) %>%
-    #   select(player_num, is_team1, everything())
 
     if(FALSE) {
 
@@ -556,9 +497,9 @@ munge_play_by_play <-
         players_nbastatr <- .try_import_players_nbastatr(...)
       }
 
-      play_by_play_debug <-
-        play_by_play_tidy %>%
-        filter(id_game == .ID_GAME_DEBUG) %>%
+      play_by_play_compare <-
+        play_by_play %>%
+        filter(id_game == .ID_GAME_compare) %>%
         # filter(id_game >= 21700001, id_game <= 21700004) %>%
         # filter(slug_team1 == "SAS" | slug_team2 == "SAS") %>%
         # mutate_at(vars(pts12), funs(if_else(is_off1 == 0L, -., .))) %>%
@@ -575,8 +516,8 @@ munge_play_by_play <-
         ) %>%
         arrange(id_game, poss_num)
 
-      play_by_play_debug <-
-        play_by_play_debug %>%
+      play_by_play_compare <-
+        play_by_play_compare %>%
         group_by(id_game, poss_num) %>%
         mutate(player_num = row_number()) %>%
         ungroup() %>%
@@ -589,7 +530,7 @@ munge_play_by_play <-
           str_sub(x_chr, start = nchar(x_chr))
         }
       .unite_lineup <-
-        function(play_by_play_wide,
+        function(.data,
                  col,
                  ...,
                  prefix_rgx = "x",
@@ -601,32 +542,32 @@ munge_play_by_play <-
             case_when(suffix == "1" ~ "0[1-5]",
                       suffix == "2" ~ "[01][06-9]")
           rgx <- glue::glue("{prefix_rgx}{suffix_rgx}")
-          play_by_play_wide %>%
+          .data %>%
             unite(!!col_quo, matches(rgx), sep = sep, remove = remove, ...)
         }
-      play_by_play_debug_wide <-
-        play_by_play_debug %>%
+      play_by_play_compare_wide <-
+        play_by_play_compare %>%
         select(id_game, poss_num, pts1_calc, pts2_calc, player_num, name_player) %>%
         spread(player_num, name_player) %>%
         .unite_lineup(lineup1) %>%
         .unite_lineup(lineup2)
 
-      play_by_play_debug <-
-        play_by_play_debug %>%
+      play_by_play_compare <-
+        play_by_play_compare %>%
         select(-matches("^(id|name)_player$|^id_team$|^player_num$")) %>%
         group_by(id_game, poss_num) %>%
         filter(row_number() == 1) %>%
         ungroup() %>%
         inner_join(
-          play_by_play_debug_wide,
+          play_by_play_compare_wide,
           by = c("id_game", "poss_num", "pts1_calc", "pts2_calc")
         )
 
       .export_data_from_path(
         # ...,
         season = .SEASON,
-        data = play_by_play_debug,
-        path = glue::glue("data/debug/play_by_play_munge1_debug.csv")
+        data = play_by_play_compare,
+        path = glue::glue("data/debug/play_by_play_munge1_compare.csv")
       )
 
       .summarise_stint_stats <-
@@ -661,34 +602,31 @@ munge_play_by_play <-
           res
         }
 
-      stints1_debug <-
-        play_by_play_debug %>%
+      stints1_compare <-
+        play_by_play_compare %>%
         .summarise_stint_stats(lineup1)
 
-      stints2_debug <-
-        play_by_play_debug %>%
+      stints2_compare <-
+        play_by_play_compare %>%
         .summarise_stint_stats(lineup2)
 
       .export_data_from_path(
         # ...,
         season = .SEASON,
-        data = stints1_debug,
-        path = glue::glue("data/debug/stints1_debug.csv")
+        data = stints1_compare,
+        path = glue::glue("data/debug/stints1_compare.csv")
       )
       .export_data_from_path(
         # ...,
         season = .SEASON,
-        data = stints2_debug,
-        path = glue::glue("data/debug/stints2_debug.csv")
+        data = stints2_compare,
+        path = glue::glue("data/debug/stints2_compare.csv")
       )
     }
 
     play_by_play <-
-      play_by_play_tidy %>%
-      mutate(xid_player = sprintf("%s%07d", side, as.integer(id_player))) %>%
-      # select(-side) %>%
-      mutate(dummy = 1L)
-
+      play_by_play %>%
+      mutate(xid_player = sprintf("%s%07d", side, as.integer(id_player)))
 
     players_summary_calc <-
       .summarise_players(
@@ -717,7 +655,6 @@ munge_play_by_play <-
         play_by_play = play_by_play
       )
 
-    # browser()
     possession_data_o <-
       .widen_data_byside_partially(
         path_possession_data_side = path_possession_data_o,
@@ -745,7 +682,7 @@ auto_munge_play_by_play <-
     poss_min = config$poss_min,
     gp_min = config$gp_min,
     mp_min = config$mp_min,
-    skip = config$skip_munge,
+    skip = config$skip,
     verbose = config$verbose,
     export = config$export,
     backup = config$backup,

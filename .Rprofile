@@ -27,7 +27,6 @@ suppressWarnings(suppressPackageStartupMessages(library("nbastatR")))
 # config <- config::get()
 
 .SKIP <- FALSE
-.DEBUG <- TRUE
 .VERBOSE <- TRUE
 .EXPORT <- TRUE
 .BACKUP <- FALSE

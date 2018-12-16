@@ -68,7 +68,7 @@
 .join_estimates_with_players_summary_calc <-
   function(...,
            estimates,
-           path_players_summary_calc) {
+           path_players_summary_calc = config$path_players_summary_calc) {
 
     players_summary_calc <-
       .import_data_from_path(
@@ -94,10 +94,11 @@ extract_rapm_estimates <-
   function(...,
            path_rapm_fit_o = config$path_rapm_fit_o,
            path_rapm_fit_d = config$path_rapm_fit_d,
+           # Note that `path_players_summary_calc` is used only for `.try_skip()`.
            path_players_summary_calc = config$path_players_summary_calc,
            path_rapm_estimates_o = config$path_rapm_estimates_o,
            path_rapm_estimates_d = config$path_rapm_estimates_d,
-           path_rapm_estimates) {
+           path_rapm_estimates = config$path_rapm_estimates) {
 
     will_skip <-
       .try_skip(
@@ -148,31 +149,11 @@ extract_rapm_estimates <-
       mutate(rapm = orapm + drapm) %>%
       arrange(desc(rapm))
 
-    .join_estimates_with_players_summary_calc_possibly <-
-      purrr::possibly(
-        ~.join_estimates_with_players_summary_calc(
-          ...,
-          estimates = estimates,
-          path_players_summary_calc = path_players_summary_calc
-        ),
-        otherwise = NULL
-      )
-
     estimates_pretty <-
-      .join_estimates_with_players_summary_calc_possibly()
-
-    if(!is.null(estimates_pretty)) {
-      estimates <- estimates_pretty
-      .display_info(
-        "Successfully joined `players_summary_calc` with `estimates`.",
-        ...
+      .join_estimates_with_players_summary_calc(
+        ...,
+        estimates = estimates
       )
-    } else {
-      .display_warning(
-        "Could not join `estimates` with `players_summary_calc`.",
-        ...
-      )
-    }
 
     path_export <-
       .export_data_from_path(
@@ -187,8 +168,7 @@ auto_extract_rapm_estimates <-
   purrr::partial(
     extract_rapm_estimates,
     season = config$season,
-    path_rapm_estimates = config$path_rapm_estimates,
-    skip = config$skip_fit,
+    skip = config$skip,
     verbose = config$verbose,
     export = config$export,
     backup = config$backup,

@@ -60,8 +60,11 @@ auto_setup_cores <-
   purrr::partial(
     setup_cores,
     verbose = config$verbose,
-    # multi_core = ifelse(interactive(), FALSE, config$multi_core),
-    multi_core = config$multi_core,
+    multi_core = ifelse(interactive(), FALSE, config$multi_core),
+    # TODO: Fix this. It's causing issues (possibly because
+    # "too many" clusters are being registered and not properly unregistered,
+    # which can cause this to hang.
+    # multi_core = config$multi_core,
     n_core = config$n_core
   )
 

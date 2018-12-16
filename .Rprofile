@@ -53,8 +53,8 @@ invisible(sapply(paths_funcs, source))
 # sapply(paths_funcs, source)
 rm("paths_funcs")
 
+# if(interactive()) {
+#   config <- import_config()
+# }
 config <- import_config()
-# config$season <- 2015
-# print("here0")
-
 

@@ -1,15 +1,15 @@
 
 .convert_config_to_args_preparsed <-
-  function(x,
+  function(...,
+           x,
            description = "",
            name = NULL,
-           ...,
            .optional = TRUE,
            .help = "",
            .type = NULL,
            .nargs = NULL,
            .flag = NULL,
-           .short = NA) {
+           .short = NULL) {
     stopifnot(is.list(x))
     parser <-
       argparser::arg_parser(
@@ -25,9 +25,26 @@
     }
 
     # To properly implement the cli stuff, need to check intersection
-    # of names in `...` and `x`, then use the name/value in `...` where there is overlap.
+    # of names in `...` and `x`, then use the name/value in `...` where
+    # there is overlap.
+    dots <- list(...)
+    # print(dots)
     for(name in names(x)) {
+
+      # First, make the assumption that the user has not provided any
+      # cli parameter/value pairs.
       arg <- x[[name]]
+      # In the case that the user has specified something...
+      if(length(dots) > 0) {
+
+        # Use the user-specified values, and remove it from the list
+        # (in order to avoid having to do this check after all
+        # user-specified values are exhausted).
+        if(name %in% names(dots)) {
+          arg <- dots[[name]]
+          dots[[name]] <- NULL
+        }
+      }
       default <- .this_if_exists_else(arg, "default", NULL)
       optional <- .this_if_exists_else(arg, "optional", .optional)
       if(is.null(default) & is.null(optional)) {
@@ -71,13 +88,22 @@
   }
 
 .convert_config_to_args <-
-  function(x, ...) {
-    args_preparsed <- .convert_config_to_args_preparsed(x = x, ...)
-    args_parsed <- argparser::parse_args(args_preparsed)
+  function(..., x, argv = NULL) {
+    args_preparsed <- .convert_config_to_args_preparsed(..., x = x)
+    # Note that argparser::parse_args only accepts `parser` and
+    # `argv`, which is set to `commandArgs(trailingOnly = TRUE)` by default
+    # (and no `...`).
+    res <- argparser::parse_args(parser = args_preparsed, argv = argv)
+    # if(!is.null(argv)) {
+    #   res <- argparser::parse_args(parser = args_preparsed, argv = argv)
+    # } else {
+    #   res <- argparser::parse_args(parser = args_preparsed, argv = NULL)
+    # }
+    res
   }
 
 .import_config <-
-  function(config = NULL, ..., file) {
+  function(..., config = NULL, file) {
     if(is.null(config)) {
       stopifnot(file.exists(file))
       config <- config::get(file = file)
@@ -88,13 +114,21 @@
   }
 
 import_config <-
-  function(..., file_cli = "config-cli.yml", file_static = "config-static.yml") {
-    config_cli <- .import_config(..., file = file_cli)
+  function(...,
+           file_static = "config-static.yml",
+           file_cli = "config-cli.yml",
+           argv = commandArgs(trailingOnly = TRUE)) {
+
     # IMPORTANT: Don't pass dots here!
     config_static <- .import_config(file = file_static)
+    # return(config_static)
+    # But can here(?)
+    # config_cli <- .import_config(..., file = file_cli)
+    config_cli <- .import_config(..., file = file_cli, argv = argv)
+    # return(config_cli)
     res <-
       config::merge(
-        config_cli,
-        config_static
+        config_static,
+        config_cli
       )
   }

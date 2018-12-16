@@ -196,7 +196,7 @@
            f_import = .import_data_from_path,
            f_get) {
 
-    res <- attempt::try_catch(expr = f_import(..., path = path), .e = NULL)
+    res <- attempt::try_catch(expr = f_import(..., path = path, return_type = "warning"), .e = NULL)
 
     if(!is.null(res)) {
       return(invisible(res))
@@ -206,8 +206,7 @@
       glue::glue("Could not get data with `f_import`. Trying `f_get`."),
       ...
     )
-
-    res <- attempt::try_catch(expr = f_get(..., path = path), .e = NULL)
+    res <- attempt::try_catch(expr = f_get(..., path = path, return_type = "warning"), .e = NULL)
 
     if(!is.null(res)) {
       return(invisible(res))
@@ -217,60 +216,72 @@
       glue::glue("Could not get data with `f_get` after failing with `f_import`."),
       ...
     )
-    stop(call. = FALSE)
   }
 
 .try_import_players_nbastatr <-
-  function(...) {
-    .try_import_thing(
-      ...,
-      f_get = .get_players_nbastatr,
-      path = config$path_players_nbastatr
-    )
-  }
+  memoise::memoise(
+    function(...) {
+      .try_import_thing(
+        ...,
+        f_get = .get_players_nbastatr,
+        path = config$path_players_nbastatr
+      )
+    }
+  )
 
 .try_import_teams_nbastatr <-
-  function(...) {
-    .try_import_thing(
-      ...,
-      f_get = .get_teams_nbastatr,
-      path = config$path_teams_nbastatr
-    )
-  }
+  memoise::memoise(
+    function(...) {
+      .try_import_thing(
+        ...,
+        f_get = .get_teams_nbastatr,
+        path = config$path_teams_nbastatr
+      )
+    }
+  )
 
 .try_import_players_game_logs_nbastatr <-
-  function(...) {
-    .try_import_thing(
-      ...,
-      f_get = .get_players_game_logs_nbastatr,
-      path = config$path_players_game_logs_nbastatr
-    )
-  }
+  memoise::memoise(
+    function(...) {
+      .try_import_thing(
+        ...,
+        f_get = .get_players_game_logs_nbastatr,
+        path = config$path_players_game_logs_nbastatr
+      )
+    }
+  )
 
 .try_import_teams_game_logs_nbastatr <-
-  function(...) {
-    .try_import_thing(
-      ...,
-      f_get = .get_teams_game_logs_nbastatr,
-      path = config$path_teams_game_logs_nbastatr
-    )
-  }
+  memoise::memoise(
+    function(...) {
+      .try_import_thing(
+        ...,
+        f_get = .get_teams_game_logs_nbastatr,
+        path = config$path_teams_game_logs_nbastatr
+      )
+    }
+  )
 
 .try_import_players_summary_nbastatr <-
-  function(...) {
-    .try_import_thing(
-      ...,
-      f_get = .get_players_summary_nbastatr,
-      path = config$path_players_summary_nbastatr
-    )
-  }
+  memoise::memoise(
+    function(...) {
+      .try_import_thing(
+        ...,
+        f_get = .get_players_summary_nbastatr,
+        path = config$path_players_summary_nbastatr
+      )
+    }
+  )
 
 .try_import_teams_summary_nbastatr <-
-  function(...) {
-    .try_import_thing(
-      ...,
-      f_get = .get_teams_summary_nbastatr,
-      path = config$path_teams_summary_nbastatr
-    )
-  }
+  memoise::memoise(
+    function(...) {
+
+      .try_import_thing(
+        ...,
+        f_get = .get_teams_summary_nbastatr,
+        path = config$path_teams_summary_nbastatr
+      )
+    }
+  )
 

@@ -10,11 +10,13 @@
         funs(str_replace_all(., "^[0]+", "") %>% as.integer())
       ) %>%
       arrange(desc(estimate)) %>%
-      select(id = term, rapm = estimate)
+      select(id_player = term, rapm = estimate) %>%
+      filter(!is.na(id_player))
   }
 
-.extract_rapm_estimates <-
+.extract_rapm_estimates_side <-
   function(...,
+           side,
            path_rapm_fit_side,
            path_rapm_estimates_side) {
     fit <-
@@ -27,7 +29,8 @@
       .extract_estimates(
         ...,
         fit = fit
-      )
+      ) %>%
+      mutate(prefix = side)
 
     .export_data_from_path(
       ...,
@@ -38,66 +41,32 @@
     invisible(estimates)
   }
 
-.get_cols_estimates_pretty <-
+.extract_rapm_estimates_o <-
   function(...) {
-    cols_estimates_order <-
-      c("name",
-        "id",
-        paste0(c("o", "d", ""), "rapm"),
-        paste0(c("o", "d", ""), "rapm_rnk")
-      )
-
-    cols_players_summary_calc <-
-      .get_cols_players_summary_calc()
-
-    cols_raw <-
-      c(
-        cols_estimates_order,
-        cols_players_summary_calc
-      )
-    cols_fct <-
-      cols_raw %>%
-      factor(levels = unique(cols_raw), ordered = TRUE)
-    cols <-
-      cols_fct %>%
-      unique() %>%
-      as.character()
-    cols
+    .extract_rapm_estimates_side(
+      ...,
+      side = "o",
+      path_rapm_fit_side = config$path_rapm_fit_o,
+      path_rapm_estimates_side = config$path_rapm_estimates_o
+    )
   }
 
-.join_estimates_with_players_summary_calc <-
-  function(...,
-           estimates,
-           path_players_summary_calc = config$path_players_summary_calc) {
-
-    players_summary_calc <-
-      .import_data_from_path(
-        ...,
-        path = path_players_summary_calc
-      )
-
-    estimates_pretty <-
-      estimates %>%
-      mutate_at(vars(matches("rapm$")), funs(rnk = row_number(desc(.)))) %>%
-      left_join(players_summary_calc, by = "id")
-
-
-    cols_estimates_pretty <-
-      # estimates_pretty %>%
-      .get_cols_estimates_pretty()
-
-    estimates_pretty %>%
-      select(one_of(cols_estimates_pretty))
+.extract_rapm_estimates_d <-
+  function(...) {
+    .extract_rapm_estimates_side(
+      ...,
+      side = "d",
+      path_rapm_fit_side = config$path_rapm_fit_d,
+      path_rapm_estimates_side = config$path_rapm_estimates_d
+    )
   }
 
 extract_rapm_estimates <-
   function(...,
+           # Note that some of these are used for `.try_skip()`.
            path_rapm_fit_o = config$path_rapm_fit_o,
            path_rapm_fit_d = config$path_rapm_fit_d,
-           # Note that `path_players_summary_calc` is used only for `.try_skip()`.
            path_players_summary_calc = config$path_players_summary_calc,
-           path_rapm_estimates_o = config$path_rapm_estimates_o,
-           path_rapm_estimates_d = config$path_rapm_estimates_d,
            path_rapm_estimates = config$path_rapm_estimates) {
 
     will_skip <-
@@ -111,8 +80,6 @@ extract_rapm_estimates <-
           ),
         path_deps =
           c(
-            path_rapm_estimates_o,
-            path_rapm_estimates_d,
             path_rapm_estimates
           )
       )
@@ -121,44 +88,51 @@ extract_rapm_estimates <-
       return(invisible(NULL))
     }
 
-    .extract_rapm_estimates_partially <-
-      purrr::partial(
-        .extract_rapm_estimates,
-        ...
-      )
+    estimates_o <- .extract_rapm_estimates_o(...)
+    estimates_d <- .extract_rapm_estimates_d(...)
 
-    estimates_o <-
-      .extract_rapm_estimates_partially(
-        path_rapm_fit_side = path_rapm_fit_o,
-        path_rapm_estimates_side = path_rapm_estimates_o
-      )
-    estimates_d <-
-      .extract_rapm_estimates_partially(,
-        path_rapm_fit_side = path_rapm_fit_d,
-        path_rapm_estimates_side = path_rapm_estimates_d
-      )
-
-    # browser()
     estimates <-
       bind_rows(
-        estimates_o %>% mutate(prefix = "o"),
-        estimates_d %>% mutate(prefix = "d")
+        estimates_o,
+        estimates_d
       ) %>%
       spread(prefix, rapm) %>%
       rename_at(vars(o, d), funs(paste0(., "rapm"))) %>%
       mutate(rapm = orapm + drapm) %>%
       arrange(desc(rapm))
 
-    estimates_pretty <-
-      .join_estimates_with_players_summary_calc(
+
+    players_summary_calc <-
+      .import_data_from_path(
         ...,
-        estimates = estimates
+        path = path_players_summary_calc
       )
+
+    estimates_pretty_base <-
+      estimates %>%
+      mutate_at(vars(matches("rapm$")), funs(rnk = row_number(desc(.)))) %>%
+      left_join(players_summary_calc, by = "id_player")
+
+    prefix_cols <- c("o", "d", "")
+    cols_order_base <-
+      c(
+        "id_player",
+        "name_player",
+        paste0(prefix_cols, "rapm"),
+        paste0(prefix_cols, "rapm_rnk")
+      )
+    cols_order_other <-
+      setdiff(names(players_summary_calc), cols_order_base)
+    cols_order <- c(cols_order_base, cols_order_other)
+
+    estimates_pretty <-
+      estimates_pretty_base %>%
+      select(one_of(cols_order))
 
     path_export <-
       .export_data_from_path(
         ...,
-        data = estimates,
+        data = estimates_pretty,
         path = path_rapm_estimates
       )
     invisible(estimates)

@@ -1,33 +1,23 @@
 
 .validate_season <-
   function(x = .SEASONS) {
-    # match.arg(x) %>% names()
+    stopifnot(length(x) == 1)
     stopifnot(any(x == .SEASONS))
     x
   }
 
 .validate_season_type <-
   function(x = .SEASON_TYPES) {
+    stopifnot(length(x) == 1)
     match.arg(x)
   }
 
 .convert_season_type <-
   function(x = .SEASON_TYPES) {
-    # switch(
-    #   regular = "Regular Season",
-    #   playoffs = "Playoffs",
-    #   all = "All"
-    # )
+    stopifnot(length(x) == 1)
     case_when(
       x == "regular" ~ "Regular Season",
       x == "playoffs" ~ "Playoffs",
       TRUE ~ "All"
     )
-  }
-
-# Note that `side` isn't actually exposed to the user, so this validation
-# is purely for the developer.
-.validate_side <-
-  function(x = .SIDES) {
-    match.arg(x)
   }

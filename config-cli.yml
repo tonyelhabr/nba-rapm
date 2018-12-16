@@ -42,7 +42,7 @@ default:
     help: 'Number of cores to use. Only relevant if `multi_core = TRUE`.
     (Requires `{parallel}` package, as well as `{doParallel}` package on Windows.)'
   season:
-    default: 2016
+    default: 2017
     help: 'NBA season to process. Used as "suffix" for all path formats 
     (where it is subsituted in placed for the "sprintf"-style format "%04d").'
 
@@ -51,26 +51,28 @@ default:
     default: 'regular'
     help: 'Valid choices include "regular". ("playoffs" and "all" have not been implemented).'
   poss_min:
-    default: 500
+    default: 5000
     help: 'Minimum number of possession in which a player must have 
     participated  (offense and defense combined) in order to qualify for model fitting process.
     (Model quality generally improves if players with less time played are removed
     from consideration because they can represent outliers and have high leverage on 
     the model fitting.)'
   gp_min:
-    default: 20
+    default: 25
     help: 'Analogous to `poss_min` for games played.'
   mp_min:
     default: 250
     help: 'Analogous to `poss_min` for minutes played.'
   optimize_o:
-    default: false
+    # default: false
+    default: true
     help: 'If `TRUE`, then calculates the "optimal" regularized
     "lambda" penalties for the offensive at run-time (via `{glment}`"s default cross validation procedure.
     Note that setting this value to `FALSE` (and using the default `lambda_optm_o` value),
     reduces run-time execution.'
   optimize_d:
-    default: false
+    # default: false
+    default: true
     help: 'Analogous to `optimize_lambda_o`.'
   seed_o:
     default: 42
@@ -79,14 +81,10 @@ default:
     default: 42
     help: 'Analogous to `seed_o`.'
   lambda_o:
-    default: 200
+    default: 100
     help: 'Value to use for lambda in model fit if `optimize_lambda_o = FALSE`.'
   lambda_d:
-    default: 200
+    default: 250
     help: 'Analogous to `lambda_optm_o`.'
 
 production:
-
-# ```r
-# config <- config::get()
-# ```

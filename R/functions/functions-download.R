@@ -1,7 +1,10 @@
 
 # Links derived from public google drive folders at
 # https://drive.google.com/drive/folders/1GMiP-3Aoh2AKFCoGZ8f0teMYNlkm87dm.
-.ID_GOOGLEDRIVE_RAW_PLAY_BY_PLAY <- "1iXxovZCf1QcHfiDXWBV3aWURkg1ymqh9"
+# Id identified by clickiing on desired folder, copying share link,
+# and extracting the text after "id" using the online tool at
+# https://sites.google.com/site/gdocs2direct/.
+.ID_GOOGLEDRIVE_RAW_PLAY_BY_PLAY <- "1BmBC0EQCsvyCwRHybxm--IMWWVqWEAOu"
 .DIR_DL <- "data-raw"
 .OVERWRITE <- FALSE
 .download_googledrive_files <-
@@ -9,14 +12,8 @@
            id = .ID_GOOGLEDRIVE_RAW_PLAY_BY_PLAY,
            dir = .DIR_DL,
            overwrite = .OVERWRITE) {
-    .display_error(
-      glue::glue(
-        "You should download this manually instead ",
-        "(until better functionality is implemented)."
-      ),
-      verbose = verbose
-    )
-    .create_dir_ifnecessary(dir = dir, verbose = verbose)
+
+    .create_dir_ifnecessary(..., dir = dir)
     temp_zip <- tempfile(fileext = ".zip")
     f_download <-
       function() {
@@ -38,10 +35,11 @@
       return(invisible(NULL))
     }
     paths <- utils::unzip(temp_zip, exdir = dir)
+    # TODO: Rename these more "drastically"?
     paths_renamed <-
       paths %>%
       purrr::walk(
-        ~file.rename(from = .x, to = str_replace(.x, "[01][0-9]-", ""))
+        ~file.rename(from = .x, to = str_replace(.x, "-[01][0-9]", ""))
       )
 
     n_paths <- length(paths)
@@ -56,7 +54,7 @@
     invisible(paths_renamed)
   }
 
-.download_raw_play_by_play_files <-
+download_raw_play_by_play_files <-
   function(...) {
     .download_googledrive_files(...)
   }

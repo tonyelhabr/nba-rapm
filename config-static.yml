@@ -2,7 +2,7 @@ default:
 
   # "Required" for data processing.
   path_raw_play_by_play:
-    default: 'data-raw/raw_play_by_play.csv'
+    default: 'data-raw/play_by_play_with_lineup.csv'
     help: 'Path format of raw play-by-play data file to clean.'
   path_play_by_play:
     default: 'data/play_by_play.csv'
@@ -69,6 +69,9 @@ default:
     help: 'Analogous to `path_players_summary_calc` for team data.'
   
   # Output from comparisons.
+  path_game_final_scores_compare:
+    default: 'data/game_final_scores_compare.csv'
+    help: ''
   path_players_game_logs_compare:
     default: 'data/players_game_logs_compare.csv'
     help: ''
@@ -78,7 +81,20 @@ default:
   path_teams_summary_compare:
     default: 'data/teams_summary_compare.csv'
     help: ''
-   
+    
+  # Output from "debugging"-like things
+  path_play_by_play_error:
+    default: 'data/play_by_play_error.csv'
+    help: ''
+  path_stints_calc:
+    default: 'data/stints_calc.csv'
+    help: ''
+  path_possession_data_o_error:
+    default: 'data/possession_data_o_error.csv'
+    help: ''
+  path_possession_data_d_error:
+    default: 'data/possession_data_d_error.csv'
+    help: ''
    
 production:
 

@@ -46,7 +46,7 @@ clean_play_by_play <-
         path = path_raw_play_by_play
       )
 
-    eams_game_logs_nbastatr <- .try_import_teams_game_logs_nbastatr(...)
+    teams_game_logs_nbastatr <- .try_import_teams_game_logs_nbastatr(...)
     teams_nbastatr <- .try_import_teams_nbastatr(...)
     players_nbastatr <- .try_import_players_nbastatr(...)
 
@@ -105,7 +105,7 @@ clean_play_by_play <-
       )
 
     id_game_bad <-
-      game_final_scores_debug %>%
+      game_final_scores_compare %>%
       pull(id_game)
 
     path_export <-
@@ -272,17 +272,25 @@ clean_play_by_play <-
         path = path_play_by_play_error
       )
 
-    # TODO: Figure out a better way to do this.
-    browser()
+    suffix12 <- as.character(1:2)
+    cols_keep <-
+      c(
+        "rn",
+        paste0(c("is_off", "is_home"), "1"),
+        paste0("pts", suffix12),
+        "mp",
+        "id_game",
+        "period",
+        paste0("id_team", suffix12),
+        paste0("slug_team", suffix12),
+        paste0("lineup", suffix12)
+      )
+
+    # # Other possibly useful columns?
+    # cols_order <- c(cols_order, "description", "pc_time_string", "poss_num")
     play_by_play <-
       play_by_play %>%
-      select(-matches("^pts_(home|away|total|team[12])$|^player1_id|_player1$|^event_num$|^play_type$|^location_game1$")) %>%
-      select(matches("^lineup"), everything()) %>%
-      select(matches("^slug_team[12]$"), everything()) %>%
-      select(matches("^id_|^period$|^poss_num$"), everything()) %>%
-      select(matches("^pts[12]|^mp$"), everything()) %>%
-      select(matches("^is_"), everything()) %>%
-      select(matches("rn"), everything())
+      select(one_of(cols_keep))
 
     path_export <-
       .export_data_from_path(

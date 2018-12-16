@@ -17,7 +17,6 @@
        ),
        ...
      )
-      stop(call. = FALSE)
     }
     # Ignore `season_type` for now.
     # if (!is.null(season_type)) {
@@ -87,7 +86,10 @@
            # `import` is only included here in order to be analogous with `export`
            # for `.export_*()`. In reality, `skip` is used before this function
            # is ever called, so `import` is irrelevant.
-           import = TRUE) {
+           import = TRUE,
+           # This `return_type` argument was created spcifically for the `.try_import*nbastatr()`
+           # family of functions, which depends on NOT throwing an error if the file does not exist.
+           return_type = c("error", "warning")) {
     if(!import) {
       return(invisible(NULL))
     }
@@ -95,11 +97,13 @@
     # browser()
     path <- .get_path_from(..., path = path)
     if(!file.exists(path)) {
-      .display_error(
+      return_type <- match.arg(return_type)
+      f_display <-
+        switch(return_type, error = .display_error, warning = .display_warning)
+      f_display(
         glue::glue("No file at {usethis::ui_path(path)} exists."),
         ...
       )
-      # stop(call. = FALSE)
       return(invisible(NULL))
     }
     data <- .import_data(..., path = path)

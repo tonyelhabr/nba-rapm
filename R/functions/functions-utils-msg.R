@@ -4,7 +4,8 @@
   if(!verbose) {
     return(invisible(NULL))
   }
-  usethis::ui_line(glue::glue("Info: {x}"), .envir = .envir)
+  # usethis::ui_line(glue::glue("Info: {x}"), .envir = .envir)
+  usethis::ui_done(glue::glue("Info: {x}"), .envir = .envir)
 }
 
 .display_warning <- function(x, ..., .envir = parent.frame()) {

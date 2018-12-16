@@ -36,14 +36,11 @@ suppressWarnings(suppressPackageStartupMessages(library("nbastatR")))
 .SEED <- 42
 .LAMBDA <- 200
 
-.SEASONS <- 2016:2017
-.SEASON <- .SEASONS[1]
-.ID_GAME_DEBUG <- 21600001
-.RAW_DATA_SOURCES <- c("rd","etf")
-.RAW_DATA_SOURCE <- .RAW_DATA_SOURCES[1]
+.SEASONS <- 2009:2017
+.SEASON <- .SEASONS[-1]
+# .ID_GAME_DEBUG <- 21600001
 .SEASON_TYPES <- "regular"
 .SEASON_TYPE <- .SEASON_TYPES[1]
-.SIDES <- c("o", "d")
 
 paths_funcs <-
   list.files(
@@ -56,8 +53,8 @@ invisible(sapply(paths_funcs, source))
 # sapply(paths_funcs, source)
 rm("paths_funcs")
 
-if(interactive()) {
-  config <- import_config()
-}
+config <- import_config()
+# config$season <- 2015
+# print("here0")
 
 

@@ -97,11 +97,4 @@ TODO
 ====
 
 + DONE: Convert all usage of `sprintf()` to `glue::glue()` (and experiment with `glue_fmt()`).
-+ DONE: Change order of `...` relative to other arguments in functions so
-that `...` comes first (always(?)). If this were done, then the user MUST be explicit
-about all arguments.
-+ Fix `extract*` functions (to join properly at the end).
-+ Clean up messages and debug stuff everywhere.
-+ Migrate the miscellaneous path-stuff in the cli yml to the static yml.
-+ ...
-+ Batch clean all raw files and skip them in the future? (Update: Do this only after everything is tested.)
++ Fix stint function.

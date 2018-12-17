@@ -102,27 +102,35 @@ extract_rapm_estimates <-
       arrange(desc(rapm))
 
 
-    players_summary_calc <-
-      .import_data_from_path(
-        ...,
-        path = path_players_summary_calc
-      )
+    # Use this if cross-checking "unexpected" RAPM values with calculated stats
+    # to try to identify why these unexpected values may be like they are.
+    # players_summary_calc <-
+    #   .import_data_from_path(
+    #     ...,
+    #     path = path_players_summary_calc
+    #   )
+    players_nbastatr <-
+      .try_import_players_nbastatr(...)
+    players_slim <-
+      players %>%
+      select(id_player, name_player, slug_team, season = year_season_first)
 
     estimates_pretty_base <-
       estimates %>%
-      mutate_at(vars(matches("rapm$")), funs(rnk = row_number(desc(.)))) %>%
-      left_join(players_summary_calc, by = "id_player")
+      mutate_at(vars(matches("rapm$")), funs(rank = row_number(desc(.)))) %>%
+      left_join(players_slim, by = "id_player")
 
     prefix_cols <- c("o", "d", "")
     cols_order_base <-
       c(
+        "season",
         "id_player",
         "name_player",
         paste0(prefix_cols, "rapm"),
-        paste0(prefix_cols, "rapm_rnk")
+        paste0(prefix_cols, "rapm_rank")
       )
     cols_order_other <-
-      setdiff(names(players_summary_calc), cols_order_base)
+      setdiff(names(players_slim), cols_order_base)
     cols_order <- c(cols_order_base, cols_order_other)
 
     estimates_pretty <-
@@ -138,7 +146,7 @@ extract_rapm_estimates <-
     invisible(estimates)
   }
 
-auto_extract_rapm_estimates <-
+extract_rapm_estimates_auto <-
   purrr::partial(
     extract_rapm_estimates,
     season = config$season,

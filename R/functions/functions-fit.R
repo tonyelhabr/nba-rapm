@@ -145,7 +145,7 @@ fit_rapm_models <-
     invisible(list(fit_o = fit_o, fit_d = fit_d))
   }
 
-auto_fit_rapm_models <-
+fit_rapm_models_auto <-
   purrr::partial(
     fit_rapm_models,
     season = config$season,

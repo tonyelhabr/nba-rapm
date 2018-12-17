@@ -669,7 +669,7 @@ munge_play_by_play <-
     )
   }
 
-auto_munge_play_by_play <-
+munge_play_by_play_auto <-
   purrr::partial(
     munge_play_by_play,
     season = config$season,

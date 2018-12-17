@@ -56,7 +56,7 @@ setup_cores <-
     return(invisible(NULL))
   }
 
-auto_setup_cores <-
+setup_cores_auto <-
   purrr::partial(
     setup_cores,
     verbose = config$verbose,
@@ -79,7 +79,7 @@ desetup_cores <-
     )
   }
 
-auto_desetup_cores <-
+desetup_cores_auto <-
   purrr::partial(
     desetup_cores,
     verbose = config$verbose,

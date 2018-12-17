@@ -302,7 +302,7 @@ clean_play_by_play <-
     invisible(play_by_play)
   }
 
-auto_clean_play_by_play <-
+clean_play_by_play_auto <-
   purrr::partial(
     clean_play_by_play,
     path_raw_play_by_play = config$path_raw_play_by_play,

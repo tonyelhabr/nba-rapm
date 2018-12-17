@@ -18,16 +18,16 @@ if (!interactive()) {
 
 pre_auto()
 
-# auto_setup_cores()
+# setup_cores_auto()
 #
-auto_clean_play_by_play()
+clean_play_by_play_auto()
 #
-# auto_munge_play_by_play()
+# munge_play_by_play_auto()
 #
-# auto_fit_rapm_models()
+# fit_rapm_models_auto()
 #
-# auto_extract_rapm_estimates()
+# extract_rapm_estimates_auto()
 #
-# auto_desetup_cores()
+# desetup_cores_auto()
 #
 post_auto()

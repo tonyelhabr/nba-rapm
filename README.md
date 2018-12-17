@@ -2,38 +2,77 @@
 Introduction
 ============
 
-This repo ...
+This project is the end-product of my efforts to do the following:
+
+1. First and foremost, calculate 
+[Regularized Adjusted Plus-Minus](https://www.nbastuffer.com/analytics101/regularized-adjusted-plus-minus-rapm/) 
+(RAPM) for NBA players. This statistic (which comes in many different "flavors")
+is viewed as a relatively robust "all-in-one" metric
+to quantify individual player skill among the NBA analytics community.
+
+2. Practice some "advanced" R project skills, such as providing a command-line
+interface CLI and implementing custom conditions.
+
+The raw data ...
+
+References
+==========
+
++ http://www.espn.com/nba/statistics/rpm/_/year/2018
++ http://apbr.org/metrics/viewtopic.php?f=2&t=9491
+    + http://web.archive.org/web/20150408042813/http://stats-for-the-nba.appspot.com:80/
+    + https://sites.google.com/site/rapmstats/
+    + http://basketball-analytics.gitlab.io/rapm-data/season/2016-17/regular-season/
 
 Highlights
 ==========
 
 ...
 
+Features
+========
+
++ The project provides a command-line interface (CLI) that blends seamlessly
+with interactive use (i.e. not via the command line). This is achieved by
+adept use of the `{config}` and `{argparser}` packages for providing
+APIs to work with `yaml` and the command line respectively. [^1]
+
+    To provide more detail, two `yaml` files are used: (1) a "static" one to specify
+parameters that are not configurable via the command line, but which the developer
+would like to specify in order to keep file names consistent across different
+raw data sets.
+    
+
+
 Developer and API Conventions
 =============================
 
 + A dot prefix is used for un-"exposed" functions that are not intended to be used directly by the user.
-(i.e. like how "helper" functions in a package are not exported).
+(i.e. like how "helper" functions in a package are not exported). Part
+of the reason for doing this is to maintain a "minimal" Environment pane
+in the RStudio editor. (One might argue that this is a good reason to 
+hide the Environment pane entirely.
 
 + The `auto_` prefix is used for "exposed" functions with arguments set equal to command line `args`.
 This prefix indicates (to the user) that these are to be used for batch-style automated runs.
 
-+ "path"-like (or, in more programmatic terms, `path_format`-like) function parameters 
++ `path`-like function parameters 
 are converted to variables borrowing their namesake.
-For example, `path_raw_play_by_play_format` is converted to `raw_play_by_play`,
-`path_raw_game_summary_format` is converted to `raw_game_summary`, etc., where 
-the `format` suffix is a placeholder for the `season` (and the `path` prefix siimply
-indicates that the variable is to be imported from a file). `path_format`-like
-parameters are converted to and from their variable equivalents vai the 
-internal `.[import|export]_data_from_path_format()` functions.
+For example, `path_raw_play_by_play` is converted to `raw_play_by_play`,
+`path_raw_game_summary` is converted to `raw_game_summary`, etc. 
+The season from which the data comes from is "attached" as a suffix to the corresponding file.
+These `path`-like parameters are converted to/from their variable equivalents via the 
+internal `.[import|export]_data_from_path()` functions.
 
-+ The names of path-like parameters in exposed functions are intentionally
++ The names of `path`-like parameters in exposed functions are intentionally
 named in a verbose manner (somewhat compromising the "abstractness" of the functions).
-This is done to implicitly indicate to the user (and the unacquainted developer) what the intended
-value of the parameter is to be (e.g. `path_raw_players_format` is used, as opposed to
-something simpler/more generic like `path_input_format` in order to indicate that the path format
-is intended to be filled with a value representing the path format of `players` data,
-as described in the previous point.)
+This is done to implicitly indicate to the user 
+(and the unacquainted developer, such as myself looking back at this in
+the future)  what the intended
+value of the parameter is to be (e.g. `path_play_by_play` is used, as opposed to
+something simpler/more generic like `path` in order to indicate that the path format
+is intended to be filled with a value representing the path format of
+`play_by_play` data.
 This convention is applied even in the case that only a single "significant" 
 path-like format is required as an input
 (or exported as an output) for a given function.
@@ -98,3 +137,9 @@ TODO
 
 + DONE: Convert all usage of `sprintf()` to `glue::glue()` (and experiment with `glue_fmt()`).
 + Fix stint function.
+
+================================================================================
+
+[^]: although any packages that provide good `yaml` and CLI functionality certainly could have been used
+
+[^]:

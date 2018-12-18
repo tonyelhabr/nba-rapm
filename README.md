@@ -2,18 +2,51 @@
 Introduction
 ============
 
-This project is the end-product of my efforts to do the following:
-
-1. First and foremost, calculate 
+This primary goal of this project was to calculate 
 [Regularized Adjusted Plus-Minus](https://www.nbastuffer.com/analytics101/regularized-adjusted-plus-minus-rapm/) 
-(RAPM) for NBA players. This statistic (which comes in many different "flavors")
+(RAPM)---an "advanced statistic"---for NBA players. [^#] [^#]
+
+[^#] A set of CSVs in the repository withhold the calculated values.
+
+[^#] I've always told myself (and others) that I'm a "sports analytics" guy,
+but I had never done something "rigorous" like this myself. Up to this point, I have
+mostly been a consumer of the work and writing done by other people who
+write "smart" things about sports.
+
+Additionally, while the primary intent of the project was purely quantitative,
+the project provided supplementary benefits to me as a developer and, more specifically,
+an R user. Among other things, I was challenged to tackle questions about
+    + how best to work with (relatively) large data sets,
+    + how to create an efficient data cleaning/processing pipeline,
+    + what functionality to "expose" to the user, and
+    + how to notify the user of warnings and errors.
+such as providing a 
+[command-line interface](https://en.wikipedia.org/wiki/Command-line_interface) (CLI) and 
+[implementing custom conditions](https://adv-r.hadley.nz/conditions.html).
+
+
+### What is RAPM?
+
+This statistic (which comes in many different "flavors")
 is viewed as a relatively robust "all-in-one" metric
 to quantify individual player skill among the NBA analytics community.
 
-2. Practice some "advanced" R project skills, such as providing a command-line
-interface CLI and implementing custom conditions.
+### About the Data
 
-The raw data ...
+The raw data comes from the `play_by_play_with_lineup/` zip file from
+the shared Google Drive folder at https://drive.google.com/drive/folders/1GMiP-3Aoh2AKFCoGZ8f0teMYNlkm87dm.
+
+This data is provided generously by [Ryan Davis](https://twitter.com/rd11490), who
+is himself an active member of the online NBA analytics community.
+
+Gathering the data needed to calculate RAPM would have been a large task itself,
+so I was glad to find that someone else had done that work and was willinig
+to share their data! [^#]
+
+[^#]: Although the NBA provides an API for accessing its data, combining
+5-man lineup data with play by play data is not straightforward whatsoever.
+Check out [Ryan's explanation](https://github.com/rd11490/NBA-Play-By-Play-Example)
+to get a feel for the difficulty of the task.
 
 References
 ==========

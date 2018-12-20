@@ -1,35 +1,53 @@
 
-Introduction
-============
+# Introduction
 
 This primary goal of this project was to calculate 
 [Regularized Adjusted Plus-Minus](https://www.nbastuffer.com/analytics101/regularized-adjusted-plus-minus-rapm/) 
 (RAPM)---an "advanced statistic"---for NBA players. [^#] [^#]
 
-[^#] A set of CSVs in the repository withhold the calculated values.
+[^#] The calculated values can be found in the set of `rapm_estimates` 
+CSVs in the project's repository.
 
 [^#] I've always told myself (and others) that I'm a "sports analytics" guy,
 but I had never done something "rigorous" like this myself. Up to this point, I have
 mostly been a consumer of the work and writing done by other people who
 write "smart" things about sports.
 
-Additionally, while the primary intent of the project was purely quantitative,
+Additionally,
 the project provided supplementary benefits to me as a developer and, more specifically,
-an R user. Among other things, I was challenged to tackle questions about
+as an R user. Among other things, I was challenged to tackle questions about
+
     + how best to work with (relatively) large data sets,
     + how to create an efficient data cleaning/processing pipeline,
     + what functionality to "expose" to the user, and
-    + how to notify the user of warnings and errors.
-such as providing a 
-[command-line interface](https://en.wikipedia.org/wiki/Command-line_interface) (CLI) and 
-[implementing custom conditions](https://adv-r.hadley.nz/conditions.html).
+    + how and when to notify the user of warnings and errors.
+    
+The following sections describe these two aspects---(1) the "quantitative" 
+side of the project resulting in the RAPM values, 
+and the (2) the "qualitative" side of the project regarding "lessons learned"
+as a programmer---in more detail.
+
+## 1. The Quantitative Side
 
 
-### What is RAPM?
+### What is  [Regularized Adjusted Plus-Minus](https://www.nbastuffer.com/analytics101/regularized-adjusted-plus-minus-rapm/) (RAPM)?
 
-This statistic (which comes in many different "flavors")
-is viewed as a relatively robust "all-in-one" metric
-to quantify individual player skill among the NBA analytics community.
+It's difficult to describe the calculation of RAPM in one or two concise sentences,
+so perhaps it's better to understand it by first acknowledging how it's
+used---as an "all-in-one" metric to quantify individual player skill. In leymen's
+terms, the quantification is based upon how well a given player's team does
+with them in the game versus out of the game, with adjustments for player skill
+on both teams.
+To better understand
+the calculations involved, I encourage the reader to browse the link provided,
+as well as the pages linked from it, such as the one on 
+[Adjusted Plus-Minus](https://www.nbastuffer.com/analytics101/adjusted-plus-minus/),
+upon which RAPM is based.
+
+
+Additonally, RAPM comes in many different "flavors" (e.g. "Four Factors" RAPM,
+"Multi-Year" RAPM, "Luck-Adjusted" RAPM). [^#]
+
 
 ### About the Data
 
@@ -38,18 +56,16 @@ the shared Google Drive folder at https://drive.google.com/drive/folders/1GMiP-3
 
 This data is provided generously by [Ryan Davis](https://twitter.com/rd11490), who
 is himself an active member of the online NBA analytics community.
-
 Gathering the data needed to calculate RAPM would have been a large task itself,
-so I was glad to find that someone else had done that work and was willinig
-to share their data! [^#]
+so I was glad to find that someone else had already done that work and was willing
+to share! [^#]
 
 [^#]: Although the NBA provides an API for accessing its data, combining
 5-man lineup data with play by play data is not straightforward whatsoever.
 Check out [Ryan's explanation](https://github.com/rd11490/NBA-Play-By-Play-Example)
 to get a feel for the difficulty of the task.
 
-References
-==========
+### References
 
 + http://www.espn.com/nba/statistics/rpm/_/year/2018
 + http://apbr.org/metrics/viewtopic.php?f=2&t=9491
@@ -57,16 +73,18 @@ References
     + https://sites.google.com/site/rapmstats/
     + http://basketball-analytics.gitlab.io/rapm-data/season/2016-17/regular-season/
 
-Highlights
-==========
+## 2. The Qualitative Side
 
-...
+~~
+[implementing custom conditions](https://adv-r.hadley.nz/conditions.html).
+~~
 
-Features
-========
 
-+ The project provides a command-line interface (CLI) that blends seamlessly
-with interactive use (i.e. not via the command line). This is achieved by
+### Features
+
++ The project provides a [command-line interface](https://en.wikipedia.org/wiki/Command-line_interface) 
+(CLI) that blends seamlessly with interactive use (i.e. not via the 
+command line). This is achieved by
 adept use of the `{config}` and `{argparser}` packages for providing
 APIs to work with `yaml` and the command line respectively. [^1]
 
@@ -77,8 +95,7 @@ raw data sets.
     
 
 
-Developer and API Conventions
-=============================
+### Developer and API Conventions
 
 + A dot prefix is used for un-"exposed" functions that are not intended to be used directly by the user.
 (i.e. like how "helper" functions in a package are not exported). Part

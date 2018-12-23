@@ -17,17 +17,10 @@ if (!interactive()) {
 }
 
 pre_auto()
-
-# setup_cores_auto()
-#
+setup_cores_auto()
 clean_play_by_play_auto()
-#
-# munge_play_by_play_auto()
-#
-# fit_rapm_models_auto()
-#
-# extract_rapm_estimates_auto()
-#
-# desetup_cores_auto()
-#
+munge_play_by_play_auto()
+fit_rapm_models_auto()
+extract_rapm_estimates_auto()
+desetup_cores_auto()
 post_auto()

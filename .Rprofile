@@ -36,7 +36,7 @@ suppressWarnings(suppressPackageStartupMessages(library("nbastatR")))
 .SEED <- 42
 .LAMBDA <- 200
 
-.SEASONS <- 2009:2017
+.SEASONS <- 2015:2017 # 2009:2017
 .SEASON <- .SEASONS[-1]
 # .ID_GAME_DEBUG <- 21600001
 .SEASON_TYPES <- "regular"

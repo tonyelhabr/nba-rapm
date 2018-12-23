@@ -1,11 +1,12 @@
 
-
+.VALIDATE <- TRUE # Set this to `FALSE` for combining paths.
 .SEP <- "_"
 .get_path_from <-
   function(...,
            path,
-           season,
+           season = NULL,
            # season_type = NULL,
+           validate = TRUE,
            sep = .SEP) {
     ext <- tools::file_ext(path)
     path_noext <-
@@ -23,7 +24,9 @@
     #   .validate_season_type(season_type)
     # }
     # basename_suffix <- purrr::compact(list(season, season_type))
-    .validate_season(season)
+    if(validate) {
+      .validate_season(season)
+    }
     basename_suffix <- purrr::compact(list(season))
     # Check that at least one is non-`NULL`.
     if(length(basename_suffix) > 0) {

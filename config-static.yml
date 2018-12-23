@@ -82,7 +82,7 @@ default:
     default: 'data/teams_summary_compare.csv'
     help: ''
     
-  # Output from "debugging"-like things
+  # Output from "debugging"-like things.
   path_play_by_play_error:
     default: 'data/play_by_play_error.csv'
     help: ''
@@ -94,6 +94,14 @@ default:
     help: ''
   path_possession_data_d_error:
     default: 'data/possession_data_d_error.csv'
+    help: ''
+  
+  # For RAPM comparisons.
+  path_rpm_espn:
+    default: 'data/rpm_espn.csv'
+    help: ''
+  path_rapm_basketballanalytics:
+    default: 'data/rapm_basketballanalytics.csv'
     help: ''
    
 production:

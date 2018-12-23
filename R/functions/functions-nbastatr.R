@@ -1,178 +1,366 @@
 
-# season <- 2017L
-# players_game_logs_nbastatr <- .try_import_players_game_logs_nbastatr(season = season)
-# teams_game_logs_nbastatr <- .try_import_teams_game_logs_nbastatr(season = season)
 
-.COLS_GAME_LOGS_PLAYER_NBASTATR_ALL <-
-  c(
-    "year_season",
-    "slug_season",
-    "slug_league",
-    "type_season",
-    "date_game",
-    "id_game",
-    "number_game_team_season",
-    "name_team",
-    "id_team",
-    "is_b2b",
-    "is_b2b_first",
-    "is_b2b_second",
-    "location_game",
-    "slug_matchup",
-    "slug_team",
-    "count_days_rest_team",
-    "count_days_next_game_team",
-    "slug_opponent",
-    "slug_team_winner",
-    "slug_team_loser",
-    "outcome_game",
-    "name_player",
-    "number_game_player_season",
-    "count_days_rest_player",
-    "count_days_next_game_player",
-    "id_player",
-    "is_win",
-    "fgm",
-    "fga",
-    "pct_fg",
-    "fg3m",
-    "fg3a",
-    "pct_fg3",
-    "pct_ft",
-    "has_video",
-    "fg2m",
-    "fg2a",
-    "pct_fg2",
-    "minutes",
-    "ftm",
-    "fta",
-    "oreb",
-    "dreb",
-    "treb",
-    "ast",
-    "stl",
-    "blk",
-    "tov",
-    "pf",
-    "pts",
-    "plusminus",
-    "url_team_season_logo",
-    "url_player_stats",
-    "url_player_thumbnail",
-    "url_player_headshot",
-    "url_player_action_photo"
-  )
+# .get ----
+# Note that paths are "hard-coded" here to allow for flexible "offline"
+# execution of this function. This design choice should/could be reconsidered in the future.
+.get_players_nbastatr <-
+  function(..., season = .SEASON, path) {
+    .validate_season(season)
 
-.COLS_GAME_LOGS_PLAYER_NBASTATR <-
-  c(
-    "id_player",
-    "is_win",
-    "fgm",
-    "fga",
-    "pct_fg",
-    "fg3m",
-    "fg3a",
-    "pct_fg3",
-    "pct_ft",
-    "has_video",
-    "fg2m",
-    "fg2a",
-    "pct_fg2",
-    "minutes",
-    "ftm",
-    "fta",
-    "oreb",
-    "dreb",
-    "treb",
-    "ast",
-    "stl",
-    "blk",
-    "tov",
-    "pf",
-    "pts",
-    "plusminus"
-  )
+    res <-
+      nbastatR::nba_players() %>%
+      janitor::clean_names()
 
-.COLS_GAME_LOGS_TEAM_NBASTATR_ALL <-
-  c(
-    "year_season",
-    "slug_season",
-    "slug_league",
-    "type_season",
-    "date_game",
-    "id_game",
-    "number_game_team_season",
-    "name_team",
-    "id_team",
-    "is_b2b",
-    "is_b2b_first",
-    "is_b2b_second",
-    "location_game",
-    "slug_matchup",
-    "slug_team",
-    "count_days_rest_team",
-    "count_days_next_game_team",
-    "slug_opponent",
-    "slug_team_winner",
-    "slug_team_loser",
-    "outcome_game",
-    "is_win",
-    "fgm_team",
-    "fga_team",
-    "pct_fg_team",
-    "fg3m_team",
-    "fg3a_team",
-    "pct_fg3team",
-    "pct_ft_team",
-    "has_video",
-    "fg2m_team",
-    "fg2a_team",
-    "pct_fg2team",
-    "minutes_team",
-    "ftm_team",
-    "fta_team",
-    "oreb_team",
-    "dreb_team",
-    "treb_team",
-    "ast_team",
-    "stl_team",
-    "blk_team",
-    "tov_team",
-    "pf_team",
-    "pts_team",
-    "plusminus_team",
-    "url_team_season_logo",
-    "id_opponent"
-  )
-.COLS_GAME_LOGS_TEAM_NBASTATR <-
-  c(
-    "name_team",
-    "id_team",
-    # "outcome_game",
-    "is_win",
-    "fgm_team",
-    "fga_team",
-    "pct_fg_team",
-    "fg3m_team",
-    "fg3a_team",
-    "pct_fg3team",
-    "pct_ft_team",
-    "has_video",
-    "fg2m_team",
-    "fg2a_team",
-    "pct_fg2team",
-    "minutes_team",
-    "ftm_team",
-    "fta_team",
-    "oreb_team",
-    "dreb_team",
-    "treb_team",
-    "ast_team",
-    "stl_team",
-    "blk_team",
-    "tov_team",
-    "pf_team",
-    "pts_team",
-    "plusminus_team"
-  )
+    res <-
+      res %>%
+      filter(
+        year_season_first <= season,
+        year_season_last >= season
+      )
+
+    path_export <-
+      .export_data_from_path(
+        ...,
+        season = season,
+        data = res,
+        path = path
+      )
+    invisible(res)
+  }
+
+.get_teams_nbastatr <-
+  function(..., season = .SEASON, path) {
+    .validate_season(season)
+
+    res <-
+      nbastatR::nba_teams() %>%
+      janitor::clean_names() %>%
+      filter(is_non_nba_team == 0L)
+
+    res <-
+      res %>%
+      filter(year_played_last >= season)
+
+    path_export <-
+      .export_data_from_path(
+        ...,
+        season = season,
+        data = res,
+        path = path
+      )
+    invisible(res)
+  }
+
+.get_teams_game_logs_nbastatr <-
+  function(...,
+           season = .SEASON,
+           season_type = .SEASON_TYPE,
+           path) {
+    .validate_season(season)
+    .validate_season_type(season_type)
+    season_type_nm <- .convert_season_type(season_type)
+
+    # TODO: Better handle case where `season_type` is `NULL`?
+    # Not exactly sure how this would be done, since `{nbastatR}`
+    # has a default value for this parameter.
+    res <-
+      nbastatR::game_logs(
+        seasons = season + 1,
+        result_types = "team",
+        season_types = season_type_nm,
+        assign_to_environment = FALSE,
+        return_message = FALSE
+      ) %>%
+      janitor::clean_names()
+
+    # # Note that this is done soley to get `id_team_opponent`.
+    res <-
+      res %>%
+      left_join(
+        res %>%
+          select(id_game, id_opponent = id_team, slug_opponent = slug_team),
+        by = c("id_game", "slug_opponent")
+      ) %>%
+      arrange(id_game, id_team)
+
+    path_export <-
+      .export_data_from_path(
+        ...,
+        season = season,
+        season_type = season_type,
+        data = res,
+        path = path
+      )
+
+    invisible(res)
+  }
+
+.get_players_game_logs_nbastatr <-
+  function(...,
+           season = .SEASON,
+           season_type = .SEASON_TYPE,
+           path) {
+    .validate_season(season)
+    .validate_season_type(season_type)
+    season_type_nm <- .convert_season_type(season_type)
+
+    res <-
+      nbastatR::game_logs(
+        seasons = season + 1,
+        result_types = "player",
+        season_types = season_type_nm,
+        assign_to_environment = FALSE,
+        return_message = FALSE
+      ) %>%
+      janitor::clean_names()
+
+    path_export <-
+      .export_data_from_path(
+        ...,
+        season = season,
+        season_type = season_type,
+        data = res,
+        path = path
+      )
+
+    invisible(res)
+  }
+
+
+.get_teams_summary_nbastatr <-
+  function(..., season = .SEASON, path) {
+
+    # Not working for 2017 and beyond.
+    # res <-
+    #   nbastatR::bref_teams_stats(
+    #     seasons = season + 1,
+    #     assign_to_environment = FALSE,
+    #     return_message = FALSE
+    #   ) %>%
+    #   unnest() %>%
+    #   janitor::clean_names()
+
+    teams <-
+      .try_import_teams_nbastatr(season = season)
+    id_teams <- teams %>% pull(id_team)
+
+    res <-
+      nbastatR::teams_annual_stats(
+        team_ids = id_teams,
+        all_active_teams = TRUE,
+        season_types = c("Regular Season"),
+        modes = c("Totals"),
+        return_message = FALSE,
+        nest_data = FALSE
+      ) %>%
+      janitor::clean_names() %>%
+      mutate_at(
+        vars(slug_season),
+        funs(paste0(str_sub(., 1, 2), str_sub(., 6)) %>% as.integer())
+      ) %>%
+      filter(slug_season == season)
+
+    .export_data_from_path(
+      ...,
+      season = season,
+      data = res,
+      path = path
+    )
+    invisible(res)
+  }
+
+.get_players_summary_nbastatr <-
+  function(..., season = .SEASON, path) {
+
+    res <-
+      nbastatR::bref_players_stats(
+        seasons = season + 1,
+        assign_to_environment = FALSE,
+        return_message = FALSE
+      ) %>%
+      unnest() %>%
+      janitor::clean_names()
+
+    .export_data_from_path(
+      ...,
+      season = season,
+      data = res,
+      path = path
+    )
+    invisible(res)
+  }
+
+# unused ----
+# .COLS_GAME_LOGS_PLAYER_NBASTATR_ALL <-
+#   c(
+#     "year_season",
+#     "slug_season",
+#     "slug_league",
+#     "type_season",
+#     "date_game",
+#     "id_game",
+#     "number_game_team_season",
+#     "name_team",
+#     "id_team",
+#     "is_b2b",
+#     "is_b2b_first",
+#     "is_b2b_second",
+#     "location_game",
+#     "slug_matchup",
+#     "slug_team",
+#     "count_days_rest_team",
+#     "count_days_next_game_team",
+#     "slug_opponent",
+#     "slug_team_winner",
+#     "slug_team_loser",
+#     "outcome_game",
+#     "name_player",
+#     "number_game_player_season",
+#     "count_days_rest_player",
+#     "count_days_next_game_player",
+#     "id_player",
+#     "is_win",
+#     "fgm",
+#     "fga",
+#     "pct_fg",
+#     "fg3m",
+#     "fg3a",
+#     "pct_fg3",
+#     "pct_ft",
+#     "has_video",
+#     "fg2m",
+#     "fg2a",
+#     "pct_fg2",
+#     "minutes",
+#     "ftm",
+#     "fta",
+#     "oreb",
+#     "dreb",
+#     "treb",
+#     "ast",
+#     "stl",
+#     "blk",
+#     "tov",
+#     "pf",
+#     "pts",
+#     "plusminus",
+#     "url_team_season_logo",
+#     "url_player_stats",
+#     "url_player_thumbnail",
+#     "url_player_headshot",
+#     "url_player_action_photo"
+#   )
+#
+# .COLS_GAME_LOGS_PLAYER_NBASTATR <-
+#   c(
+#     "id_player",
+#     "is_win",
+#     "fgm",
+#     "fga",
+#     "pct_fg",
+#     "fg3m",
+#     "fg3a",
+#     "pct_fg3",
+#     "pct_ft",
+#     "has_video",
+#     "fg2m",
+#     "fg2a",
+#     "pct_fg2",
+#     "minutes",
+#     "ftm",
+#     "fta",
+#     "oreb",
+#     "dreb",
+#     "treb",
+#     "ast",
+#     "stl",
+#     "blk",
+#     "tov",
+#     "pf",
+#     "pts",
+#     "plusminus"
+#   )
+#
+# .COLS_GAME_LOGS_TEAM_NBASTATR_ALL <-
+#   c(
+#     "year_season",
+#     "slug_season",
+#     "slug_league",
+#     "type_season",
+#     "date_game",
+#     "id_game",
+#     "number_game_team_season",
+#     "name_team",
+#     "id_team",
+#     "is_b2b",
+#     "is_b2b_first",
+#     "is_b2b_second",
+#     "location_game",
+#     "slug_matchup",
+#     "slug_team",
+#     "count_days_rest_team",
+#     "count_days_next_game_team",
+#     "slug_opponent",
+#     "slug_team_winner",
+#     "slug_team_loser",
+#     "outcome_game",
+#     "is_win",
+#     "fgm_team",
+#     "fga_team",
+#     "pct_fg_team",
+#     "fg3m_team",
+#     "fg3a_team",
+#     "pct_fg3team",
+#     "pct_ft_team",
+#     "has_video",
+#     "fg2m_team",
+#     "fg2a_team",
+#     "pct_fg2team",
+#     "minutes_team",
+#     "ftm_team",
+#     "fta_team",
+#     "oreb_team",
+#     "dreb_team",
+#     "treb_team",
+#     "ast_team",
+#     "stl_team",
+#     "blk_team",
+#     "tov_team",
+#     "pf_team",
+#     "pts_team",
+#     "plusminus_team",
+#     "url_team_season_logo",
+#     "id_opponent"
+#   )
+# .COLS_GAME_LOGS_TEAM_NBASTATR <-
+#   c(
+#     "name_team",
+#     "id_team",
+#     # "outcome_game",
+#     "is_win",
+#     "fgm_team",
+#     "fga_team",
+#     "pct_fg_team",
+#     "fg3m_team",
+#     "fg3a_team",
+#     "pct_fg3team",
+#     "pct_ft_team",
+#     "has_video",
+#     "fg2m_team",
+#     "fg2a_team",
+#     "pct_fg2team",
+#     "minutes_team",
+#     "ftm_team",
+#     "fta_team",
+#     "oreb_team",
+#     "dreb_team",
+#     "treb_team",
+#     "ast_team",
+#     "stl_team",
+#     "blk_team",
+#     "tov_team",
+#     "pf_team",
+#     "pts_team",
+#     "plusminus_team"
+#   )
 

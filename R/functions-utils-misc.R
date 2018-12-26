@@ -54,7 +54,7 @@
     for (path in path_deps) {
       path <-
         .get_path_from(..., path = path)
-      if (!file.exist(path)) {
+      if (!file.exists(path)) {
         msg <-
           glue::glue(
             "Can't skip {call_name} because up-stream file dependency at {path} does not exist."

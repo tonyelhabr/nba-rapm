@@ -1,8 +1,38 @@
 
+# Note that this is a work-around since `broom:::tidy.glmnet()` isn't working(?)
+.tidy_glmnet <- function(x, return_zeros = FALSE, ...) {
+  # This is the major change to `broom:::tidy.glmnet()`.
+  # beta <- coef(x)
+  beta <- x$beta
+  # browser()
+  beta_d <-
+      broom:::fix_data_frame(
+      as.matrix(beta),
+      newnames = 1:ncol(beta),
+      newcol = "term"
+    )
+    ret <- tidyr::gather(beta_d, step, estimate, -term)
+    # add values specific to each step
+    ret <- ret %>%
+      mutate(
+        step = as.numeric(step),
+        lambda = x$lambda[step],
+        dev.ratio = x$dev.ratio[step]
+      )
+
+    if (!return_zeros) {
+      ret <- filter(ret, estimate != 0)
+    }
+
+    as_tibble(ret)
+  }
+
 .extract_estimates <-
   function(..., fit) {
+    # browser()
     fit %>%
-      broom::tidy() %>%
+      # broom::tidy() %>%
+      .tidy_glmnet() %>%
       filter(term != "(Intercept)") %>%
       mutate_at(vars(term), funs(str_replace(., "^.", ""))) %>%
       mutate_at(
@@ -88,6 +118,7 @@ extract_rapm_estimates <-
       return(invisible(NULL))
     }
 
+    # browser()
     estimates_o <- .extract_rapm_estimates_o(...)
     estimates_d <- .extract_rapm_estimates_d(...)
 
@@ -112,22 +143,25 @@ extract_rapm_estimates <-
     players_nbastatr <-
       .try_import_players_nbastatr(...)
     players_slim <-
-      players %>%
-      select(id_player, name_player, slug_team, season = year_season_first)
+      players_nbastatr %>%
+      select(id = id_player, name = name_player, slug = slug_team)
 
     estimates_pretty_base <-
       estimates %>%
-      mutate_at(vars(matches("rapm$")), funs(rank = row_number(desc(.)))) %>%
-      left_join(players_slim, by = "id_player")
+      # mutate_at(vars(matches("rapm$")), funs(rank = row_number(desc(.)))) %>%
+      mutate_at(vars(rapm), funs(rank = row_number(desc(.)))) %>%
+      rename(id = id_player) %>%
+      left_join(players_slim, by = "id")
 
     prefix_cols <- c("o", "d", "")
     cols_order_base <-
       c(
-        "season",
-        "id_player",
-        "name_player",
-        paste0(prefix_cols, "rapm"),
-        paste0(prefix_cols, "rapm_rank")
+        "id",
+        "name",
+        "slug",
+        # paste0(prefix_cols, "rapm_rank"),
+        "rank",
+        paste0(prefix_cols, "rapm")
       )
     cols_order_other <-
       setdiff(names(players_slim), cols_order_base)
@@ -143,7 +177,7 @@ extract_rapm_estimates <-
         data = estimates_pretty,
         path = path_rapm_estimates
       )
-    invisible(estimates)
+    invisible(estimates_pretty)
   }
 
 extract_rapm_estimates_auto <-
@@ -157,3 +191,9 @@ extract_rapm_estimates_auto <-
     clean = config$clean,
     n_keep = config$n_keep
   )
+
+extract_rapm_estimates_manual <-
+  function(..., skip = FALSE, season = .SEASONS) {
+    purrr::map(season, ~extract_rapm_estimates(..., skip = skip, season = .x))
+  }
+

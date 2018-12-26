@@ -22,7 +22,9 @@ suppressWarnings(suppressPackageStartupMessages(library("argparser")))
 suppressWarnings(suppressPackageStartupMessages(library("nbastatR")))
 # suppressWarnings(suppressPackageStartupMessages(library("doParallel")))
 # suppressWarnings(suppressPackageStartupMessages(library("glmnet")))
-
+# suppressWarnings(suppressPackageStartupMessages(library("broom")))
+# Need to load this for `broom:::fix_data_frame()` to work (although `broom:::tidy.glmnet()` still doesn't work(?)
+suppressWarnings(suppressPackageStartupMessages(library("Matrix")))
 
 # config <- config::get()
 
@@ -44,8 +46,7 @@ suppressWarnings(suppressPackageStartupMessages(library("nbastatR")))
 
 paths_funcs <-
   list.files(
-    path = file.path("R", "functions"),
-    # path = "R",
+    path = file.path("R"),
     pattern = "func",
     full.names = TRUE
   )

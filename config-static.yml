@@ -8,12 +8,15 @@ default:
     default: 'data/play_by_play.csv'
     help: 'Path format of cleaned play-by-play data file to export.'
   
-  path_possession_data_o:
-    default: 'data/posession_data_o.rds'
-    help: 'Path format of "wide" offensive possession data to export.'
-  path_possession_data_d:
-    default: 'data/posession_data_d.rds'
-    help: 'Analogous to `path_possession_data_o`.'
+  # path_possession_data_o:
+  #   default: 'data/posession_data_o.rds'
+  #   help: 'Path format of "wide" offensive possession data to export.'
+  # path_possession_data_d:
+  #   default: 'data/posession_data_d.rds'
+  #   help: 'Analogous to `path_possession_data_o`.'
+  path_possession_data:
+    default: 'data/possession_data.rds'
+    help: ''
    
   path_rapm_fit_o:
     default: 'data/rapm_fit_o.rds'
@@ -86,14 +89,23 @@ default:
   path_play_by_play_error:
     default: 'data/play_by_play_error.csv'
     help: ''
-  path_stints_calc:
-    default: 'data/stints_calc.csv'
+  path_lineup_summary_calc:
+    default: 'data/lineup_summary_calc.csv'
     help: ''
-  path_possession_data_o_error:
-    default: 'data/possession_data_o_error.csv'
+  # path_possession_data_o_error:
+  #   default: 'data/possession_data_o_error.csv'
+  #   help: ''
+  # path_possession_data_d_error:
+  #   default: 'data/possession_data_d_error.csv'
+  #   help: ''
+  path_possession_data_error:
+    default: 'data/possession_data_error.csv'
     help: ''
-  path_possession_data_d_error:
-    default: 'data/possession_data_d_error.csv'
+  path_rapm_fit_cv_o:
+    default: 'data/fit_cv_o.csv'
+    help: ''
+  path_rapm_fit_cv_d:
+    default: 'data/fit_cv_d.csv'
     help: ''
   
   # For RAPM comparisons.

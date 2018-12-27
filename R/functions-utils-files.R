@@ -1,11 +1,27 @@
 
 .VALIDATE <- TRUE # Set this to `FALSE` for combining paths.
 .SEP <- "_"
+
+.get_config_name <-
+  function(..., name, side = NULL, sep = .SEP, .name = substitute(name)) {
+    suffix <- purrr::compact(list(side))
+    # Check that at least one is non-`NULL`.
+    if(length(suffix) > 0) {
+      suffix <- paste0(sep, paste0(suffix, collapse = sep))
+    } else {
+      suffix <- ""
+    }
+    arg <- glue::glue("{.name[[2]]}{.name[[1]]}{.name[[3]]}{suffix}")
+    # config[[arg]]
+    arg
+  }
+
 .get_path_from <-
   function(...,
            path,
            season = NULL,
            # season_type = NULL,
+           side = NULL,
            validate = TRUE,
            sep = .SEP) {
     ext <- tools::file_ext(path)
@@ -23,18 +39,19 @@
     # if (!is.null(season_type)) {
     #   .validate_season_type(season_type)
     # }
-    # basename_suffix <- purrr::compact(list(season, season_type))
+    # suffix <- purrr::compact(list(season, season_type))
     if(validate) {
       .validate_season(season)
+      # .validate_side(side)
     }
-    basename_suffix <- purrr::compact(list(season))
+    suffix <- purrr::compact(list(side, season))
     # Check that at least one is non-`NULL`.
-    if(length(basename_suffix) > 0) {
-      basename_suffix <- paste0(sep, paste0(basename_suffix, collapse = sep))
+    if(length(suffix) > 0) {
+      suffix <- paste0(sep, paste0(suffix, collapse = sep))
     } else {
-      basename_suffix <- ""
+      suffix <- ""
     }
-    path <- glue::glue("{path_noext}{basename_suffix}.{ext}")
+    path <- glue::glue("{path_noext}{suffix}.{ext}")
     path
   }
 
@@ -121,7 +138,16 @@
   function(..., data, path) {
     # path_export <- rio::export(data, path, ...)
     # See `.import_data()` for the reasoning for setting `verbose = FALSE` here.
-    path_export <- rio::export(x = data, file = path)
+    if(any("gg" %in% class(data))) {
+      path_export <-
+        ggplot2::ggsave(
+          ...,
+          x = data,
+          filename = path
+        )
+    } else {
+      path_export <- rio::export(x = data, file = path)
+    }
     invisible(path_export)
   }
 

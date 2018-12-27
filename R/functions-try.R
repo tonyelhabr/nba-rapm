@@ -131,4 +131,15 @@
     }
   )
 
+.try_import_players_summary_compare <-
+  memoise::memoise(
+    function(...) {
+      .try_import_thing(
+        ...,
+        validate = FALSE,
+        f_get = combine_players_summary_compare,
+        path = config$path_players_summary_compare
+      )
+    }
+  )
 

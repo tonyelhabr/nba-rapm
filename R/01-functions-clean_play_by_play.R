@@ -115,14 +115,17 @@ clean_play_by_play <-
         path = path_game_final_scores_compare
       )
 
-    if(FALSE) {
-      raw_play_by_play <-
-        .import_data_from_path(season = .SEASON, path = config$path_raw_play_by_play)
-      raw_play_by_play <-
-        raw_play_by_play %>%
-        filter(game_id == .ID_GAME_DEBUG) %>%
-        arrange(period, time_elapsed)
-    }
+    # if(FALSE) {
+    #   raw_play_by_play <-
+    #     .import_data_from_path(
+    #       season = .SEASON,
+    #       path = config$path_raw_play_by_play
+    #     )
+    #   raw_play_by_play <-
+    #     raw_play_by_play %>%
+    #     filter(game_id == .ID_GAME_DEBUG) %>%
+    #     arrange(period, time_elapsed)
+    # }
 
     play_by_play <-
       raw_play_by_play %>%
@@ -302,17 +305,39 @@ clean_play_by_play <-
     invisible(play_by_play)
   }
 
-clean_play_by_play_auto <-
-  purrr::partial(
-    clean_play_by_play,
-    path_raw_play_by_play = config$path_raw_play_by_play,
-    season = config$season,
-    season_type = config$season_type,
-    skip = config$skip,
-    verbose = config$verbose,
-    export = config$export,
-    backup = config$backup,
-    clean = config$clean,
-    n_keep = config$n_keep
-  )
+# clean_play_by_play_auto <-
+#   purrr::partial(
+#     clean_play_by_play,
+#     path_raw_play_by_play = config$path_raw_play_by_play,
+#     season = config$season,
+#     season_type = config$season_type,
+#     skip = config$skip,
+#     verbose = config$verbose,
+#     export = config$export,
+#     backup = config$backup,
+#     clean = config$clean,
+#     n_keep = config$n_keep
+#   )
 
+clean_play_by_play_auto <-
+  function(...,
+           season = config$season,
+           season_type = config$season_type,
+           skip = config$skip,
+           verbose = config$verbose,
+           export = config$export,
+           backup = config$backup,
+           clean = config$clean,
+           n_keep = config$n_keep) {
+    clean_play_by_play(
+      # ...,
+      season = season,
+      season_type = season_type,
+      skip = skip,
+      verbose = verbose,
+      export = export,
+      backup = backup,
+      clean = clean,
+      n_keep = n_keep
+    )
+  }

@@ -40,6 +40,14 @@ combine_rapm_estimates <-
     )
   }
 
+combine_players_summary_compare <-
+  function(...) {
+    .combine_data_from_paths(
+      ...,
+      path = config$path_players_summary_compare
+    )
+  }
+
 # Prefix these with `.` because `.try_import*()` (and `.download_combine*()`) function
 # is "preferred".
 .combine_rpm_espn <-

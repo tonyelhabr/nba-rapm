@@ -1,8 +1,8 @@
 
-.summarise_stints <-
+.summarise_lineup <-
   function(...,
            play_by_play,
-           path_stints_summary_calc = config$path_stints_summary_calc) {
+           path_lineup_summary_calc = config$path_lineup_summary_calc) {
     players_nbastatr <- .try_import_players_nbastatr(...)
 
     # browser()
@@ -11,8 +11,6 @@
       # filter(id_game == .ID_GAME_compare) %>%
       # filter(id_game >= 21700001, id_game <= 21700004) %>%
       # filter(slug_team1 == "SAS" | slug_team2 == "SAS") %>%
-      # mutate_at(vars(pts12), funs(if_else(is_off1 == 0L, -., .))) %>%
-      rename(pts1_calc = pts1, pts2_calc = pts2) %>%
       left_join(
         # To get `name_player`.
         players_nbastatr %>%
@@ -43,7 +41,7 @@
                col,
                ...,
                prefix_rgx = "x",
-               sep = "-",
+               sep = " - ",
                remove = TRUE) {
         col_quo <- rlang::enquo(col)
         suffix <- .convert_lineup_to_suffix(!!col_quo)
@@ -54,9 +52,10 @@
         .data %>%
           unite(!!col_quo, matches(rgx), sep = sep, remove = remove, ...)
       }
+
     play_by_play_compare_wide <-
       play_by_play_aug %>%
-      select(id_game, poss_num, pts1_calc, pts2_calc, player_num, name_player) %>%
+      select(id_game, poss_num, pts, player_num, name_player) %>%
       spread(player_num, name_player) %>%
       .unite_lineup(lineup1) %>%
       .unite_lineup(lineup2)
@@ -69,62 +68,47 @@
       ungroup() %>%
       inner_join(
         play_by_play_compare_wide,
-        by = c("id_game", "poss_num", "pts1_calc", "pts2_calc")
+        by = c("id_game", "poss_num", "pts")
       )
 
-    .summarise_stint_stats <-
-      function(play_by_play, col) {
+
+    .summarise_lineup_byside <-
+      function(data, col, side = c("o", "d")) {
 
         col_quo <- enquo(col)
         suffix <- .convert_lineup_to_suffix(!!col_quo)
-
-        col_pts_calc <- glue::glue("pts{suffix}_calc")
-        col_pts_calc_sym <- sym(col_pts_calc)
-
-        res <-
-          play_by_play %>%
-          select(id_game, period, poss_num, mp, pts1_calc, pts2_calc, !!col_quo) %>%
-          group_by(id_game, !!col_quo) %>%
+        data %>%
+          rename(lineup = !!col_quo) %>%
+          select(id_game, lineup, poss_num, mp, pts) %>%
+          group_by(id_game, lineup) %>%
           summarise(
             poss_calc = n(),
             mp_calc = sum(mp),
-            # !!col_pts_calc_sym := sum(!!col_pts_calc_sym)
-            pts1_calc = sum(pts1_calc),
-            pts2_calc = sum(pts2_calc)
+            pts_calc = sum(pts)
           ) %>%
           ungroup() %>%
-          mutate(pm_calc = pts1_calc - pts2_calc) %>%
-          arrange(id_game, desc(mp))
-
-        if(suffix == "2") {
-          res <-
-            res %>%
-            mutate_at(vars(pm_calc), funs(-.))
-        }
-        res
+          rename_at(vars(matches("_calc$")), funs(paste0(., "_", side)))
       }
 
-    stints1 <-
-      play_by_play_aug %>%
-      .summarise_stint_stats(lineup1)
-
-    stints2 <-
-      play_by_play_aug %>%
-      .summarise_stint_stats(lineup2)
-
-    stints_summary_calc <-
-      bind_rows(
-        stints1,
-        stints2
-      )
+    lineup_summary_calc <-
+      left_join(
+        play_by_play_aug %>% .summarise_lineup_byside(lineup1, side = "o"),
+        play_by_play_aug %>% .summarise_lineup_byside(lineup2, side = "d")
+      ) %>%
+      mutate(
+        poss_calc_total = poss_calc_o + poss_calc_d,
+        mp_calc_total = mp_calc_o + mp_calc_d,
+        pm_calc = pts_calc_o - pts_calc_d
+      ) %>%
+      arrange(id_game, desc(mp_calc_total))
 
     path_export <-
       .export_data_from_path(
         ...,
-        data = stints_summary,
-        path = path_stints_summary_calc
+        data = lineup_summary_calc,
+        path = path_lineup_summary_calc
       )
-    invisible(stints_calc)
+    invisible(lineup_summary_calc)
   }
 
 .summarise_players <-
@@ -356,13 +340,12 @@
       players_summary_calc %>%
       left_join(
         players_nbastatr %>% select(id_player, id_team, team_name),
-        by = c("id_player" = "id_player")
+        by = c("id_player")
       )
-
     teams_summary_calc <-
       players_summary_calc_aug %>%
       group_by(id_team, team_name) %>%
-      summarise_if(is.numeric, funs(sum)) %>%
+      summarise_at(vars(matches("_calc")), funs(sum)) %>%
       ungroup() %>%
       arrange(id_team, team_name)
 
@@ -412,8 +395,10 @@
   function(...,
            play_by_play,
            side,
-           path_possession_data_side,
-           path_possession_data_side_error) {
+           # path_possession_data_side,
+           # path_possession_data_side_error
+           path_possession_data_side = config$path_possession_data,
+           path_possession_data_side_error = config$path_possession_data_error) {
 
     # browser()
     play_by_play_side <-
@@ -430,7 +415,8 @@
       if(n_dups > 0L) {
         .display_warning(
           glue::glue(
-            "There are {n_dups} rows with more than one player-side-possession combination ",
+            "There are {usethis::ui_value(n_dups)} rows with more than one ",
+            "player-side-possession combination ",
             "(i.e. a player appears in a lineup more than once on a single possession)."
           ),
           ...
@@ -509,9 +495,9 @@
   function(...) {
     .widen_data_byside(
       ...,
-      side = "o",
-      path_possession_data_side = config$path_possession_data_o,
-      path_possession_data_side_error = config$path_possession_data_o_error
+      side = "o" #,
+      # path_possession_data_side = config$path_possession_data_o,
+      # path_possession_data_side_error = config$path_possession_data_o_error
     )
   }
 
@@ -519,9 +505,9 @@
   function(...) {
     .widen_data_byside(
       ...,
-      side = "d",
-      path_possession_data_side = config$path_possession_data_d,
-      path_possession_data_side_error = config$path_possession_data_d_error
+      side = "d" #,
+      # path_possession_data_side = config$path_possession_data_d,
+      # path_possession_data_side_error = config$path_possession_data_d_error
     )
   }
 
@@ -538,10 +524,13 @@ munge_play_by_play <-
            path_play_by_play = config$path_play_by_play,
            # These are included here exclusively for the `.try_skip()` function.
            # (The `widen_data*` functions "know" what these paths should be.)
-           path_possession_data_o = config$path_possession_data_o,
-           path_possession_data_d = config$path_possession_data_d,
+           # path_possession_data_o = config$path_possession_data_o,
+           # path_possession_data_d = config$path_possession_data_d,
+           path_possession_data = config$path_possession_data,
            path_players_summary_calc = config$path_players_summary_calc) {
 
+    path_possession_data_o <- .get_path_from(..., path = config$path_possession_data, side = "o")
+    path_possession_data_d <- .get_path_from(..., path = config$path_possession_data, side = "d")
     will_skip <-
       .try_skip(
         ...,
@@ -628,12 +617,11 @@ munge_play_by_play <-
       mutate(side = if_else(player_num <= 5L, "o", "d")) %>%
       arrange(rn, player_num)
 
-    # # TODO: Fix this.
-    # stints_summary_calc <-
-    #   .summarise_stints(
-    #     ...,
-    #     play_by_play = play_by_play
-    #   )
+    lineup_summary_calc <-
+      .summarise_lineup(
+        ...,
+        play_by_play = play_by_play
+      )
 
     # Note that this is the only `summary_calc` data that matters
     # (because the subsequent filtering depends on it).
@@ -670,16 +658,28 @@ munge_play_by_play <-
   }
 
 munge_play_by_play_auto <-
-  purrr::partial(
-    munge_play_by_play,
-    season = config$season,
-    poss_min = config$poss_min,
-    gp_min = config$gp_min,
-    mp_min = config$mp_min,
-    skip = config$skip,
-    verbose = config$verbose,
-    export = config$export,
-    backup = config$backup,
-    clean = config$clean,
-    n_keep = config$n_keep
-  )
+  function(...,
+           season = config$season,
+           poss_min = config$poss_min,
+           gp_min = config$gp_min,
+           mp_min = config$mp_min,
+           skip = config$skip,
+           verbose = config$verbose,
+           export = config$export,
+           backup = config$backup,
+           clean = config$clean,
+           n_keep = config$n_keep) {
+    munge_play_by_play(
+      # ...,
+      season = season,
+      poss_min = poss_min,
+      gp_min = gp_min,
+      mp_min = mp_min,
+      skip = skip,
+      verbose = verbose,
+      export = export,
+      backup = backup,
+      clean = clean,
+      n_keep = n_keep
+    )
+  }

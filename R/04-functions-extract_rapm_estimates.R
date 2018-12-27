@@ -180,20 +180,42 @@ extract_rapm_estimates <-
     invisible(estimates_pretty)
   }
 
-extract_rapm_estimates_auto <-
-  purrr::partial(
-    extract_rapm_estimates,
-    season = config$season,
-    skip = config$skip,
-    verbose = config$verbose,
-    export = config$export,
-    backup = config$backup,
-    clean = config$clean,
-    n_keep = config$n_keep
-  )
+# extract_rapm_estimates_auto <-
+#   purrr::partial(
+#     extract_rapm_estimates,
+#     season = config$season,
+#     skip = config$skip,
+#     verbose = config$verbose,
+#     export = config$export,
+#     backup = config$backup,
+#     clean = config$clean,
+#     n_keep = config$n_keep
+#   )
 
-extract_rapm_estimates_manual <-
-  function(..., skip = FALSE, season = .SEASONS) {
-    purrr::map(season, ~extract_rapm_estimates(..., skip = skip, season = .x))
+extract_rapm_estimates_auto <-
+  function(...,
+           season = config$season,
+           skip = config$skip,
+           verbose = config$verbose,
+           export = config$export,
+           backup = config$backup,
+           clean = config$clean,
+           n_keep = config$n_keep) {
+    extract_rapm_estimates(
+      # ...,
+      season = season,
+      skip = skip,
+      verbose = verbose,
+      export = export,
+      backup = backup,
+      clean = clean,
+      n_keep = n_keep
+    )
   }
+
+# # This was used once "ad-hoc".
+# .extract_rapm_estimates_manual <-
+#   function(..., skip = FALSE, season = .SEASONS) {
+#     purrr::map(season, ~extract_rapm_estimates(..., skip = skip, season = .x))
+#   }
 

@@ -1,0 +1,192 @@
+---
+author: ""
+output: github_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE,
+  echo = FALSE,
+  include = TRUE,
+  fig.align = "center"
+)
+```
+
+```{r profvis, eval = FALSE}
+
+.export_widget <-
+  function(x,
+             path = NULL,
+             ...,
+             file = deparse(substitute(x)),
+             dir = "widgets",
+             ext = "html",
+             from = paste0(file, ".", ext)) {
+    stopifnot(any(c("htmlwidget") %in% class(x)))
+    # browser()
+    if (is.null(path)) {
+      if (file == ".") {
+        warning("Did you pass `x` via a pipe? If so, you should define `file` explicitly.", call. = FALSE)
+      }
+    } else {
+      dir <- dirname(path)
+      is_wd <- dir == getwd()
+      if (is_wd) {
+        res <- htmlwidgets::saveWidget(widget = x, file = path)
+        return(invisible(path))
+      }
+      ext <- tools::file_ext(path)
+      basename <- basename(path)
+      file <- tools::file_path_sans_ext(basename)
+      from <- basename
+    }
+    if (!dir.exists(dir)) {
+      dir.create(dir, recursive = TRUE)
+    }
+    # browser()
+    htmlwidgets::saveWidget(widget = x, file = from)
+    invisible(
+      file.copy(
+        from = from,
+        to = path,
+        overwrite = TRUE
+      )
+    )
+    invisible(unlink(from))
+    invisible(path)
+  }
+
+export_widget <-
+  function(...) {
+    .export_widget(...)
+  }
+
+pv <- profvis::profvis(clean_play_by_play_auto(), split = "v")
+export_widget(pv, path = "widgets/clean_play_by_play_auto.html")
+pv <- profvis::profvis(munge_play_by_play_auto(), split = "v")
+export_widget(pv, path = "widgets/munge_play_by_play_auto.html")
+pv <- profvis::profvis(fit_rapm_models_auto(), split = "v")
+export_widget(pv, "widgets/fit_rapm_models_auto.html")
+pv <- profvis::profvis(extract_rapm_estimates_auto(), split = "v")
+export_widget(pv, "widgets/extract_rapm_estimates_auto.html")
+```
+
+```{r proftools_rds}
+# Reference: https://cran.r-project.org/web/packages/proftools/vignettes/proftools.pdf
+path_profile <- "data/profile.rds"
+if (!file.exists(path_profile)) {
+  pd <- proftools::profileExpr(source("_main.R"))
+  readr::write_rds(pd, path_profile)
+} else {
+  pd <- path_profile %>% readr::read_rds()
+}
+```
+
+```{r proftools_analyze, eval = FALSE}
+# Not exactly what I'm looking for...
+# pd %>% proftools::funSummary() %>% as_tibble(rownames = "f")
+pd %>%
+  proftools::funSummary(srclines = FALSE, value = "time", GC = FALSE, self.pct = 0.1) %>%
+  as_tibble(rownames = "fUNC") %>%
+  print(n = Inf)
+
+# Closer...
+# pd %>% proftools::callSummary() %>% as_tibble(rownames = "call")
+pd %>% proftools::callSummary(byTotal = FALSE, total.pct = 1, value = "time") %>% as_tibble(rownames = "call") %>% print(n = Inf)
+# Best.
+pd %>% proftools::srcSummary() %>% as_tibble(rownames = "call") %>% print(n = Inf)
+pd %>%
+  proftools::srcSummary(value = "time", source = TRUE, width = 80L) %>%
+  as_tibble(rownames = "call") %>%
+  print(n = Inf)
+
+# This is better for actually analyzing times.
+pd %>%
+  proftools::hotPaths(srclines = FALSE) %>%
+  as_tibble() %>%
+  print(n = Inf)
+
+# Need to install `{graph}` from bioconductor.
+# pd %>% proftools::plotProfileCallGraph()
+
+# Not too helpful...
+# pd %>% proftools::printProfileCallGraph()
+pd %>%
+  proftools::filterProfileData(select = "extract_rapm_estimates_auto", skip = 10) %>%
+  proftools::printProfileCallGraph()
+
+pd %>%
+  proftools::plotProfileCallGraph()
+```
+
+```{r proftools_visualize}
+funcs <- lsf.str(all.names = TRUE) %>% c()
+funcs
+rgx_funcs <-
+  paste0("(", paste(funcs, collapse = ")|(", sep = ""), ")") %>%
+  str_replace_all("\\.", "[.]")
+
+pd_arr <-
+  pd %>%
+  proftools:::fgData(colormap = NULL, reorder = "time") %>%
+  as_tibble(rownames = "idx_time") %>%
+  mutate_at(vars(idx_time), funs(as.integer)) %>%
+  arrange(left, bottom, right, top)
+pd_arr
+pd_arr_filt <-
+  pd_arr %>%
+  filter(str_detect(label, rgx_funcs))
+
+func_grps <-
+  pd_arr_filt %>%
+  left_join(
+    pd_arr_filt %>%
+      filter(str_detect(label, "_auto$")) %>%
+      mutate(grp = str_remove(label, "_auto$"), idx_grp = row_number())
+  ) %>%
+  fill(grp) %>%
+  fill(idx_grp) %>%
+  mutate(idx = row_number()) %>%
+  mutate_at(vars(grp), funs(forcats::fct_inorder(.))) %>%
+  group_by(idx_grp) %>%
+  mutate(idx_grp_intra = row_number()) %>%
+  ungroup() %>%
+  select(idx, idx_grp_inter = idx_grp, idx_grp_intra, func_grp = grp, func = label)
+func_grps
+
+library("teplot")
+n_funcs <- func_grps %>% nrow()
+viz_funcs <-
+  func_grps %>%
+  ggplot(aes(x = idx, y = idx_grp_intra, color = func_grp)) +
+  geom_point() +
+  ggrepel::geom_text_repel(aes(label = func), hjust = 0, force = 0.1, show.legend = FALSE) +
+  ggplot2::scale_colour_brewer(palette = "Set1") +
+  # scale_x_continuous(limits = c(0, 6)) +
+  guides(color = guide_legend(title = 'Function "Group"', override.aes = list(size = 3))) +
+  xlim(-1, n_funcs + 2) +
+  teplot::theme_te(legend.title = element_text()) +
+  theme(
+    legend.text = element_text(size = 11),
+    legend.position = "bottom",
+    axis.text = element_blank(),
+  ) +
+  labs(
+    title = "Execution Order of Custom Functions in Project",
+    # x = 'Function "Group"',
+    x = NULL,
+    y = 'Call Stack Order Within Function "Group"'
+  )
+viz_funcs
+
+teproj::export_ext_png(
+  viz_funcs,
+  dir = "figs",
+  units = "in",
+  height = 7,
+  width = 9
+)
+```
+

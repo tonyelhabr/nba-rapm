@@ -1,7 +1,7 @@
 
 # Reference: http://eightthirtyfour.com/data
 # path_dl <- download_rda_file(season = 2017)
-path_dl <- "data-raw/raw_play_by_play_2017.Rda"
+path_dl <- "data-raw/PbP_17_18.Rda"
 
 # .import_data(path_dl)
 load(path_dl)

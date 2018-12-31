@@ -1,6 +1,6 @@
 *.csv
 *.rds
-!20181224/
+!20181224/*
 
 # *play_by_play*
 # *game_logs*

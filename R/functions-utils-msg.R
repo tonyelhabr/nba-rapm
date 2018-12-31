@@ -13,7 +13,6 @@
 }
 
 .display_error <- function(x, ..., .envir = parent.frame()) {
-
   usethis::ui_stop(x, .envir = .envir)
 }
 

@@ -9,28 +9,18 @@
     possession_data %>% pull(pts)
   }
 
-.UNITS <- "in"
-.HEIGHT <- 5
-.WIDTH <- 7
 .visualize_glmnet <-
   function(...,
            data,
-           side = c("o", "d"),
-           path,
-           units = .UNITS,
-           height = .HEIGHT,
-           width = .WIDTH) {
-    require("ggfortify")
+           path_viz_rapm_fit_side = config$path_viz_rapm_fit_side) {
+    suppressWarnings(suppressPackageStartupMessages(requireNamespace("ggfortify")))
     viz <-
-      ggfortify::autoplot(data)
+      autoplot(data)
     path_export <-
       .export_data_from_path(
         ...,
         data = viz,
-        path = path,
-        units = units,
-        height = height,
-        width = width
+        path = path_viz_rapm_fit_side
       )
     invisible(viz)
   }
@@ -38,29 +28,42 @@
 .visualize_glmnet_cv <-
   function(...,
            data,
-           side = c("o", "d"),
-           path = .get_config_name(config$path_fit_cv, side = side),
-           units = .UNITS,
-           height = .HEIGHT,
-           width = .WIDTH) {
-    .visualize_glmnet(
-      ...,
-      data = data,
-      path = path,
-      units = units,
-      height = height,
-      width = width
-    )
+           path_viz_rapm_fit_cv_side = config$path_viz_rapm_fit_cv_side) {
+    suppressWarnings(suppressPackageStartupMessages(requireNamespace("ggfortify")))
+    viz <-
+      autoplot(data)
+    path_export <-
+      .export_data_from_path(
+        ...,
+        data = viz,
+        path = path_viz_rapm_fit_cv_side
+      )
+    invisible(viz)
   }
 
-.get_lambda_optm <-
+.get_lambda <-
   function(...,
            x,
            y,
+           optimize = .OPTIMIZE,
+           lambda = .LAMBDA,
            seed = .SEED,
-           path_rapm_fit_cv_side,
-           path_rapm_fit_cv_error_side,
-           path_rapm_fit_cv_coefs_side) {
+           path_lambda_side = config$path_lambda_side) {
+    # browser()
+    if(!optimize) {
+      .display_info(
+        glue::glue(
+          "Using the specified value {usethis::ui_value(lambda)} for {usethis::ui_field('lambda')}."),
+        ...
+      )
+      path_export <-
+        .export_data_from_path(
+          ...,
+          data = lambda %>% tibble(lambda = .),
+          path = path_lambda_side
+        )
+      return(lambda)
+    }
     set.seed(seed)
     fit <-
       glmnet::cv.glmnet(
@@ -70,27 +73,32 @@
         y = y,
         alpha = 0
       )
-    browser()
 
     # plot(fit)
-    viz_fit_error <-
+    viz_glmnet <-
       .visualize_glmnet_cv(
         ...,
-        data = fit,
-        path = path_rapm_fit_cv_error_side
+        data = fit
       )
-    # plot(fit$glmnet.fit)
-    viz_fit_coefs <-
+    # # plot(fit$glmnet.fit)
+    viz_glmnet <-
       .visualize_glmnet(
         ...,
-        data = fit$glmnet.fit,
-        path = path_rapm_fit_cv_coefs_side
+        data = fit$glmnet.fit
       )
+    .display_info(
+      glue::glue(
+        "Found {usethis::ui_value(fit$lambda.min)} ",
+        "to be the optimal {usethis::ui_field('lambda')}."
+      ),
+      ...
+    )
+
     path_export <-
       .export_data_from_path(
         ...,
-        data = fit$lambda.min %>% tibble(lambda_min = .),
-        path = path_rapm_fit_cv_side
+        data = fit$lambda.min %>% tibble(lambda = .),
+        path = path_lambda_side
       )
     invisible(fit$lambda.min)
   }
@@ -99,24 +107,17 @@
   function(...,
            x,
            y,
-           lambda,
+           lambda = .LAMBDA,
            seed = .SEED,
-           side = c("o", "d"),
-           path_rapm_fit_side) {
+           path_rapm_fit_side = config$path_rapm_fit_side) {
     set.seed(seed)
     fit <-
       glmnet::glmnet(
         intercept = TRUE,
         x = x,
         y = y,
+        lambda = lambda,
         alpha = 0,
-        lambda = lambda
-      )
-    viz_fit_coefs <-
-      .visualize_glmnet(
-        ...,
-        data = fit,
-        path = path_rapm_fit_side
       )
     path_export <-
       .export_data_from_path(
@@ -129,12 +130,9 @@
 
 .fit_rapm_model_byside <-
   function(...,
-           # side = c("o", "d"),
-           path_possession_data_side,
-           path_rapm_fit_cv_side,
-           path_rapm_fit_side,
-           optimize = .OPTIMIZE,
-           lambda = .LAMBDA) {
+           lambda, # "Catch the `lambda` here.
+           path_possession_data_side = config$path_possession_data_side) {
+
     possession_data <-
       .import_data_from_path(
         ...,
@@ -147,45 +145,32 @@
       possession_data %>%
       .get_y_glmnet()
 
-    if(optimize) {
-      lambda <-
-        .get_lambda_optm(
-          ...,
-          x = x_glmnet,
-          y = y_glmnet,
-          path_rapm_fit_cv_side
-        )
-      msg <- glue::glue("Found {usethis::ui_value(lambda)} to be the optimal {usethis::ui_field('lambda')}.")
-    } else {
-      msg <- glue::glue("Using default {usethis::ui_field('lambda')} = {usethis::ui_value(lambda)}.")
-    }
-    .display_info(msg, ...)
+    lambda <-
+      .get_lambda(
+        ...,
+        lambda = lambda,
+        x = x_glmnet,
+        y = y_glmnet
+      )
 
     fit <-
       .fit_rapm_model_side(
         ...,
         x = x_glmnet,
         y = y_glmnet,
-        lambda = lambda,
-        path_rapm_fit_side = path_rapm_fit_side
+        lambda = lambda
       )
     fit
   }
 
 fit_rapm_models <-
   function(...,
+           path_possession_data_side = config$path_possession_data_side,
+           path_rapm_fit_side = config$path_rapm_fit_side,
+           # optimize = .OPTIMIZE,
+           # seed = .SEED,
            # Unfortunately, these cant be abstracted away with `...`
            # because they have _[o|d]` suffixes.
-           path_possession_data_o = config$path_possession_data_o,
-           path_possession_data_d = config$path_possession_data_d,
-           path_rapm_fit_cv_o = config$path_rapm_fit_cv_o,
-           path_rapm_fit_cv_d = config$path_rapm_fit_cv_d,
-           path_rapm_fit_o = config$path_rapm_fit_o,
-           path_rapm_fit_d = config$path_rapm_fit_d,
-           optimize_o = .OPTIMIZE,
-           optimize_d = .OPTIMIZE,
-           seed_o = .SEED,
-           seed_d = .SEED,
            lambda_o = .LAMBDA,
            lambda_d = .LAMBDA) {
 
@@ -194,13 +179,13 @@ fit_rapm_models <-
         ...,
         path_reqs =
           c(
-            path_possession_data_o,
-            path_possession_data_d
+            .get_path_from(..., path = path_possession_data_side, side = "o"),
+            .get_path_from(..., path = path_possession_data_side, side = "d")
           ),
         path_deps =
           c(
-            path_rapm_fit_o,
-            path_rapm_fit_d
+            .get_path_from(..., path = path_rapm_fit_side, side = "o"),
+            .get_path_from(..., path = path_rapm_fit_side, side = "d")
           )
       )
 
@@ -208,59 +193,31 @@ fit_rapm_models <-
       return(invisible(NULL))
     }
 
-    .fit_rapm_model_byside_partially <-
-      purrr::partial(
-        .fit_rapm_model_byside,
-        ...
-      )
+    .display_info(
+      glue::glue("Step 3: Fitting models."),
+      ...
+    )
+
     fit_o <-
-      # .fit_rapm_model_byside_partially(
       .fit_rapm_model_byside(
         ...,
-        path_possession_data_side = path_possession_data_o,
-        optimize = optimize_o,
-        seed = seed_o,
-        lambda = lambda_o,
-        path_rapm_fit_cv_side = path_fit_cv_o,
-        path_rapm_fit_side = path_rapm_fit_o
+        side = "o",
+        lambda = lambda_o
       )
     fit_d <-
-      .fit_rapm_model_byside_partially(
-        path_possession_data_side = path_possession_data_d,
-        optimize = optimize_d,
-        seed = seed_d,
-        lambda = lambda_d,
-        path_rapm_fit_cv_side = path_fit_cv_d,
-        path_rapm_fit_side = path_rapm_fit_d
+      .fit_rapm_model_byside(
+        ...,
+        side = "d",
+        lambda = lambda_d
       )
     invisible(list(fit_o = fit_o, fit_d = fit_d))
   }
 
-# fit_rapm_models_auto <-
-#   purrr::partial(
-#     fit_rapm_models,
-#     season = config$season,
-#     optimize_o = config$optimize_o,
-#     optimize_d = config$optimize_d,
-#     seed_o = config$seed_o,
-#     seed_d = config$seed_d,
-#     lambda_o = config$lambda_o,
-#     lambda_d = config$lambda_d,
-#     skip = config$skip,
-#     verbose = config$verbose,
-#     export = config$export,
-#     backup = config$backup,
-#     clean = config$clean,
-#     n_keep = config$n_keep
-#   )
-
 fit_rapm_models_auto <-
   function(...,
            season = config$season,
-           optimize_o = config$optimize_o,
-           optimize_d = config$optimize_d,
-           seed_o = config$seed_o,
-           seed_d = config$seed_d,
+           optimize = config$optimize,
+           seed = config$seed,
            lambda_o = config$lambda_o,
            lambda_d = config$lambda_d,
            skip = config$skip,
@@ -272,10 +229,8 @@ fit_rapm_models_auto <-
     fit_rapm_models(
       # ...,
       season = season,
-      optimize_o = optimize_o,
-      optimize_d = optimize_d,
-      seed_o = seed_o,
-      seed_d = seed_d,
+      optimize = optimize,
+      seed = seed,
       lambda_o = lambda_o,
       lambda_d = lambda_d,
       skip = skip,

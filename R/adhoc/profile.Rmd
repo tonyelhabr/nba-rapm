@@ -69,8 +69,8 @@ pv <- profvis::profvis(munge_play_by_play_auto(), split = "v")
 export_widget(pv, path = "widgets/munge_play_by_play_auto.html")
 pv <- profvis::profvis(fit_rapm_models_auto(), split = "v")
 export_widget(pv, "widgets/fit_rapm_models_auto.html")
-pv <- profvis::profvis(extract_rapm_estimates_auto(), split = "v")
-export_widget(pv, "widgets/extract_rapm_estimates_auto.html")
+pv <- profvis::profvis(extract_rapm_coefs_auto(), split = "v")
+export_widget(pv, "widgets/extract_rapm_coefs_auto.html")
 ```
 
 ```{r proftools_rds}
@@ -114,7 +114,7 @@ pd %>%
 # Not too helpful...
 # pd %>% proftools::printProfileCallGraph()
 pd %>%
-  proftools::filterProfileData(select = "extract_rapm_estimates_auto", skip = 10) %>%
+  proftools::filterProfileData(select = "extract_rapm_coefs_auto", skip = 10) %>%
   proftools::printProfileCallGraph()
 
 pd %>%
@@ -122,6 +122,7 @@ pd %>%
 ```
 
 ```{r proftools_visualize}
+
 funcs <- lsf.str(all.names = TRUE) %>% c()
 funcs
 rgx_funcs <-

@@ -95,9 +95,9 @@ if(config$optimize) {
     )
 }
 
-# create_estimates -------------------------------------------------------------
+# create_coefs -------------------------------------------------------------
 # Estimate the rapm values for each `id`.
-create_estimates <-
+create_coefs <-
   function(x, y, lambda, ..., path) {
     fit_glmnet <-
       glmnet::glmnet(
@@ -108,7 +108,7 @@ create_estimates <-
         lambda = lambda
       )
 
-    estimates <-
+    coefs <-
       fit_glmnet %>%
       broom::tidy() %>%
       filter(term != "(Intercept)") %>%
@@ -120,59 +120,59 @@ create_estimates <-
       arrange(desc(estimate)) %>%
       select(id = term, rapm = estimate)
 
-    estimates
+    coefs
   }
 
-estimates_o <-
-  create_estimates(
+coefs_o <-
+  create_coefs(
     x = x_glmnet_o,
     y = y_glmnet_o,
     # lambda = lambda_optm_o
     # lambda = 200
     lambda = 100
   )
-estimates_o %>% arrange(desc(rapm))
+coefs_o %>% arrange(desc(rapm))
 
-estimates_d <-
-  create_estimates(
+coefs_d <-
+  create_coefs(
     x = x_glmnet_d,
     y = y_glmnet_d,
     # lambda = lambda_optm_d
     # lambda = 200
     lambda = 100
   )
-estimates_d %>% arrange(desc(rapm))
+coefs_d %>% arrange(desc(rapm))
 
-# Combine the `o` and `d` estimates.
-estimates <-
+# Combine the `o` and `d` coefs.
+coefs <-
   bind_rows(
-    estimates_o %>% mutate(prefix = "o"),
-    estimates_d %>% mutate(prefix = "d")
+    coefs_o %>% mutate(prefix = "o"),
+    coefs_d %>% mutate(prefix = "d")
   ) %>%
   spread(prefix, rapm) %>%
   rename_at(vars(o, d), funs(paste0(., "rapm"))) %>%
   mutate(rapm = orapm + drapm) %>%
   arrange(desc(rapm))
-estimates
+coefs
 
 players <-
   config$path_players %>%
   teproj::import_path_cleanly()
 
-estimates_pretty <-
-  estimates %>%
+coefs_pretty <-
+  coefs %>%
   mutate_at(vars(matches("rapm")), funs(rnk = row_number(desc(.)))) %>%
   left_join(players, by = "id")
-estimates_pretty
+coefs_pretty
 
 teproj::export_path(
-  estimates_pretty,
+  coefs_pretty,
   path = config$path_data_export,
   export = config$export_data
 )
 
 message(
-  sprintf("Exported final rapm estimates to \"%s\".", config$output)
+  sprintf("Exported final rapm coefs to \"%s\".", config$output)
 )
 
 if(exists("cl")) {

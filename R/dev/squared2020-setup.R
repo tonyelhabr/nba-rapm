@@ -1,8 +1,8 @@
 
 # Reference: https://squared2020.com/2017/09/18/deep-dive-on-regularized-adjusted-plus-minus-ii-basic-application-to-2017-nba-data-with-r/
-file <- "data-raw/play_by_play_with_lineup_2017.csv"
-# file <- "data-raw/PbP_17_18.Rda"
-# load(file)
+path <- "data-raw/play_by_play_with_lineup_2017.csv"
+# path <- "data-raw/PbP_17_18.Rda"
+# load(path)
 # play_by_play0 <-
 #   pbp %>%
 #   as_tibble() %>%
@@ -12,7 +12,7 @@ file <- "data-raw/play_by_play_with_lineup_2017.csv"
 # play_by_play0 %>% count(rebound_offensive_count, shot_type, sort = TRUE)
 
 raw_shots_all <-
-  file %>%
+  path %>%
   readr::read_csv() %>%
   janitor::clean_names()
 

@@ -1,6 +1,6 @@
 
 setup_cores <-
-  function(multi_core, n_core, ...) {
+  function(..., multi_core = TRUE, n_core = 4L) {
     if(.Platform$OS.type != "windows") {
       if(multi_core) {
         .display_warning(
@@ -23,10 +23,14 @@ setup_cores <-
           )
         } else {
           # suppressWarnings(suppressPackageStartupMessages(library("parallel")))
-          library("parallel")
+          # suppressWarnings(suppressPackageStartupMessages(library("doParallel")))
 
-          n_core_avail <- parallel::detectCores()
-          print("here")
+          # browser()
+          # library("doParallel")
+          cl <- makeCluster(detectCores())
+
+          n_core_avail <- detectCores()
+          # print("here")
           if(n_core > n_core_avail) {
             .display_error(
               glue::glue("{usethis::ui_code(n_core)} must be less than {n_core_avail}."),
@@ -40,9 +44,8 @@ setup_cores <-
               ...
             )
           }
-          # cl <- parallel::makeCluster(n_core)
-          cl <- doParallel::makeCluster(n_core)
-          suppressWarnings(suppressPackageStartupMessages(library("doParallel")))
+          # cl <- makeCluster(n_core)
+          cl <- makeCluster(detectCores())
           doParallel::registerDoParallel(cl)
 
           .display_info(

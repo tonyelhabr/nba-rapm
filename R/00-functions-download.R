@@ -6,13 +6,13 @@
 # and extracting the text after "id" using the online tool at
 # https://sites.google.com/site/gdocs2direct/.
 .ID_GOOGLEDRIVE_RAW_PLAY_BY_PLAY <- "1BmBC0EQCsvyCwRHybxm--IMWWVqWEAOu"
-.DIR_DL <- "data-raw"
-.OVERWRITE <- FALSE
+.DIR_DATA_RAW <- "data-raw"
+.OVERWRITE_GOOGLEDRIVE <- FALSE
 .download_googledrive_files <-
   function(...,
            id = .ID_GOOGLEDRIVE_RAW_PLAY_BY_PLAY,
-           dir = .DIR_DL,
-           overwrite = .OVERWRITE) {
+           dir = .DIR_DATA_RAW,
+           .overwrite = .OVERWRITE_GOOGLEDRIVE) {
 
     .create_dir_ifnecessary(..., dir = dir)
     temp_zip <- tempfile(fileext = ".zip")
@@ -22,7 +22,7 @@
           googledrive::as_id() %>%
           googledrive::drive_download(
             path = temp_zip,
-            overwrite = overwrite,
+            overwrite = .overwrite,
             verbose = TRUE
           )
       }
@@ -56,43 +56,63 @@
   }
 
 download_raw_play_by_play_files <-
-  function(...) {
+  function(..., season = .SEASONS, path = config$path_raw_play_by_play) {
+    paths_exist <-
+      .check_dst_files_download(
+        ...,
+        season = season,
+        path = path
+      )
+    if(paths_exist) {
+      return(invisible(NULL))
+    }
     .download_googledrive_files(...)
   }
 
-# nbastatr ----
-# (Re-)generate data for a single `nbastatr` function.
-# purrr::pmap(
-#   list(.SEASONS),
-#   ~.try_import_teams_nbastatr(
-#     season = ..1
-#   )
-# )
-# Or..., do it all at once.
 
+# nbastatr ----
 download_nbastatr <-
   function(..., season = .SEASONS) {
+    paths_exist <-
+      .check_dst_files_download(
+        ...,
+        season = season,
+        path = path
+      )
+    if(paths_exist) {
+      return(invisible(NULL))
+    }
     # Note that its erroneous to use `season = .SEASONS` (because the functions
     # will treat `season` as a vector instead of as a scalar), and it doesn't work to
     # call `purrr::invoke_map()` from `purrr::map()`, so use a for loop instead.
-    for(s in season) {
+    for(.season in season) {
       purrr::invoke_map(
         .f = list(
-          .try_import_players_nbastatr,
-          .try_import_teams_nbastatr,
-          .try_import_players_game_logs_nbastatr,
-          .try_import_teams_game_logs_nbastatr,
-          .try_import_players_summary_nbastatr,
-          .try_import_teams_summary_nbastatr
+          .get_players_nbastatr,
+          .get_teams_nbastatr,
+          .get_players_game_logs_nbastatr,
+          .get_teams_game_logs_nbastatr,
+          .get_players_summary_nbastatr,
+          .get_teams_summary_nbastatr
         ),
-        .x = list(list(season = s))
+        .x = list(list(season = .season))
       )
     }
+    invisible()
   }
 
 # espn ----
 download_rpm_espn <-
-  function(..., season = .SEASONS) {
+  function(..., season = .SEASONS, path = config$path_rpm_espn) {
+    paths_exist <-
+      .check_dst_files_download(
+        ...,
+        season = season,
+        path = path
+      )
+    if(paths_exist) {
+      return(invisible(NULL))
+    }
     res <- purrr::map(season, ~.download_rpm_espn(..., season = .x))
     invisible(res)
   }
@@ -152,38 +172,58 @@ download_rpm_espn <-
     invisible(res)
   }
 
-.download_combine_thing <-
-  function(..., season = .SEASONS, f_download, path) {
-    res0 <- purrr::map(season, ~f_download(..., season = .x))
-    res <-
-      .combine_data_from_paths(
+download_rapm_basketballanalytics <-
+  function(..., season = .SEASONS, path = config$path_rapm_basketballanalytics) {
+    paths_exist <-
+      .check_dst_files_download(
         ...,
+        season = season,
         path = path
       )
+    if(paths_exist) {
+      return(invisible(NULL))
+    }
+    res <- purrr::map(season, ~.download_rapm_basektballanalytics(..., season = .x))
     invisible(res)
   }
 
-# Note that `path` is made to be a parameter here so that it can be "overwritten"
-# when called from the corresponding `.try_import*()` function.
-.download_combine_rpm_espn <-
-  function(..., path = config$path_rpm_espn) {
-    memoise::memoise(
-      .download_combine_thing(
-        ...,
-        f_download = .download_rpm_espn,
-        path = path
-      )
-    )
-  }
-
-.download_combine_rapm_basketballanalytics <-
-  function(..., path = config$path_rapm_basketballanalytics) {
-    memoise::memoise(
-      .download_combine_thing(
-        ...,
-        f_download = .download_rapm_basektballanalytics,
-        path = path
-      )
-    )
-  }
+# download-combine ----
+# UPDATE: Decided that `download*()` and `combine*()` functions should be
+# called explicitly.
+# .download_combine_thing <-
+#   function(..., season = .SEASONS, f_download, path) {
+#     res_dummy <- purrr::map(season, ~f_download(..., season = .x))
+#     res <-
+#       .combine_data_from_paths(
+#         ...,
+#         path = path
+#       )
+#     invisible(res)
+#   }
+#
+# # .download_combine_thing_memoise <- memoise::memoise(.download_combine_thing)
+#
+# # Note that `path` is made to be a parameter here so that it can be "overwritten"
+# # when called from the corresponding `.try_import*()` function.
+# .download_combine_rpm_espn <-
+#   memoise::memoise(
+#     function(..., path = config$path_rpm_espn_combined) {
+#       .download_combine_thing(
+#         ...,
+#         f_download = .download_rpm_espn,
+#         path = path
+#       )
+#     }
+#   )
+#
+# .download_combine_rapm_basketballanalytics <-
+#   memoise::memoise(
+#     function(..., path = config$path_rapm_basketballanalytics_combined) {
+#       .download_combine_thing(
+#         ...,
+#         f_download = .download_rapm_basektballanalytics,
+#         path = path
+#       )
+#     }
+#   )
 

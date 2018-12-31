@@ -27,10 +27,12 @@ invisible(source(".Rprofile"))
 
 
 ```{r import}
-rapm_estimates <- .try_import_rapm_estimates()
+rapm_coefs <- .try_import_rapm_coefs()
 rapm_basektball_analytics <- .try_import_rapm_basketballanalytics()
 rpm_espn <- .try_import_rpm_espn()
 ```
+
+Going to need to update this to use the functions I created based on this initial work.
 
 ```{r rgx_src}
 src_order <- c("calc", "basketballanalytics", "espn")
@@ -46,8 +48,8 @@ rgx_src_debug <- src_order_debug %>% .create_rgx()
 
 
 ```{r rapm_estimate_slim}
-rapm_estimates_slim <-
-  rapm_estimates %>%
+rapm_coefs_slim <-
+  rapm_coefs %>%
   select(-matches("[o|d]rapm_rank")) %>%
   rename_at(vars(matches("rank|rapm")), funs(paste0(., "_calc"))) %>%
   select(
@@ -59,14 +61,14 @@ rapm_estimates_slim <-
 
 # My Estimates
 
-```{r rapm_estimates_slim_show_prep1}
+```{r rapm_coefs_slim_show_prep1}
 # library("data.table")
 # getOption("datatable.print.topn")
 # getOption("datatable.print.nrows")
 # getOption("datatable.print.rownames")
 # options(datatable.print.topn = 10, datatable.print.rownames = FALSE, max.print = 200)
-rapm_estimates_slim_show <-
-  rapm_estimates_slim %>%
+rapm_coefs_slim_show <-
+  rapm_coefs_slim %>%
   rename_at(vars(matches("_calc$")), funs(str_remove(., "_calc$"))) %>% 
   mutate(grp = season) %>% 
   group_by(grp) %>% 
@@ -75,13 +77,13 @@ rapm_estimates_slim_show <-
   mutate(dummy = purrr::walk(data, ~data.table:::print.data.table(x = .x)))
 ```
 
-```{r rapm_estimates_slim_show1, include = TRUE}
-rapm_estimates_slim_show
+```{r rapm_coefs_slim_show1, include = TRUE}
+rapm_coefs_slim_show
 ```
 
-```{r rapm_estimates_slim_show_prep2}
-rapm_estimates_slim_show <-
-  rapm_estimates_slim %>%
+```{r rapm_coefs_slim_show_prep2}
+rapm_coefs_slim_show <-
+  rapm_coefs_slim %>%
   rename_at(vars(matches("_calc$")), funs(str_remove(., "_calc$"))) %>% 
   group_by(season) %>% 
   arrange(rank) %>% 
@@ -92,15 +94,15 @@ rapm_estimates_slim_show <-
   knitr::kable(output_format = "markdown")
 ```
 
-```{r rapm_estimates_slim_show2, include = TRUE}
-rapm_estimates_slim_show
+```{r rapm_coefs_slim_show2, include = TRUE}
+rapm_coefs_slim_show
 ```
 
 Check against: https://public.tableau.com/views/14YearRAPM/14YearRAPM?%3Aembed=y&%3AshowVizHome=no
 
-```{r viz_rapm_estimates}
-viz_rapm_estimates <-
-  rapm_estimates_slim %>% 
+```{r viz_rapm_coefs}
+viz_rapm_coefs <-
+  rapm_coefs_slim %>% 
   ggplot(aes(x = orapm_calc, y = drapm_calc)) +
   geom_hline(aes(yintercept = 0)) +
   geom_vline(aes(xintercept = 0)) +
@@ -121,12 +123,12 @@ viz_rapm_estimates <-
     x = "ORAPM",
     y = "DRAPM"
   )
-viz_rapm_estimates
+viz_rapm_coefs
 ```
 
-```{r viz_rapm_estimates_export, eval = FALSE}
+```{r viz_rapm_coefs_export, eval = FALSE}
 teproj::export_ext_png(
-  viz_rapm_estimates,
+  viz_rapm_coefs,
   dir = "figs",
   units = "in",
   height = 7,
@@ -134,14 +136,14 @@ teproj::export_ext_png(
 )
 ```
 
-```{r viz_rapm_estimates_show, include = TRUE, fig.show = "asis"}
-viz_rapm_estimates
+```{r viz_rapm_coefs_show, include = TRUE, fig.show = "asis"}
+viz_rapm_coefs
 ```
 
 
 # Comparisons
 
-```{r estimates_compare}
+```{r coefs_join}
 rapm_basektball_analytics_slim <-
   rapm_basektball_analytics %>% 
   rename_at(vars(matches("rank|rapm")), funs(paste0(., "_basketballanalytics"))) %>%
@@ -161,8 +163,8 @@ rpm_espn_slim <-
     matches("rank|rpm")
   )
 
-estimates_compare <-
-  rapm_estimates_slim %>% 
+coefs_join <-
+  rapm_coefs_slim %>% 
   left_join(rapm_basektball_analytics_slim, by = c("season", "name")) %>%
   left_join( rpm_espn_slim, by = c("season", "name")) %>%
   select(
@@ -174,13 +176,13 @@ estimates_compare <-
     matches("^o"),
     matches("^d")
   )
-estimates_compare
+coefs_join
 ```
 
 ## With basketball-analytics
 
-```{r estimates_compare_basketballanalytics}
-estimates_compare
+```{r coefs_join_basketballanalytics}
+coefs_join
 ```
 
 
@@ -193,9 +195,9 @@ estimates_compare
 players_summary_compare <- .try_import_players_summary_compare()
 ```
 
-```{r estimates_compare_debug}
-estimates_compare_debug <-
-  estimates_compare %>% 
+```{r coefs_join_debug}
+coefs_join_debug <-
+  coefs_join %>% 
   left_join(
     players_summary_compare %>% 
       rename(id = id_player, name = name_player),
@@ -212,8 +214,8 @@ estimates_compare_debug <-
     pm_diff = pm_calc - pm_game_logs_nbastatr
   )
 
-estimates_compare_debug_slim <-
-  estimates_compare_debug %>% 
+coefs_join_debug_slim <-
+  coefs_join_debug %>% 
   mutate(
     mp_diff_rate = mp_diff / mp_calc,
     pm_diff_rate = pm_diff / pm_calc
@@ -227,37 +229,37 @@ estimates_compare_debug_slim <-
     matches("_diff$"),
     matches("_rate$")
   )
-estimates_compare_debug_slim
+coefs_join_debug_slim
 ```
 
-```{r viz_estimates_compare_debug, eval = FALSE}
-estimates_compare_debug_slim_tidy <-
-  estimates_compare_debug_slim %>% 
+```{r viz_coefs_join_debug, eval = FALSE}
+coefs_join_debug_slim_tidy <-
+  coefs_join_debug_slim %>% 
   select_at(vars(matches("^(mp|pm).*(calc|diff)$"))) %>% 
   gather(calc_metric, calc_value, matches("_calc$")) %>% 
   gather(diff_metric, diff_value, matches("_diff$")) %>% 
   mutate(prefix = calc_metric %>% str_remove("_.*$"))
-viz_estimates_compare_debug_slim_tidy1 <-
-  estimates_compare_debug_slim_tidy %>% 
+viz_coefs_join_debug_slim_tidy1 <-
+  coefs_join_debug_slim_tidy %>% 
   ggplot(aes(x = calc_value, y = diff_value, color = prefix)) +
   geom_point(alpha = 0.1) +
   facet_wrap(~prefix, scales = "free")
-viz_estimates_compare_debug_slim_tidy1
-viz_estimates_compare_debug_slim_tidy2 <-
-  estimates_compare_debug_slim_tidy %>% 
+viz_coefs_join_debug_slim_tidy1
+viz_coefs_join_debug_slim_tidy2 <-
+  coefs_join_debug_slim_tidy %>% 
   ggplot(aes(x = diff_value, fill = prefix)) +
   # geom_histogram(bins = 50) +
   geom_density(alpha = 0.8) +
   # scale_y_continuous(labels = scales::percent) +
   facet_wrap(~prefix, scales = "free")
-viz_estimates_compare_debug_slim_tidy2
+viz_coefs_join_debug_slim_tidy2
 ```
 
 
-```{r fit_estimates_compare_debug, eval = FALSE}
+```{r fit_coefs_join_debug, eval = FALSE}
 fmlas_lhs <-  paste0(c("o", "d"), "rapm_basketballanalytics_diff")
 nms_rhs <-
-  estimates_compare_debug_slim %>% 
+  coefs_join_debug_slim %>% 
   names() %>% 
   str_subset("^(mp|pm).*(calc|diff|rate)$")
 
@@ -275,43 +277,43 @@ grid_fmlas <-
   )
 grid_fmla
 fmla_rhs <-
-  estimates_compare_debug_slim %>% 
+  coefs_join_debug_slim %>% 
   names() %>% 
   # str_subset("^(mp|pm)_(calc|diff|rate)$") %>% 
   # str_subset("^(mp|pm)_(diff_rate)$") %>%
   str_subset("^(mp|pm)_(diff)$") %>%
   paste(collapse = " + ", sep = "")
-fits_estimates_compare_debug <-
+fits_coefs_join_debug <-
   grid_fmlas %>% 
   group_by(y) %>% 
   mutate(fit = 
            purrr::pmap(list(y, x), 
                        ~lm(formula = formula(paste0(..1, " ~ ", ..2)), 
-                           data = estimates_compare_debug_slim)
+                           data = coefs_join_debug_slim)
            )
   ) %>%
-  mutate(estimates = purrr::map(fit, broom::tidy)) %>% 
+  mutate(coefs = purrr::map(fit, broom::tidy)) %>% 
   ungroup() %>% 
-  select(y, x, estimates) %>% 
-  unnest(estimates) %>% 
+  select(y, x, coefs) %>% 
+  unnest(coefs) %>% 
   arrange(y, x, p.value)
-fits_estimates_compare_debug
+fits_coefs_join_debug
 
-fits_estimates_compare_debug_filt1 <-
-  fits_estimates_compare_debug %>%
+fits_coefs_join_debug_filt1 <-
+  fits_coefs_join_debug %>%
   filter(x == "mp_diff + pm_diff")
-fits_estimates_compare_debug_filt1
+fits_coefs_join_debug_filt1
 
-fits_estimates_compare_debug_filt1 <-
-  fits_estimates_compare_debug %>%
+fits_coefs_join_debug_filt1 <-
+  fits_coefs_join_debug %>%
   filter(x == "mp_diff_rate + pm_diff_rate")
-fits_estimates_compare_debug_filt1
+fits_coefs_join_debug_filt1
 
 ```
 
-```{r estimates_compare_slim, eval = FALSE}
-estimates_compare_slim <-
-  estimates_compare %>%
+```{r coefs_join_slim, eval = FALSE}
+coefs_join_slim <-
+  coefs_join %>%
   select(
     season,
     name,
@@ -320,47 +322,47 @@ estimates_compare_slim <-
     matches("^ra?pm")
   )
 
-estimates_compare_slim1 <-
-  estimates_compare_slim %>%
+coefs_join_slim1 <-
+  coefs_join_slim %>%
   select(-matches("espn"))
 
-estimates_compare_slim1 %>%
+coefs_join_slim1 %>%
   print(n = 25)
-estimates_compare_slim2 <-
-  estimates_compare_slim %>%
+coefs_join_slim2 <-
+  coefs_join_slim %>%
   select(-matches("basketballanalytics"))
 
-estimates_compare_slim
-estimates_compare_slim %>%
+coefs_join_slim
+coefs_join_slim %>%
   mutate(diff = (rank_calc - rank_basketballanalytics)) %>%
   arrange(abs(diff))
 
-estimates_tidy <-
-  estimates_compare %>%
+coefs_tidy <-
+  coefs_join %>%
   gather(metric_src, value, matches(rgx_src)) %>%
   separate(metric_src, into = c("metric", "src"), sep = "_") %>%
   mutate_at(vars(src), funs(factor(., levels = src_order)))
-estimates_tidy
-estimates_tidy %>% pull(src) %>% levels()
+coefs_tidy
+coefs_tidy %>% pull(src) %>% levels()
 
-estimates_h2h <-
-  estimates_tidy %>%
+coefs_h2h <-
+  coefs_tidy %>%
   filter(metric == "rank") %>%
   spread(src, value) %>%
   select(-metric) %>%
   arrange(season, calc)
-estimates_h2h
+coefs_h2h
 
-estimates_norm <-
-  estimates_tidy %>%
+coefs_norm <-
+  coefs_tidy %>%
   group_by(season, src, metric) %>%
   mutate_at(vars(value), funs(value_prank = dplyr::percent_rank(-.))) %>%
   ungroup()
-estimates_norm
+coefs_norm
 
-estimates_cors <-
-  estimates_tidy %>%
-  # estimates_norm %>%
+coefs_cors <-
+  coefs_tidy %>%
+  # coefs_norm %>%
   filter(metric == "rank") %>%
   spread(src, value) %>%
   group_by(season) %>%
@@ -378,10 +380,10 @@ estimates_cors <-
   arrange(season, src1, src2) %>%
   filter(!is.na(value)) %>%
   filter(src1 < src2)
-estimates_cors
+coefs_cors
 
-estimates_norm_viz <-
-  estimates_norm %>%
+coefs_norm_viz <-
+  coefs_norm %>%
   filter(metric == "rank") %>%
   spread(src, value) %>%
   # filter(espn > 0.75 | calc > 0.75) %>%
@@ -389,19 +391,19 @@ estimates_norm_viz <-
   mutate(
     diff_grp = diff %>% abs() %>% ggplot2::cut_width(0.25)
   )
-estimates_norm_viz <-
-  estimates_norm_viz %>%
+coefs_norm_viz <-
+  coefs_norm_viz %>%
   left_join(
-    estimates_norm_viz %>%
+    coefs_norm_viz %>%
       filter(!is.na(diff)) %>%
       group_by(diff_grp) %>%
       sample_frac(0.05) %>%
       ungroup() %>%
       mutate(name_diff = name)
   )
-estimates_norm_viz
-viz_estimates_norm1 <-
-  estimates_norm_viz %>%
+coefs_norm_viz
+viz_coefs_norm1 <-
+  coefs_norm_viz %>%
   filter(espn > 0.75 | calc > 0.75) %>%
   ggplot(aes(x = espn, y = calc, color = diff_grp)) +
   geom_point() +
@@ -409,14 +411,14 @@ viz_estimates_norm1 <-
     aes(label = name_diff)
   ) +
   teplot::theme_te()
-viz_estimates_norm1
+viz_coefs_norm1
 
-viz_estimates_norm2 <-
-  estimates_norm_viz %>%
+viz_coefs_norm2 <-
+  coefs_norm_viz %>%
   # filter(espn > 0.75 | calc > 0.75) %>%
   ggplot(aes(x = diff, fill = diff_grp)) +
   geom_histogram() +
   teplot::theme_te()
-viz_estimates_norm2
+viz_coefs_norm2
 ```
 

@@ -1,9 +1,16 @@
 
+
+.create_path_combined <-
+  function(x) {
+    x %>% str_replace_all("\\.", "_combined")
+  }
+
 .combine_data_from_paths <-
   function(...,
            path,
            dir = dirname(path),
-           rgx = str_replace_all(basename(path), "\\.", "_[0-9]{4}\\\\.")) {
+           rgx = .create_path_season_rgx(path),
+           path_out = .create_path_combined(path)) {
 
     # Use `list.files()` instead of `fs::dir_ls()` because the former raises an error
     # if extra arguments are passed through `...`
@@ -27,16 +34,18 @@
         ...,
         validate = FALSE,
         data = res,
-        path = path
+        path = path_out
       )
     invisible(res)
   }
 
-combine_rapm_estimates <-
+# Don't think I really need to specify `path_out` with these, assuming that
+# they all just substitute season suffix with `_combined`.
+combine_rapm_coefs <-
   function(...) {
     .combine_data_from_paths(
       ...,
-      path = config$path_rapm_estimates
+      path = config$path_rapm_coefs
     )
   }
 
@@ -48,9 +57,7 @@ combine_players_summary_compare <-
     )
   }
 
-# Prefix these with `.` because `.try_import*()` (and `.download_combine*()`) function
-# is "preferred".
-.combine_rpm_espn <-
+combine_rpm_espn <-
   function(...) {
     .combine_data_from_paths(
       ...,
@@ -58,7 +65,7 @@ combine_players_summary_compare <-
     )
   }
 
-.combine_rapm_basketballanalytics <-
+combine_rapm_basketballanalytics <-
   function(...) {
     .combine_data_from_paths(
       ...,

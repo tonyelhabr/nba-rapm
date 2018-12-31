@@ -23,12 +23,16 @@ default:
   n_keep:
     default: 0
     help: 'Number of backup files to NOT delete when "clean"-ing backup files.
-    (Not relevant if `clean = FALSE`.'
+    (Not relevant if `clean = FALSE`.)'
   skip:
     default: false
     help: 'If `TRUE`, skips any step that can be skipped by checking that
     downstread dependencies of the step already exist. If they do not exist,
     then the step is not skipped.'
+  overwrite:
+    default: false
+    help: 'If `TRUE`, then overwrites existing files. Used for some functions
+    (instead of `backup`).'
     
   dir:
     default: 'C:/Users/aelhabr/Documents/projects/nba-rapm/R'
@@ -66,23 +70,31 @@ default:
     # default: 250
     default: 50
     help: 'Analogous to `poss_min` for minutes played.'
-  optimize_o:
+  # optimize_o:
+  #   default: false
+  #   help: 'If `TRUE`, then calculates the "optimal" regularized
+  #   "lambda" penalties for the offensive at run-time (via `{glment}`"s default cross validation procedure.
+  #   Note that setting this value to `FALSE` (and using the default `lambda_optm_o` value),
+  #   reduces run-time execution.'
+  # optimize_d:
+  #   default: false
+  #   help: 'Analogous to `optimize_lambda_o`.'
+  optimize:
     default: false
     # default: true
     help: 'If `TRUE`, then calculates the "optimal" regularized
     "lambda" penalties for the offensive at run-time (via `{glment}`"s default cross validation procedure.
     Note that setting this value to `FALSE` (and using the default `lambda_optm_o` value),
     reduces run-time execution.'
-  optimize_d:
-    default: false
-    # default: true
-    help: 'Analogous to `optimize_lambda_o`.'
-  seed_o:
+  # seed_o:
+  #   default: 42
+  #   help: 'Seed to use for regression cross-validation.'
+  # seed_d:
+  #   default: 42
+  #   help: 'Analogous to `seed_o`.'
+  seed:
     default: 42
-    help: 'Seed to use for ridge regression cross-validation.'
-  seed_d:
-    default: 42
-    help: 'Analogous to `seed_o`.'
+    help: 'Seed to use for regression cross-validation.'
   lambda_o:
     # default: 100
     default: 250

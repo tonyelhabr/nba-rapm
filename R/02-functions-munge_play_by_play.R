@@ -5,7 +5,6 @@
            path_lineup_summary_calc = config$path_lineup_summary_calc) {
     players_nbastatr <- .try_import_players_nbastatr(...)
 
-    # browser()
     play_by_play_aug <-
       play_by_play %>%
       # filter(id_game == .ID_GAME_compare) %>%
@@ -93,7 +92,8 @@
     lineup_summary_calc <-
       left_join(
         play_by_play_aug %>% .summarise_lineup_byside(lineup1, side = "o"),
-        play_by_play_aug %>% .summarise_lineup_byside(lineup2, side = "d")
+        play_by_play_aug %>% .summarise_lineup_byside(lineup2, side = "d"),
+        by = c("id_game", "lineup")
       ) %>%
       mutate(
         poss_calc_total = poss_calc_o + poss_calc_d,
@@ -376,10 +376,19 @@
     invisible(players_summary_calc)
   }
 
+# This function is mostly useful so that the `*min` paremters
+# can be "abstracted" away (with the ellipses).
 .filter_play_by_play <-
-  function(..., play_by_play, players_summary_calc, poss_min, gp_min, mp_min) {
+  function(...,
+           play_by_play,
+           players_summary_calc,
+           poss_min = 0,
+           gp_min = 0,
+           mp_min = 0) {
 
-    play_by_play %>%
+    n_row_before <- play_by_play %>% nrow()
+    res <-
+      play_by_play %>%
       semi_join(
         players_summary_calc %>%
           filter(
@@ -389,16 +398,24 @@
           ),
         by = "id_player"
       )
+    n_row_after <- res %>% nrow()
+    .display_info(
+      glue::glue(
+        "{usethis::ui_value(n_row_before)} - {usethis::ui_value(n_row_after)} = ",
+        "{usethis::ui_value(n_row_before - n_row_after)} rows removed by filtering."
+        ),
+      ...
+    )
+    res
   }
 
 .widen_data_byside <-
   function(...,
            play_by_play,
+           # I believe this is the one time I need to explicilty include `side` due to the filtering.
            side,
-           # path_possession_data_side,
-           # path_possession_data_side_error
-           path_possession_data_side = config$path_possession_data,
-           path_possession_data_side_error = config$path_possession_data_error) {
+           path_possession_data_side = config$path_possession_data_side,
+           path_possession_data_error_side = config$path_possession_data_error_side) {
 
     # browser()
     play_by_play_side <-
@@ -413,11 +430,10 @@
 
     n_dups <- nrow(dups_n)
       if(n_dups > 0L) {
-        .display_warning(
+        .display_info(
           glue::glue(
             "There are {usethis::ui_value(n_dups)} rows with more than one ",
-            "player-side-possession combination ",
-            "(i.e. a player appears in a lineup more than once on a single possession)."
+            "player-side-possession combination."
           ),
           ...
         )
@@ -427,7 +443,7 @@
         dups_n_aug <-
           dups_n %>%
           mutate(
-            id_player = xid_player %>% str_replace("^%s", "") %>% as.integer()
+            id_player = xid_player %>% str_replace("^[od]", "") %>% as.integer()
           ) %>%
           left_join(
             players_nbastatr %>% select(id_player, name_player),
@@ -438,7 +454,8 @@
           .export_data_from_path(
             ...,
             data = dups_n_aug,
-            path = path_possession_data_side_error
+            side = side,
+            path = path_possession_data_error_side
           )
     }
 
@@ -458,59 +475,40 @@
       anti_join(dups_n, by = c("rn", "xid_player")) %>%
       arrange(rn, xid_player) %>%
       mutate(dummy = 1L) %>%
-      select(rn, xid_player, pts, mp, dummy) %>%
+      select(rn, xid_player, pts, dummy) %>%
       # semi_join(xid_players_filt) %>%
       spread(xid_player, dummy, fill = 0L) %>%
       select(-rn) %>%
-      mutate(poss = 1L) %>%
-      group_by_at(vars(-pts, -poss)) %>%
-      summarise_at(vars(pts, poss), funs(sum)) %>%
+      mutate(n = 1L) %>%
+      group_by_at(vars(-pts, -n)) %>%
+      summarise_at(vars(pts, n), funs(sum)) %>%
       ungroup() %>%
-      select(pts, poss, everything()) %>%
-      mutate(pts = 100 * pts / poss)
+      select(pts, n, everything()) %>%
+      mutate(pts = 100 * pts / n)
 
     if(FALSE) {
       possession_data_side %>% arrange(desc(pts))
-      possession_data_side %>% count(poss) %>% arrange(poss)
-      possession_data_side %>% count(poss) %>% arrange(desc(poss))
+      possession_data_side %>% count(n) %>% arrange(n)
+      possession_data_side %>% count(n) %>% arrange(desc(n))
 
       possession_data_side %>%
-        # filter(poss > 1) %>%
+        # filter(n > 1) %>%
         # filter(pts > 2) %>%
-        filter(abs(pts) <= 500) %>%
-        select(-poss)
+        filter(abs(pts) <= 500)
     }
 
+    possession_data_side <-
+      possession_data_side %>%
+      select(-n)
     path_export <-
       .export_data_from_path(
         ...,
         data = possession_data_side,
+        side = side,
         path = path_possession_data_side
       )
     invisible(possession_data_side)
   }
-
-
-.widen_data_o <-
-  function(...) {
-    .widen_data_byside(
-      ...,
-      side = "o" #,
-      # path_possession_data_side = config$path_possession_data_o,
-      # path_possession_data_side_error = config$path_possession_data_o_error
-    )
-  }
-
-.widen_data_d <-
-  function(...) {
-    .widen_data_byside(
-      ...,
-      side = "d" #,
-      # path_possession_data_side = config$path_possession_data_d,
-      # path_possession_data_side_error = config$path_possession_data_d_error
-    )
-  }
-
 
 .separate_lineup <-
   function(play_by_play, col, prefix = "x", suffix = 1:5, sep = "-") {
@@ -522,32 +520,31 @@
 munge_play_by_play <-
   function(...,
            path_play_by_play = config$path_play_by_play,
-           # These are included here exclusively for the `.try_skip()` function.
-           # (The `widen_data*` functions "know" what these paths should be.)
-           # path_possession_data_o = config$path_possession_data_o,
-           # path_possession_data_d = config$path_possession_data_d,
-           path_possession_data = config$path_possession_data,
+           path_possession_data_side = config$path_possession_data_side,
            path_players_summary_calc = config$path_players_summary_calc) {
 
-    path_possession_data_o <- .get_path_from(..., path = config$path_possession_data, side = "o")
-    path_possession_data_d <- .get_path_from(..., path = config$path_possession_data, side = "d")
     will_skip <-
       .try_skip(
         ...,
         path_reqs =
           c(
-            path_play_by_play
+            .get_path_from(..., path = path_play_by_play)
           ),
         path_deps =
           c(
-            path_players_summary_calc,
-            path_possession_data_o,
-            path_possession_data_d
+            .get_path_from(..., path = path_players_summary_calc),
+            .get_path_from(..., path = path_possession_data_side, side = "o"),
+            .get_path_from(..., path = path_possession_data_side, side = "d")
           )
       )
     if(will_skip) {
       return(invisible(NULL))
     }
+
+    .display_info(
+      glue::glue("Step 2: Munging play-by-play data."),
+      ...
+    )
 
     play_by_play <-
       .import_data_from_path(
@@ -617,14 +614,15 @@ munge_play_by_play <-
       mutate(side = if_else(player_num <= 5L, "o", "d")) %>%
       arrange(rn, player_num)
 
+    # Note that the `players_summary_calc` is the only `_calc` object
+    # that that matters
+    # (because the subsequent filtering depends on it).
     lineup_summary_calc <-
       .summarise_lineup(
         ...,
         play_by_play = play_by_play
       )
 
-    # Note that this is the only `summary_calc` data that matters
-    # (because the subsequent filtering depends on it).
     players_summary_calc <-
       .summarise_players(
         ...,
@@ -637,8 +635,6 @@ munge_play_by_play <-
         players_summary_calc = players_summary_calc
       )
 
-    # This function is mostly useful so that the `*min` paremters
-    # can be "abstracted" away (with the ellipses).
     play_by_play <-
       .filter_play_by_play(
         ...,
@@ -646,8 +642,18 @@ munge_play_by_play <-
         players_summary_calc = players_summary_calc
       )
 
-    possession_data_o <- .widen_data_o(..., play_by_play = play_by_play)
-    possession_data_d <- .widen_data_d(..., play_by_play = play_by_play)
+    possession_data_o <-
+      .widen_data_byside(
+        ...,
+        play_by_play = play_by_play,
+        side = "o"
+      )
+    possession_data_d <-
+      .widen_data_byside(
+        ...,
+        play_by_play = play_by_play,
+        side = "d"
+      )
 
     invisible(
       list(

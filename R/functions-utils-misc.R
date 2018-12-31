@@ -15,33 +15,38 @@
 #   }
 
 .try_skip <-
-  function(skip,
+  function(...,
+           skip,
            path_deps,
            path_reqs = NULL,
-           ...,
            call_name = NULL,
            safe = TRUE) {
     if (is.null(call_name)) {
       call_name <- "function"
     }
+
     if (!skip) {
       # return(invisible(FALSE))
       if(!is.null(path_reqs)) {
-        path_reqs_exist <-
-          purrr::pmap_lgl(
-            list(path_reqs, ...),
+        # Rely on full path being creted beforehand (in order to avoid ambiguity with `side`
+        # being specified).
+        path_reqs_check <-
+          purrr::map_chr(
+            path_reqs,
             ~.get_path_from(
-              ...,
-              path = ..1
-            ) %>%
-              file.exists()
+              path = .x,
+              validate = FALSE
+            )
           )
+        path_reqs_exist <- path_reqs_check %>% purrr::map_lgl(file.exists)
+
         if(all(path_reqs_exist)) {
           # msg <- glue::glue("Could skip {call_name} since all required input files exist.")
         } else {
           .display_info(
             glue::glue(
-              "You would have to skip {call_name} anyways since not all required input files exist."
+              "You would HAVE TO skip {call_name} since not ",
+              "all required input files exist."
             ),
             ...
           )
@@ -52,22 +57,35 @@
     }
 
     for (path in path_deps) {
-      path <-
-        .get_path_from(..., path = path)
       if (!file.exists(path)) {
         msg <-
           glue::glue(
-            "Can't skip {call_name} because up-stream file dependency at {path} does not exist."
+            "Can't skip {call_name} because up-stream file dependency at ",
+            "{path} does not exist."
            )
         if (safe) {
-          msg <- glue::glue("{msg} Over-ruling `skip = TRUE` and continuing (because `safe = TRUE`).")
+          msg <- glue::glue(
+            "{msg} Over-ruling `skip = TRUE` and continuing",
+            " (because `safe = TRUE`)."
+          )
           .display_warning(msg, ...)
           return(invisible(FALSE))
         } else {
           .display_error(msg, ...)
-          stop(call. = FALSE)
         }
       }
     }
     skip
   }
+
+
+.create_pb <-
+  function(total, ..., width = 80, format = "[:bar] :percent eta :eta\n") {
+    progress::progress_bar$new(
+      total = total,
+      format = format,
+      width = width
+    )
+  }
+
+

@@ -22,6 +22,8 @@
 
 clean_play_by_play <-
   function(...,
+           # Some of these are included here exclusively for the `.try_skip()` function.
+           # This is true with some of the other functions as well.
            path_raw_play_by_play = config$path_raw_play_by_play,
            path_play_by_play = config$path_play_by_play,
            path_game_final_scores_compare = config$path_game_final_scores_compare,
@@ -31,14 +33,23 @@ clean_play_by_play <-
       .try_skip(
         ...,
         path_reqs =
-          c(path_raw_play_by_play),
+          c(
+            .get_path_from(..., path = path_raw_play_by_play)
+          ),
         path_deps =
-          c(path_play_by_play)
+          c(
+            .get_path_from(..., path = path_play_by_play)
+          )
       )
 
     if(will_skip) {
       return(invisible(NULL))
     }
+
+    .display_info(
+      glue::glue("Step 1: Cleaning play-by-play data."),
+      ...
+    )
 
     raw_play_by_play <-
       .import_data_from_path(
@@ -304,20 +315,6 @@ clean_play_by_play <-
 
     invisible(play_by_play)
   }
-
-# clean_play_by_play_auto <-
-#   purrr::partial(
-#     clean_play_by_play,
-#     path_raw_play_by_play = config$path_raw_play_by_play,
-#     season = config$season,
-#     season_type = config$season_type,
-#     skip = config$skip,
-#     verbose = config$verbose,
-#     export = config$export,
-#     backup = config$backup,
-#     clean = config$clean,
-#     n_keep = config$n_keep
-#   )
 
 clean_play_by_play_auto <-
   function(...,

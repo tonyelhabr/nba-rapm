@@ -12,11 +12,10 @@ so I encourage the reader to read more about it there.
 
 # Highlights
 
-![](figs/viz_funcs.png)
+![](figs/viz_proj_funcs.png)
 
 # TODO(?)
 
-+ Fix stint function.
 + Re-do calculations to follow code shown at
     + https://squared2020.com/2017/09/18/deep-dive-on-regularized-adjusted-plus-minus-i-introductory-example/
     + https://squared2020.com/2017/09/18/deep-dive-on-regularized-adjusted-plus-minus-ii-basic-application-to-2017-nba-data-with-r/.

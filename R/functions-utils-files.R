@@ -2,6 +2,87 @@
 .VALIDATE <- TRUE # Set this to `FALSE` for combining paths.
 .SEP <- "_"
 
+.get_path_from_multiseason <-
+  function(..., path, season) {
+    season %>%
+      purrr::map_chr(~.get_path_from(..., path = path, season = .x, validate = FALSE))
+  }
+.get_paths_src <- .get_path_from_multiseason
+
+.create_path_season_rgx <-
+  function(x) {
+    x %>%
+      basename() %>%
+      str_replace_all("\\.", "_[0-9]{4}\\\\.") %>%
+      paste0("$")
+  }
+
+.get_path_dst_multiseason <-
+  function(..., path) {
+    list.files(
+      path = path %>% dirname(),
+      pattern = path %>% .create_path_season_rgx(),
+      recursive = FALSE,
+      full.names = TRUE
+    )
+  }
+.get_paths_dst <- .get_path_dst_multiseason
+
+.check_dst_files <-
+  function(..., paths_src = NULL, paths_dst = NULL, verb = NULL, overwrite = .OVERWRITE, f = NULL) {
+    if(is.null(paths_src)) {
+      # paths_src <- .get_paths_src(..., path = path, season = season)
+      paths_src <- .get_paths_src(...)
+    }
+    if(is.null(paths_dst)) {
+      # paths_dst <- .get_paths_dst(..., path = path)
+      paths_dst <- .get_paths_dst(...)
+    }
+    return_early <- FALSE
+    if(all(paths_src %in% paths_dst)) {
+      msg <- glue::glue("All files to {verb} already exist.")
+      if(overwrite) {
+        msg <-
+          glue::glue(
+            "{msg} However, {usethis::ui_field('overwrite')} = {usethis::ui_value(overwrite)},",
+            " so {verb}ing anyways."
+          )
+
+      } else {
+        return_early <- TRUE
+      }
+    } else {
+      msg <- glue::glue("Not all files to {verb} already exist, so {verb}ing.")
+      if(overwrite) {
+        msg <-
+          glue::glue(
+            "{msg} (Ignoring, {usethis::ui_field('overwrite')} = {usethis::ui_value(overwrite)},",
+            " since there is at least 1 file that is missing.)"
+          )
+      } else {
+
+      }
+    }
+    .display_info(msg, ...)
+    if(return_early) {
+      return(invisible(NULL))
+    }
+    if(is.null(f)) {
+      return(invisible(NULL))
+    }
+    f(...)
+  }
+
+.check_dst_files_download <-
+  function(...) {
+    .check_dst_files(..., verb = "download")
+  }
+
+.check_dst_files_create <-
+  function(...) {
+    .check_dst_files(..., verb = "create")
+  }
+
 .get_config_name <-
   function(..., name, side = NULL, sep = .SEP, .name = substitute(name)) {
     suffix <- purrr::compact(list(side))
@@ -134,16 +215,29 @@
     invisible(data)
   }
 
+
+.UNITS <- "in"
+.HEIGHT <- 5
+.WIDTH <- 7
 .export_data <-
-  function(..., data, path) {
+  function(...,
+           data,
+           path,
+           units = .UNITS,
+           height = .HEIGHT,
+           width = .WIDTH) {
     # path_export <- rio::export(data, path, ...)
     # See `.import_data()` for the reasoning for setting `verbose = FALSE` here.
     if(any("gg" %in% class(data))) {
       path_export <-
         ggplot2::ggsave(
-          ...,
-          x = data,
-          filename = path
+          # Passing dots will cause an error because `grDevices::png()` does not accept unused arguments.
+          # ...,
+          plot = data,
+          filename = path,
+          units = units,
+          height = height,
+          width = width
         )
     } else {
       path_export <- rio::export(x = data, file = path)

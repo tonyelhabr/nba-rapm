@@ -14,11 +14,10 @@
   if(!verbose) {
     return(invisible(NULL))
   }
-  usethis::ui_todo(glue::glue("TODO: {x}"), .envir = .envir)
+  # usethis::ui_todo(glue::glue("TODO: {x}"), .envir = .envir)
   # usethis::ui_todo(glue::glue("Info: {x}", .envir = .envir))
   # usethis::ui_line(glue::glue("Info: {x}"), .envir = .envir)
   cli::cat_rule(left = sprintf("TODO: %s", x), line = 2)
-  # cli::rule(left = x)
 }
 
 .display_warning <- function(x, ..., .envir = parent.frame()) {
@@ -28,6 +27,17 @@
 .display_error <- function(x, ..., .envir = parent.frame()) {
   usethis::ui_stop(x, .envir = .envir)
 }
+
+..pre_display <-
+  function(..., .width = 80L) {
+    opt_old <- getOption("width")
+    options(width = .width)
+  }
+
+..post_display <-
+  function(..., .width = 10000L) {
+    options(width = .width)
+  }
 
 # # Reference: `glue` package vignette.
 # .sprintf_transformer <- function(text, envir) {

@@ -1,6 +1,20 @@
-*.csv
-*.rds
-!04-extract/20181224/*
+!.gitignore
+# *
+**.csv
+**.rds
+01-clean/*
+02-munge/*
+03-fit/*
+04-extract/*
+05-analyze/*
+*dump/*
+# !*dump/*
+# !*dump/compare/*
+# !*dump/calc/*
+# !*dump/error/*
+# !*dump/info/*
+misc/*
+static/*
 
 # *play_by_play*
 # *game_logs*

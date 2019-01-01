@@ -1,23 +1,25 @@
 
 auto <-
   function(...) {
+    # width_old <- getOption("width")
+    # options(width = 80L)
     pre_auto()
     # setup_cores_auto()
     clean_play_by_play_auto(
       ...,
-      skip = TRUE
+      skip = FALSE
     )
     munge_play_by_play_auto(
       ...,
-      skip = TRUE
+      skip = FALSE
     )
     fit_rapm_models_auto(
       ...,
       intercept = TRUE,
       # optimize = TRUE,
       optimize = FALSE,
-      # lambda_o = 250,
-      # lambda_d = 350,
+      lambda_o = 200,
+      # lambda_d = 500,
       skip = FALSE
     )
     res <-
@@ -27,6 +29,7 @@ auto <-
       )
     # desetup_cores_auto()
     post_auto()
+    # options(width = width_old)
     invisible(res)
   }
 

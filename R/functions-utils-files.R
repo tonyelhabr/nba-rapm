@@ -213,7 +213,7 @@
     .display_info(
       glue::glue(
         "Successfully imported data from {usethis::ui_path(path)}.",
-        " (Last modification at {scales::time_format()(path_info$modification_time)})."
+        " (Last modification at {path_info$modification_time})."
       ),
       ...
     )

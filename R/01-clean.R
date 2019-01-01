@@ -10,7 +10,6 @@
 #     }
 #     # TODO: Implement this better (although this seems like it would work).
 #     # .validate_season_type(season_type)
-#     # browser()
 #     # if (season_type == .SEASON_TYPES[3] |
 #     #     (season_type != .SEASON_TYPES[1] &
 #     #     season_type != .SEASON_TYPES[2])) {
@@ -116,7 +115,7 @@ clean_play_by_play <-
       )
 
     id_game_bad <-
-      game_final_scores_compare %>%
+      game_final_scores_error %>%
       pull(id_game)
 
     path_export <-
@@ -137,6 +136,8 @@ clean_play_by_play <-
     #     filter(game_id == .ID_GAME_DEBUG) %>%
     #     arrange(period, time_elapsed)
     # }
+    play_types_valid <-
+      c("Make", "Miss", "Turnover", "Timeout", "Ejection", "Foul")
 
     play_by_play <-
       raw_play_by_play %>%
@@ -145,14 +146,14 @@ clean_play_by_play <-
       # Throw out completely mis-labeled points (e.g. 21600236).
       filter(!game_id %in% id_game_bad) %>%
       # Some of these "relevant" `play_type`s are mis-labeled with `event_action_type = 0`.
-      filter(event_action_type != 0 |
-               c(play_type %in% c("Make", "Miss", "Turnover", "Timeout", "Ejection", "Foul"))) %>%
+      filter(event_action_type != 0 | c(play_type %in% play_types_valid)) %>%
       filter(!is.na(player1team_id)) %>%
       mutate_at(vars(matches("description$")), funs(na_if(., ""))) %>%
       mutate(
         description = coalesce(home_description, away_description)
       ) %>%
       select(
+        pk = primary_key,
         id_game = game_id,
         period,
         event_num = event_number,
@@ -209,9 +210,9 @@ clean_play_by_play <-
         by = c("player1_id_team")
       ) %>%
       select(
+        id_game,
         pts_home,
         pts_away,
-        id_game,
         slug_team1,
         slug_team2,
         name_player1,
@@ -295,6 +296,7 @@ clean_play_by_play <-
         "mp",
         "id_game",
         "period",
+        "pk",
         paste0("id_team", suffix12),
         paste0("slug_team", suffix12),
         paste0("lineup", suffix12)

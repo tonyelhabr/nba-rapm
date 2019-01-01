@@ -352,7 +352,7 @@
     path_export <-
       .export_data_from_path(
         ...,
-        data = teams_summary_calcs,
+        data = teams_summary_calc,
         path = path_teams_summary_calc
       )
 
@@ -480,7 +480,8 @@
 .widen_data_byside <-
   function(...,
            play_by_play,
-           # I believe this is the one time I need to explicilty include `side` due to the filtering.
+           # I believe this is the one time I need to explicilty include
+           # `side` due to the filtering.
            side,
            path_possession_data_side = config$path_possession_data_side,
            path_possession_data_error_side = config$path_possession_data_error_side) {
@@ -708,7 +709,6 @@ munge_play_by_play <-
         play_by_play = play_by_play
       )
 
-    browser()
     teams_summary_calc <-
       .summarise_teams(
         ...,

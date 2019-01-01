@@ -61,7 +61,7 @@
         data = fit %>% .tidy_glmnet(),
         path = path_rapm_coefs_var_side
       )
-    coefs <-
+    rapm_coefs <-
       .extract_coefs(
         ...,
         fit = fit
@@ -69,20 +69,56 @@
 
     .export_data_from_path(
       ...,
-      data = coefs,
+      data = rapm_coefs,
       path = path_rapm_coefs_side
     )
 
-    invisible(coefs)
+    invisible(rapm_coefs)
+  }
+
+.join_coefs_od <-
+  function(...,
+           rapm_coefs_o = NULL,
+           rapm_coefs_d = NULL,
+           path_rapm_coefs_side = config$path_rapm_coefs_side) {
+
+    if(is.null(rapm_coefs_o)) {
+      rapm_coefs_o <-
+        .import_data_from_path(
+          ...,
+          side = "o",
+          path = path_rapm_coefs_side
+        )
+    }
+
+    if(is.null(rapm_coefs_d)) {
+      rapm_coefs_d <-
+        .import_data_from_path(
+          ...,
+          side = "d",
+          path = path_rapm_coefs_side
+        )
+    }
+
+    bind_rows(
+      rapm_coefs_o %>% mutate(side = "o"),
+      rapm_coefs_d %>% mutate(side = "d")
+    ) %>%
+      spread(side, rapm) %>%
+      rename_at(vars(o, d), funs(paste0(., "rapm"))) %>%
+      mutate(rapm = orapm + drapm) %>%
+      arrange(desc(rapm)) %>%
+      # mutate_at(vars(matches("rapm$")), funs(rank = row_number(desc(.)))) %>%
+      mutate_at(vars(rapm), funs(rank = row_number(desc(.))))
   }
 
 # + TODO: Make this work for individual sides! (Right now, it only works for
-# `coefs` combined.
+# `rapm_coefs` combined.
 # + This has been separated into its own function so that it can be
 # used "dynamically" in multiple places. (This is also why it does not
 # export the output data.)
 .name_coefs <-
-  function(..., coefs, players_nbastatr = NULL) {
+  function(..., rapm_coefs, players_nbastatr = NULL) {
 
     if(is.null(players_nbastatr)) {
       players_nbastatr <-
@@ -92,29 +128,42 @@
       players_nbastatr %>%
       select(id = id_player, name = name_player, slug = slug_team)
 
-    coefs_named_base <-
-      coefs %>%
+    rapm_coefs_named_base <-
+      rapm_coefs %>%
       rename(id = id_player) %>%
       left_join(players_slim, by = "id")
 
-    prefix_cols <- c("o", "d", "")
+    cols_rapm <-
+      rapm_coefs %>%
+      names() %>%
+      str_subset("rapm")
+
+    n_cols_rapm <- length(cols_rapm)
+    if(!(n_cols_rapm == 1L | n_cols_rapm == 3L)) {
+      .display_error(
+        glue::glue("An unexpected number of RAPM columns {n_cols_rapm} were detected."),
+        ...
+      )
+    }
+    # cols_rapm <- paste0(c("o", "d", ""), "rapm")
+    # prefix <- cols_rapm %>% str_remove("rapm")
+    # match.arg(prefix, choices = c("o", "d", ""), several.ok = TRUE)
+
+    cols_other_base <-
+      intersect(c("id", "name", "slug", "rank"), names(rapm_coefs))
     cols_order_base <-
       c(
-        "id",
-        "name",
-        "slug",
-        # paste0(prefix_cols, "rapm_rank"),
-        "rank",
-        paste0(prefix_cols, "rapm")
+        cols_other_base,
+        cols_rapm
       )
     cols_order_other <-
       setdiff(names(players_slim), cols_order_base)
-    cols_order <- c(cols_order_base, cols_order_other)
+    cols_order <- c(cols_order_other, cols_order_base)
 
-    coefs_named <-
-      coefs_named_base %>%
+    rapm_coefs_named <-
+      rapm_coefs_named_base %>%
       select(one_of(cols_order))
-    coefs_named
+    rapm_coefs_named
 
   }
 
@@ -144,25 +193,19 @@ extract_rapm_coefs <-
     }
 
     .display_progress(
-      glue::glue("Step 4: Extracting model coefs."),
+      glue::glue("Step 4: Extracting model rapm_coefs."),
       ...
     )
-    # browser()
-    coefs_o <- .extract_rapm_coefs_side(..., side = "o")
-    coefs_d <- .extract_rapm_coefs_side(..., side = "d")
 
-    coefs <-
-      bind_rows(
-        coefs_o %>% mutate(side = "o"),
-        coefs_d %>% mutate(side = "d")
-      ) %>%
-      spread(side, rapm) %>%
-      rename_at(vars(o, d), funs(paste0(., "rapm"))) %>%
-      mutate(rapm = orapm + drapm) %>%
-      arrange(desc(rapm)) %>%
-      # mutate_at(vars(matches("rapm$")), funs(rank = row_number(desc(.)))) %>%
-      mutate_at(vars(rapm), funs(rank = row_number(desc(.))))
+    rapm_coefs_o <- .extract_rapm_coefs_side(..., side = "o")
+    rapm_coefs_d <- .extract_rapm_coefs_side(..., side = "d")
 
+    rapm_coefs <-
+      .join_coefs_od(
+        ...,
+        rapm_coefs_o = rapm_coefs_o,
+        rapm_coefs_d = rapm_coefs_d
+      )
 
     # Use this if cross-checking "unexpected" RAPM values with calculated stats
     # to try to identify why these unexpected values may be like they are.
@@ -171,15 +214,15 @@ extract_rapm_coefs <-
     #     ...,
     #     path = path_players_summary_calc
     #   )
-    coefs_named <- coefs %>% .name_coefs(...)
+    rapm_coefs_named <- .name_coefs(..., rapm_coefs = rapm_coefs)
 
     path_export <-
       .export_data_from_path(
         ...,
-        data = coefs_named,
+        data = rapm_coefs_named,
         path = path_rapm_coefs
       )
-    invisible(coefs_named)
+    invisible(rapm_coefs_named)
   }
 
 extract_rapm_coefs_auto <-

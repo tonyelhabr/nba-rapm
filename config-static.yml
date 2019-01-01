@@ -5,7 +5,7 @@ default:
     help: 'Path format of raw play-by-play data file to clean.'
     
     
-  path_game_final_scores_compare:
+  path_game_final_scores_error:
     default: 'data/01-clean/dump/error/game_final_scores_error.csv'
     help: ''
   path_play_by_play_error:

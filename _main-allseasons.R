@@ -12,7 +12,7 @@ combine_rapm_basketballanalytics()
 # process ----
 # This is the "meat".
 download_raw_play_by_play_files(overwrite = FALSE)
-# source("_main.R", echo = FALSE)
+# auto()
 
 # analyze ----
 # This takes a while, so it's not vectorized across all seasons (yet).

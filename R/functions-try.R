@@ -110,8 +110,13 @@
     )
   }
 
+
 .try_import_rapm_coefs_cors_grid <-
   function(...) {
+    .display_warning(
+      glue::glue("You should probably just run `f_get` directly."),
+      ...
+    )
     .try_import_thing(
       ...,
       # f_get = .get_rapm_coefs_cors_grid,
@@ -120,17 +125,15 @@
     )
   }
 
-
-.try_import_rapm_coefs_cors_grid_summary <-
-  memoise::memoise(
-    function(...) {
-      .try_import_thing(
-        ...,
-        f_get = summarise_rapm_coefs_cors_grid,
-        path = config$path_rapm_coefs_cors_grid_summary
-      )
-    }
-  )
+# Do I need this?
+# .try_import_rapm_coefs_cors_grid_summary <-
+#   function(...) {
+#     .try_import_thing(
+#       ...,
+#       f_get = summarise_rapm_coefs_cors_grid,
+#       path = config$path_rapm_coefs_cors_grid_summary
+#     )
+#   }
 
 
 # non-nbastatr, no `f_get` ----

@@ -46,7 +46,7 @@ clean_play_by_play <-
       return(invisible(NULL))
     }
 
-    .display_info(
+    .display_progress(
       glue::glue("Step 1: Cleaning play-by-play data."),
       ...
     )

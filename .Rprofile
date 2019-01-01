@@ -39,6 +39,7 @@ suppressWarnings(suppressPackageStartupMessages(library("teplot")))
 .N_KEEP <- 0L
 .OVERWRITE <- FALSE
 
+.INTERCEPT <- TRUE
 .OPTIMIZE <- FALSE
 .SEED <- 42
 .LAMBDA <- 200

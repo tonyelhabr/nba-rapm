@@ -378,6 +378,8 @@
 
 # This function is mostly useful so that the `*min` paremters
 # can be "abstracted" away (with the ellipses).
+# NOTE: I don't think the filtering is done correclty here! (Entire stints involving
+# the filtered out players should be removed!)
 .filter_play_by_play <-
   function(...,
            play_by_play,
@@ -387,22 +389,30 @@
            mp_min = 0) {
 
     n_row_before <- play_by_play %>% nrow()
+    players_summary_calc_filt <-
+      players_summary_calc %>%
+      filter(
+        poss_calc_total < poss_min |
+        gp_calc_total < gp_min |
+        mp_calc_total < mp_min
+      )
+
     res <-
       play_by_play %>%
-      semi_join(
-        players_summary_calc %>%
-          filter(
-            poss_calc_total >= poss_min,
-            gp_calc_total >= gp_min,
-            mp_calc_total >= mp_min
-          ),
+      anti_join(players_summary_calc_filt,
         by = "id_player"
-      )
+      ) %>%
+      group_by(rn) %>%
+      filter(n() == 10L) %>%
+      ungroup()
+
     n_row_after <- res %>% nrow()
+    n_poss_rem <- (n_row_before - n_row_after) / 10
     .display_info(
       glue::glue(
-        "{usethis::ui_value(n_row_before)} - {usethis::ui_value(n_row_after)} = ",
-        "{usethis::ui_value(n_row_before - n_row_after)} rows removed by filtering."
+        "{scales::comma(n_row_before)} records before filtering; ",
+        "{scales::comma(n_row_after)} records after_filter; => ",
+        "{scales::comma(n_poss_rem)} possessions removed by filtering."
         ),
       ...
     )
@@ -417,7 +427,6 @@
            path_possession_data_side = config$path_possession_data_side,
            path_possession_data_error_side = config$path_possession_data_error_side) {
 
-    # browser()
     play_by_play_side <-
       play_by_play %>%
       filter(side == !!side) %>%
@@ -432,7 +441,7 @@
       if(n_dups > 0L) {
         .display_info(
           glue::glue(
-            "There are {usethis::ui_value(n_dups)} rows with more than one ",
+            "There are {scales::comma(n_dups)} rows with more than one ",
             "player-side-possession combination."
           ),
           ...
@@ -483,10 +492,16 @@
       group_by_at(vars(-pts, -n)) %>%
       summarise_at(vars(pts, n), funs(sum)) %>%
       ungroup() %>%
-      select(pts, n, everything()) %>%
-      mutate(pts = 100 * pts / n)
+      # select(pts, n, everything()) %>%
+      mutate(pp100poss = 100 * pts / n) %>%
+      select(pp100poss, pts, n, everything())
 
     if(FALSE) {
+      possession_data_side %>%
+        arrange(desc(n)) %>%
+        slice(1) %>%
+        gather(side_id, dummy, -pts, -n, -pp100poss) %>%
+        filter(dummy > 0)
       possession_data_side %>% arrange(desc(pts))
       possession_data_side %>% count(n) %>% arrange(n)
       possession_data_side %>% count(n) %>% arrange(desc(n))
@@ -497,9 +512,6 @@
         filter(abs(pts) <= 500)
     }
 
-    possession_data_side <-
-      possession_data_side %>%
-      select(-n)
     path_export <-
       .export_data_from_path(
         ...,
@@ -516,6 +528,11 @@
     play_by_play %>%
       separate(!!col, into = glue::glue("{prefix}{suffix}"), sep = sep)
   }
+
+# .munge_play_by_play.tibble <-
+#   function(...) {
+#
+#   }
 
 munge_play_by_play <-
   function(...,
@@ -541,7 +558,7 @@ munge_play_by_play <-
       return(invisible(NULL))
     }
 
-    .display_info(
+    .display_progress(
       glue::glue("Step 2: Munging play-by-play data."),
       ...
     )
@@ -551,6 +568,8 @@ munge_play_by_play <-
         ...,
         path = path_play_by_play
       )
+
+    # UseMethod(".munge_play_by_play")
 
     suppressMessages(
       play_by_play <-
@@ -663,6 +682,7 @@ munge_play_by_play <-
     )
   }
 
+
 munge_play_by_play_auto <-
   function(...,
            season = config$season,
@@ -676,7 +696,7 @@ munge_play_by_play_auto <-
            clean = config$clean,
            n_keep = config$n_keep) {
     munge_play_by_play(
-      # ...,
+      ...,
       season = season,
       poss_min = poss_min,
       gp_min = gp_min,
@@ -688,4 +708,92 @@ munge_play_by_play_auto <-
       clean = clean,
       n_keep = n_keep
     )
+  }
+
+
+# WARNING: This is experimental!
+# Reference: https://stackoverflow.com/questions/19253820/how-to-implement-coalesce-efficiently-in-r
+.coalesce <- function(...) {
+  Reduce(function(x, y) {
+    i <- which(is.na(x))
+    x[i] <- y[i]
+    x},
+    list(...))
+}
+.coalesce_multi <- function(...) {
+  Reduce(.coalesce, list(...))
+}
+# Reference: https://stackoverflow.com/questions/12232041/how-to-reorder-data-table-columns-without-copying
+.move_col_to_first <- function(dt, col) {
+  setcolorder(dt, neworder = c(col, setdiff(colnames(dt), col)))
+}
+
+# data.table ----
+# .separate_lineup.dt <- function(dt, col, prefix = "x", suffix = 1:5, sep = "-") {
+#   col <- enquo(col)
+#   cols_new <- paste0(prefix, suffix)
+#   dt[, (cols_new) := tstrsplit(lineup_o, "-", fixed = FALSE)]
+# }
+# .separate_lineup.dt(dt)[]
+
+.munge_play_by_play.data.table <-
+  function(play_by_play, ...) {
+
+    library("data.table")
+    dt <- .import_data_from_path(season = .SEASON, path = config$path_play_by_play)
+    # dt <- setkey(as.data.table(dt), rn)
+    dt <- as.data.table(dt)
+    # class(dt)
+    dt <- dt[id_game == 21700001]
+    dt <-
+      merge(
+        dt[
+          is_off1 == TRUE,
+          .(rn1 = rn,
+            id_game,
+            is_home = is_home1,
+            # is_off = is_off1,
+            pts = pts1,
+            mp,
+            id_team_o = id_team1,
+            id_team_d = id_team2,
+            slug_o = slug_team1,
+            slug_d = slug_team2,
+            lineup_o = lineup1,
+            lineup_d = lineup2
+          )],
+        dt[,c("is_home2", "is_off2") := .(!is_home1, !is_off1)]
+        [is_off1 == FALSE,
+          .(rn2 = rn,
+            id_game,
+            is_home = is_home2,
+            # is_off = is_off2,
+            pts = pts2,
+            mp,
+            id_team_o = id_team2,
+            id_team_d = id_team1,
+            slug_o = slug_team2,
+            slug_d = slug_team1,
+            lineup_o = lineup2,
+            lineup_d = lineup1
+          )],
+        all = TRUE
+      )
+
+    dt <-
+      dt[,
+         rn := .coalesce(rn1, rn2)
+         ][,
+           `:=`(rn1 = NULL, rn2 = NULL)
+           ][
+             order(rn)
+             ]
+    # dt <- .move_col_to_first(dt, "rn")
+    dt <- setkey(dt, rn)
+    # dt[, .I]
+    dt <- dt[, (paste0("x", 1:5)) := tstrsplit(lineup_o, "-", fixed = FALSE)]
+    dt <- dt[, (paste0("x", 6:10)) := tstrsplit(lineup_d, "-", fixed = FALSE)]
+    dt <- dt[,`:=`(lineup_o = NULL, lineup_d = NULL)]
+    dt[]
+    dt <- setDT(dt)
   }

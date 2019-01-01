@@ -20,26 +20,5 @@ if (!interactive()) {
   # print(config)
 }
 
-# # pre_auto()
-# # setup_cores_auto()
-#
-# purrr::walk(
-#   # .SEASONS[3],
-#   .SEASONS,
-#   .f = function(x) {
-#     # clean_play_by_play_auto(season = x, skip = TRUE)
-#     munge_play_by_play_auto(season = x, skip = FALSE)
-#     fit_rapm_models_auto(
-#       season = x,
-#       skip = FALSE,
-#       # skip = TRUE,
-#       # optimize = TRUE
-#       optimize = FALSE
-#     )
-#     extract_rapm_coefs_auto(season = x, skip = FALSE)
-#   }
-# )
-#
-# # desetup_cores_auto()
-# # post_auto()
+auto()
 

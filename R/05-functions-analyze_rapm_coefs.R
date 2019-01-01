@@ -77,7 +77,7 @@
       str_replace_all("\\.", "[.]")
   }
 
-correlate_rapm_coefs <-
+.correlate_rapm_coefs <-
   function(...,
            rapm_coefs_join = NULL,
            src = .SRC,
@@ -138,7 +138,7 @@ correlate_rapm_coefs <-
            progress = TRUE,
            path_rapm_coefs_cors_grid = config$path_rapm_coefs_cors_grid) {
 
-    # .validate_season(season)
+    .validate_season(season)
     params_grid <-
       crossing(
         .season = season,
@@ -161,7 +161,7 @@ correlate_rapm_coefs <-
         .season, .poss_min, .lambda_o, .lambda_d
       ),
       .f = ~ {
-        usethis::ui_todo("{.season}, {.poss_min}, {.lambda_o}, {.lambda_d}")
+        .display_progress(glue::glue("{.season}, {.poss_min}, {.lambda_o}, {.lambda_d}"))
         f_clean(# clean_play_by_play_auto(
           season = .season,
           # skip = FALSE
@@ -180,10 +180,12 @@ correlate_rapm_coefs <-
           lambda_d = .lambda_d,
           optimize = FALSE
         )
-        extract_rapm_coefs_auto(season = .season,
-                                skip = FALSE)
+        extract_rapm_coefs_auto(
+          season = .season,
+          skip = FALSE
+        )
         rapm_coefs_cors <-
-          correlate_rapm_coefs(season = .season)
+          .correlate_rapm_coefs(season = .season)
         # print(coefs_cors)
         if (!is.null(.pb)) {
           .pb$tick()
@@ -311,7 +313,8 @@ correlate_rapm_coefs <-
         data = viz,
         path_viz_rapm_coefs_cors_grid = path_viz_rapm_coefs_cors_grid
       )
-    invisible(viz)
+    # invisible(viz)
+    viz
   }
 
 analyze_rapm_coefs <-

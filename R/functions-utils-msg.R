@@ -1,11 +1,24 @@
 
-.display_info <- function(x, ..., .envir = parent.frame(), verbose = TRUE) {
+.display_info <- function(x, ..., .envir = parent.frame(), verbose = .VERBOSE) {
   # .display_msg(..., verbose = verbose, type = "info")
   if(!verbose) {
     return(invisible(NULL))
   }
+  # usethis::ui_done(glue::glue("Info: {x}"), .envir = .envir)
+  usethis::ui_line(glue::glue("Info: {x}"), .envir = .envir)
+
+}
+
+.display_progress <- function(x, ..., .envir = parent.frame(), verbose = .VERBOSE) {
+  # .display_msg(..., verbose = verbose, type = "info")
+  if(!verbose) {
+    return(invisible(NULL))
+  }
+  usethis::ui_todo(glue::glue("Info: {x}"), .envir = .envir)
+  # usethis::ui_todo(glue::glue("Info: {x}", .envir = .envir))
   # usethis::ui_line(glue::glue("Info: {x}"), .envir = .envir)
-  usethis::ui_done(glue::glue("Info: {x}"), .envir = .envir)
+  cli::rule(left = sprintf("Info: %s", x))
+  # cli::rule(left = x)
 }
 
 .display_warning <- function(x, ..., .envir = parent.frame()) {

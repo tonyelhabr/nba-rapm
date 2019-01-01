@@ -62,6 +62,11 @@
 visualize_proj_funcs <- function(..., path_proj_funcs = config$path_viz_proj_funcs) {
   proj_funcs <- .extract_proj_funcs(...)
   n_func_grps <- nrow(proj_funcs)
+  # # Maybe `cli::tree()` using something like...
+  # proj_funcs %>%
+  #   select(func_grp, func) %>%
+  #   filter(func_grp == "clean_play_by_play") %>%
+  #   cli::tree(root = "clean_play_by_play")
   suppressWarnings(suppressPackageStartupMessages(library("ggrepel")))
   viz <-
     proj_funcs %>%

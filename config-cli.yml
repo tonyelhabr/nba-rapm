@@ -54,6 +54,9 @@ default:
   season_type:
     default: 'regular'
     help: 'Valid choices include "regular". ("playoffs" and "all" have not been implemented).'
+  intercept:
+    default: true
+    help: 'If `TRUE`, includes intercept term.'
   poss_min:
     # default: 5000
     default: 200

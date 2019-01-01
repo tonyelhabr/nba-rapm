@@ -109,3 +109,59 @@ post_auto <-
     message(msg)
     message(rep("*", 80L))
   }
+
+
+# # pre_auto()
+# # setup_cores_auto()
+#
+# purrr::walk(
+#   # .SEASONS[3],
+#   .SEASONS,
+#   .f = function(x) {
+#     # clean_play_by_play_auto(season = x, skip = TRUE)
+#     munge_play_by_play_auto(season = x, skip = FALSE)
+#     fit_rapm_models_auto(
+#       season = x,
+#       skip = FALSE,
+#       # skip = TRUE,
+#       # optimize = TRUE
+#       optimize = FALSE
+#     )
+#     extract_rapm_coefs_auto(season = x, skip = FALSE)
+#   }
+# )
+#
+# # desetup_cores_auto()
+# # post_auto()
+
+auto <-
+  function(...) {
+    pre_auto()
+    # setup_cores_auto()
+    clean_play_by_play_auto(
+      ...,
+      skip = TRUE
+    )
+    munge_play_by_play_auto(
+      ...,
+      skip = TRUE
+    )
+    fit_rapm_models_auto(
+      ...,
+      intercept = TRUE,
+      # optimize = TRUE,
+      optimize = FALSE,
+      lambda_o = 250,
+      lambda_d = 350,
+      skip = FALSE
+    )
+    res <-
+      extract_rapm_coefs_auto(
+        ...,
+        skip = FALSE
+      )
+    # desetup_cores_auto()
+    post_auto()
+    invisible(res)
+  }
+

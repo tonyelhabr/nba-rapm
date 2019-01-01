@@ -92,7 +92,7 @@ extract_rapm_coefs <-
       return(invisible(NULL))
     }
 
-    .display_info(
+    .display_progress(
       glue::glue("Step 4: Extracting model coefs."),
       ...
     )

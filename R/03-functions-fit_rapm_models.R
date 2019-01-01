@@ -1,59 +1,74 @@
 
-.FMLA <- formula("pts ~ .")
+.Y <- "pp100poss"
+
+.FMLA <- formula(glue::glue("{.Y} ~ . - pts - n"))
 .get_x_glmnet <-
   function(possession_data, fmla = .FMLA) {
     fmla %>% model.matrix(possession_data)
   }
 .get_y_glmnet <-
-  function(possession_data) {
-    possession_data %>% pull(pts)
+  function(possession_data, y = .Y) {
+    possession_data %>% pull(!!sym(y))
   }
 
+# NOTE: Need to make sure the number of terms is not large!
 .visualize_glmnet <-
   function(...,
            data,
            path_viz_rapm_fit_side = config$path_viz_rapm_fit_side) {
-    suppressWarnings(suppressPackageStartupMessages(requireNamespace("ggfortify")))
+    # suppressWarnings(suppressPackageStartupMessages(library("ggfortify")))
+    # # viz <- data %>% autoplot()
     viz <-
-      autoplot(data)
+      data %>%
+      ggplot(aes(x = lambda, y = estimate, color = term)) +
+      geom_line() +
+      scale_x_log10() +
+      teplot::theme_te()
     path_export <-
       .export_data_from_path(
         ...,
         data = viz,
         path = path_viz_rapm_fit_side
       )
-    invisible(viz)
+    # invisible(viz)
+    viz
   }
 
 .visualize_glmnet_cv <-
   function(...,
            data,
            path_viz_rapm_fit_cv_side = config$path_viz_rapm_fit_cv_side) {
-    suppressWarnings(suppressPackageStartupMessages(requireNamespace("ggfortify")))
+    suppressWarnings(suppressPackageStartupMessages(library("ggfortify")))
     viz <-
-      autoplot(data)
+      data %>%
+      autoplot() +
+      teplot::theme_te()
     path_export <-
       .export_data_from_path(
         ...,
         data = viz,
         path = path_viz_rapm_fit_cv_side
       )
-    invisible(viz)
+    # invisible(viz)
+    viz
   }
 
 .get_lambda <-
   function(...,
            x,
            y,
+           intercept = .INTERCEPT,
            optimize = .OPTIMIZE,
            lambda = .LAMBDA,
            seed = .SEED,
            path_lambda_side = config$path_lambda_side) {
-    # browser()
+
     if(!optimize) {
       .display_info(
         glue::glue(
-          "Using the specified value {usethis::ui_value(lambda)} for {usethis::ui_field('lambda')}."),
+          "Using the specified value {scales::comma(lambda)} for",
+          " {usethis::ui_field('lambda')}."
+        ),
         ...
       )
       path_export <-
@@ -69,31 +84,51 @@
       glmnet::cv.glmnet(
         parallel = TRUE,
         keep = TRUE,
+        intercept = intercept,
         x = x,
         y = y,
         alpha = 0
       )
 
     # plot(fit)
-    viz_glmnet <-
+    viz_glmnet_cv <-
       .visualize_glmnet_cv(
         ...,
         data = fit
       )
-    # # plot(fit$glmnet.fit)
+
+    terms <-
+      fit$glmnet.fit %>%
+      broom::tidy()
+    terms_optm_arr <-
+      terms %>%
+      filter(lambda == fit$lambda.min) %>%
+      arrange(desc(abs(estimate)))
+    terms_filt <-
+      terms %>%
+      inner_join(
+        terms_optm_arr %>%
+          select(term) %>%
+          slice(1:10),
+        by = "term"
+      )
+    # plot(fit$glmnet.fit)
     viz_glmnet <-
       .visualize_glmnet(
         ...,
-        data = fit$glmnet.fit
+        data = terms_filt
       )
     .display_info(
       glue::glue(
-        "Found {usethis::ui_value(fit$lambda.min)} ",
+        "Found {scales::comma(fit$lambda.min)} ",
         "to be the optimal {usethis::ui_field('lambda')}."
       ),
       ...
     )
 
+    # TODO: Use fit$lambda.fit %>% tidy() %>% filter(lambda == fit$lambda.1se) instead?
+    # (UPDATE: I believe this is actually the same thing.)
+    # TODO: Plot standard errors?
     path_export <-
       .export_data_from_path(
         ...,
@@ -107,13 +142,14 @@
   function(...,
            x,
            y,
+           intercept = .INTERCEPT,
            lambda = .LAMBDA,
            seed = .SEED,
            path_rapm_fit_side = config$path_rapm_fit_side) {
     set.seed(seed)
     fit <-
       glmnet::glmnet(
-        intercept = TRUE,
+        intercept = intercept,
         x = x,
         y = y,
         lambda = lambda,
@@ -193,7 +229,7 @@ fit_rapm_models <-
       return(invisible(NULL))
     }
 
-    .display_info(
+    .display_progress(
       glue::glue("Step 3: Fitting models."),
       ...
     )
@@ -216,6 +252,7 @@ fit_rapm_models <-
 fit_rapm_models_auto <-
   function(...,
            season = config$season,
+           intercept = config$intercept,
            optimize = config$optimize,
            seed = config$seed,
            lambda_o = config$lambda_o,
@@ -229,6 +266,7 @@ fit_rapm_models_auto <-
     fit_rapm_models(
       # ...,
       season = season,
+      intercept = intercept,
       optimize = optimize,
       seed = seed,
       lambda_o = lambda_o,

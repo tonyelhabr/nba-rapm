@@ -31,5 +31,13 @@ so I encourage the reader to read more about it there.
         of the argument of whether or not this should be done.
 + [ ] Re-do `clean` and `munge` functions with `{data.table}` (and use S3 methods to differentiate with `{tibble}` methods).
 + [ ] Compare calculations with those at http://nbashotcharts.com/ (e.g. http://nbashotcharts.com/rapm?id=1113190703 for 2017 season)
-+ [ ] Create function to automatically plot ORAPM vs. DRAPM.
++ [ ] Create function to automatically plot ORAPM vs. DRAPM. (Code/logic is already in
+one of the `.Rmd` files.)
 + [ ] LOW PRIORITY: Create function to regenerate profile html widgets.
+(Code/logic already exists somewhere in the project.)
++ [ ] Implement RAPM that considers both offense and defense simulatenously(?)
++ [ ] Move filtering function to last step before fitting (so that `munge` step
+can possibly be skipped).
++ [ ] Evaluate variance of coefficients.
++ [ ] Standardize dummy/indicator variables for players in stints by number of possessions(?)
++ [ ] 

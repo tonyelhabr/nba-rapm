@@ -207,9 +207,14 @@
       )
       return(invisible(NULL))
     }
+    path_info <- fs::file_info(path)
+
     data <- .import_data(..., path = path)
     .display_info(
-      glue::glue("Successfully imported data from {usethis::ui_path(path)}."),
+      glue::glue(
+        "Successfully imported data from {usethis::ui_path(path)}.",
+        " (Last modification at {scales::time_format()(path_info$modification_time)})."
+      ),
       ...
     )
     invisible(data)

@@ -14,10 +14,10 @@
   if(!verbose) {
     return(invisible(NULL))
   }
-  usethis::ui_todo(glue::glue("Info: {x}"), .envir = .envir)
+  usethis::ui_todo(glue::glue("TODO: {x}"), .envir = .envir)
   # usethis::ui_todo(glue::glue("Info: {x}", .envir = .envir))
   # usethis::ui_line(glue::glue("Info: {x}"), .envir = .envir)
-  cli::rule(left = sprintf("Info: %s", x))
+  cli::cat_rule(left = sprintf("TODO: %s", x), line = 2)
   # cli::rule(left = x)
 }
 

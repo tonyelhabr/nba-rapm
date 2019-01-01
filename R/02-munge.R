@@ -349,6 +349,13 @@
       ungroup() %>%
       arrange(id_team, team_name)
 
+    path_export <-
+      .export_data_from_path(
+        ...,
+        data = teams_summary_calcs,
+        path = path_teams_summary_calc
+      )
+
     teams_summary_nbastatr <- .try_import_teams_summary_nbastatr(...)
 
     teams_summary_nbastatr_slim <-
@@ -368,43 +375,48 @@
       ) %>%
       arrange(desc(pm_calc))
 
-    .export_data_from_path(
+    path_export <-
+      .export_data_from_path(
         ...,
         data = teams_summary_compare,
         path = path_teams_summary_compare
       )
-    invisible(players_summary_calc)
+    invisible(teams_summary_calc)
   }
 
-# This function is mostly useful so that the `*min` paremters
+# + It is worth separating this into its own function so that the `*min` parameters
 # can be "abstracted" away (with the ellipses).
-# NOTE: I don't think the filtering is done correclty here! (Entire stints involving
+# + NOTE: I don't think the filtering is done correclty here! (Entire stints involving
 # the filtered out players should be removed!)
+# UPDATE: This is now implemented in one of the `..filter*()` functions,
+# but it doesn't produce better results(?). A seperate `..filter()` function
+# has been created to have the "original" filtering implementation.
 .filter_play_by_play <-
   function(...,
+           # poss_min = 0,
+           # gp_min = 0,
+           # mp_min = 0,
            play_by_play,
-           players_summary_calc,
-           poss_min = 0,
-           gp_min = 0,
-           mp_min = 0) {
+           # Do this so that this function can be used more "dynamically"
+           # (i.e. outside the parent `munge*()` function, where `players_summary_calc`
+           # may not be calculated immediately before hand).
+           players_summary_calc = NULL,
+           path_players_summary_calc = config$path_players_summary_calc){
 
+    if(is.null(players_summary_calc)) {
+      players_summary_calc <-
+        .import_data_from_path(
+          ...,
+          path = path_players_summary_calc
+        )
+    }
     n_row_before <- play_by_play %>% nrow()
-    players_summary_calc_filt <-
-      players_summary_calc %>%
-      filter(
-        poss_calc_total < poss_min |
-        gp_calc_total < gp_min |
-        mp_calc_total < mp_min
-      )
-
     res <-
-      play_by_play %>%
-      anti_join(players_summary_calc_filt,
-        by = "id_player"
-      ) %>%
-      group_by(rn) %>%
-      filter(n() == 10L) %>%
-      ungroup()
+      ..filter_play_by_play2(
+        ...,
+        play_by_play = play_by_play,
+        players_summary_calc = players_summary_calc
+      )
 
     n_row_after <- res %>% nrow()
     n_poss_rem <- (n_row_before - n_row_after) / 10
@@ -417,6 +429,52 @@
       ...
     )
     res
+  }
+
+# Filtering out entire "stints" where a single player does not meet the criteria.
+.POSS_MIN <- 0
+.GP_MIN <- .POSS_MIN
+.MP_MIN <- .POSS_MIN
+..filter_play_by_play1 <-
+  function(...,
+           play_by_play,
+           players_summary_calc,
+           poss_min = .POSS_MIN,
+           gp_min = .GP_MIN,
+           mp_min = .MP_MIN) {
+    players_summary_calc_filt <-
+      players_summary_calc %>%
+      filter(
+        poss_calc_total < poss_min |
+          gp_calc_total < gp_min |
+          mp_calc_total < mp_min
+      )
+    play_by_play %>%
+      anti_join(players_summary_calc_filt, by = "id_player") %>%
+      group_by(rn) %>%
+      filter(n() == 10L) %>%
+      ungroup()
+  }
+
+# The "original" implementation (where individual players are filtererd out,
+# meaning that the stint may have less than 9 players (i.e. indicator variables)
+# when spread into "wide" form.
+..filter_play_by_play2 <-
+  function(...,
+           play_by_play,
+           players_summary_calc,
+           poss_min = .POSS_MIN,
+           gp_min = .GP_MIN,
+           mp_min = .MP_MIN) {
+    players_summary_calc_filt <-
+      players_summary_calc %>%
+      filter(
+        poss_calc_total >= poss_min,
+          gp_calc_total >= gp_min,
+          mp_calc_total >= mp_min
+      )
+    play_by_play %>%
+      semi_join(players_summary_calc_filt, by = "id_player")
   }
 
 .widen_data_byside <-
@@ -498,7 +556,9 @@
 
     if(FALSE) {
       possession_data_side %>%
-        arrange(desc(n)) %>%
+      # possession_data %>%
+        # arrange(desc(n)) %>%
+        arrange(n) %>%
         slice(1) %>%
         gather(side_id, dummy, -pts, -n, -pp100poss) %>%
         filter(dummy > 0)
@@ -648,6 +708,7 @@ munge_play_by_play <-
         play_by_play = play_by_play
       )
 
+    browser()
     teams_summary_calc <-
       .summarise_teams(
         ...,

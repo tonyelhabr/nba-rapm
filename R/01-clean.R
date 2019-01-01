@@ -26,7 +26,7 @@ clean_play_by_play <-
            # This is true with some of the other functions as well.
            path_raw_play_by_play = config$path_raw_play_by_play,
            path_play_by_play = config$path_play_by_play,
-           path_game_final_scores_compare = config$path_game_final_scores_compare,
+           path_game_final_scores_error = config$path_game_final_scores_error,
            path_play_by_play_error = config$path_play_by_play_error) {
 
     will_skip <-
@@ -108,7 +108,7 @@ clean_play_by_play <-
         by = c("id_game")
       )
 
-    game_final_scores_compare <-
+    game_final_scores_error <-
       raw_game_final_scores %>%
       anti_join(
         game_logs_final_scores,
@@ -122,8 +122,8 @@ clean_play_by_play <-
     path_export <-
       .export_data_from_path(
         ...,
-        data = game_final_scores_compare,
-        path = path_game_final_scores_compare
+        data = game_final_scores_error,
+        path = path_game_final_scores_error
       )
 
     # if(FALSE) {

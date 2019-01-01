@@ -53,7 +53,7 @@ suppressWarnings(suppressPackageStartupMessages(library("teplot")))
 paths_funcs <-
   list.files(
     path = file.path("R"),
-    pattern = "func",
+    pattern = "^[0-9]{2}|^func",
     full.names = TRUE
   )
 invisible(sapply(paths_funcs, source))

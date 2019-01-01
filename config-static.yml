@@ -1,40 +1,100 @@
 default:
 
-  # "Required" for data processing.
   path_raw_play_by_play:
     default: 'data-raw/play_by_play_with_lineup.csv'
     help: 'Path format of raw play-by-play data file to clean.'
-  path_play_by_play:
-    default: 'data/play_by_play.csv'
-    help: 'Path format of cleaned play-by-play data file.'
-  path_possession_data_side:
-    default: 'data/possession_data.rds'
-    help: 'Path format of "wide" offensive possession data.'
-  path_rapm_fit_side:
-    default: 'data/rapm_fit.rds'
-    help: 'Path format of RAPM model fitted for offensive/defensive possession data.'
-  path_rapm_coefs_side:
-    default: 'data/rapm_coefs.csv'
-    help: 'Path format of final player-specific offensive/defensive RAPM coefs.'
-  path_rapm_coefs:
-    default: 'data/rapm_coefs.csv'
-    help: 'Path format of final combined offensive and defensive RAPM coefs.'
     
-  # Supplementary/meta project information.
+    
+  path_game_final_scores_compare:
+    default: 'data/01-clean/dump/error/game_final_scores_error.csv'
+    help: ''
+  path_play_by_play_error:
+    default: 'data/01-clean/dump/error/play_by_play_error.csv'
+    help: 'Path format of '
+  path_play_by_play:
+    default: 'data/01-clean/play_by_play.csv'
+    help: 'Path format of cleaned play-by-play data file.'
+
+    
+  path_lineup_summary_calc:
+    default: 'data/02-munge/dump/calc/lineup_summary_calc.csv'
+    help: 'Path format of '
+  path_players_game_logs_compare:
+    default: 'data/02-munge/dump/compare/players_game_logs_compare.csv'
+    help: ''
+  path_players_summary_compare:
+    default: 'data/02-munge/dump/compare/players_summary_compare.csv'
+    help: ''
+  path_teams_summary_compare:
+    default: 'data/02-munge/dump/compare/teams_summary_compare.csv'
+    help: ''
+  path_players_summary_calc:
+    default: 'data/02-munge/dump/calc/players_summary_calc.csv'
+    help: 'Path format of summarized cleaned player data.
+     Relevant in the same cases as `path_possession_data_o`.
+     Used to add names and other player-relevant information to final output.'
+  path_teams_summary_calc:
+    default: 'data/02-munge/dump/calc/teams_summary_calc.csv'
+    help: 'Analogous to `path_players_summary_calc` for team data.'
+  path_possession_data_error_side:
+    default: 'data/02-munge/dump/debug/possession_data_error.csv'
+    help: 'Path format of '
+  path_possession_data_side:
+    default: 'data/02-munge/possession_data.rds'
+    help: 'Path format of "wide" offensive possession data.'
+
+
+    
+  path_viz_rapm_fit_cv_side:
+    default: 'figs/viz_rapm_fit_cv_side.png'
+    help: 'Path format of '
+  path_viz_rapm_fit_side:
+    default: 'figs/viz_rapm_fit_side.png'
+    help: 'Path format of '
+  path_lambda_side:
+    default: 'data/03-fit/dump/info/lambda.csv'
+    help: 'Path format of '
+  path_rapm_fit_side:
+    default: 'data/03-fit/rapm_fit.rds'
+    help: 'Path format of RAPM model fitted for offensive/defensive possession data.'
+
+
+  path_rapm_coefs_side:
+    default: 'data/04-extract/dump/info/rapm_coefs.csv'
+    help: 'Path format of final player-specific offensive/defensive RAPM coefs.'
+  path_rapm_coefs_var_side:
+    default: 'data/04-extract/dump/info/rapm_coefs_var.rds'
+    help: 'Path format of RAPM model coefficent variance values.'
+  path_rapm_coefs:
+    default: 'data/04-extract/rapm_coefs.csv'
+    help: 'Path format of final combined offensive and defensive RAPM coefs.'
+
+
+    
+  path_rapm_coefs_join:
+    default: 'data/05-analyze/dump/info/rapm_coefs_join.csv'
+    help: ''
+  path_rapm_coefs_cors:
+    default: 'data/05-analyze/rapm_coefs_cors.csv'
+    help: ''
   path_rapm_coefs_cors_grid:
-    default: 'data/rapm_coefs_cors_grid.csv'
+    default: 'data/05-analyze/rapm_coefs_cors_grid.csv'
     help: 'Path format of correlations of calcaulted RAPM coefficients with
     those from external data sources using a "grid" of different input parameters.
     This is useful for "tuning" the inputs to the RAPM model.'
   path_rapm_coefs_cors_grid_summary:
-    default: 'data/rapm_coefs_cors_grid_summary.csv'
-    help: 'Path format of summarized information regarding
+    default: 'data/05-analyze/rapm_coefs_cors_grid_summary.csv'
+    help: '???Path format of summarized information regarding
     data imported from `path_rapm_coefs_cors_grid`.'
   path_viz_rapm_coefs_cors_grid:
     default: 'figs/viz_rapm_coefs_cors_grid.csv'
     help: 'Path format of visualization of data from `path_rapm_coefs_cors_grid`.'
+
+
+
+  # Supplementary/meta project information (`analyze` and profiling)
   path_proj_profile:
-    default: 'data/proj_profile.rds'
+    default: 'data/misc/proj_profile.rds'
     help: 'Path format of a profile (i.e. timing/execution order of functions)
     of the RAPM calculation for a single season.
     Not that this path will NOT have a season appended to it.'
@@ -43,86 +103,35 @@ default:
     help: 'Path format for a visual that goes "hand-in-hand"
     with `path_proj_profile`.'
 
-  # Used exclusively for comparisons.
+
+
+  # Static data.
   path_teams_nbastatr:
-    default: 'data/teams_nbastatr.csv'
+    default: 'data/static/nbastatr/teams_nbastatr.csv'
     help: 'Path format of team data to export.
     Retrieved from `{nbastatR}` package.
     Important for checking the "validity" of the raw and processed data.
     Only relevant if `export = TRUE`.'
   path_players_nbastatr:
-    default: 'data/players_nbastatr.csv'
+    default: 'data/static/nbastatr/players_nbastatr.csv'
     help: 'Analogous to `path_teams_nbastatr` for player data.'
   path_teams_game_logs_nbastatr:
-    default: 'data/teams_game_logs_nbastatr.csv'
+    default: 'data/static/nbastatr/teams_game_logs_nbastatr.csv'
     help: 'Analogous to `path_teams_nbastatr` for team game logs data.'
   path_players_game_logs_nbastatr:
-    default: 'data/players_game_logs_nbastatr.csv'
+    default: 'data/static/nbastatr/players_game_logs_nbastatr.csv'
     help: 'Analogous to `path_teams_nbastatr` for player game logs data.'
   path_teams_summary_nbastatr:
-    default: 'data/teams_summary_nbastatr.csv'
+    default: 'data/static/nbastatr/teams_summary_nbastatr.csv'
     help: 'Analogous to `path_teams_nbastatr` for team summary data.'
   path_players_summary_nbastatr:
-    default: 'data/players_summary_nbastatr.csv'
+    default: 'data/static/nbastatr/players_summary_nbastatr.csv'
     help: 'Analogous to `path_teams_nbastatr` for player summary data.'
-  
-  # Used for comparisons, but also "required" by some of the other "significant", 
-  # non-comparison-related data.
-  path_players_summary_calc:
-    default: 'data/players_summary_calc.csv'
-    help: 'Path format of summarized cleaned player data.
-     Relevant in the same cases as `path_possession_data_o`.
-     Used to add names and other player-relevant information to final output.'
-  path_teams_summary_calc:
-    default: 'data/teams_summary_calc.csv'
-    help: 'Analogous to `path_players_summary_calc` for team data.'
-  
-  # Output from comparisons.
-  path_game_final_scores_compare:
-    default: 'data/game_final_scores_compare.csv'
-    help: ''
-  path_players_game_logs_compare:
-    default: 'data/players_game_logs_compare.csv'
-    help: ''
-  path_players_summary_compare:
-    default: 'data/players_summary_compare.csv'
-    help: ''
-  path_teams_summary_compare:
-    default: 'data/teams_summary_compare.csv'
-    help: ''
-    
-  # Output from "debugging"-like things.
-  path_play_by_play_error:
-    default: 'data/play_by_play_error.csv'
-    help: ''
-  path_lineup_summary_calc:
-    default: 'data/lineup_summary_calc.csv'
-    help: ''
-  path_possession_data_error_side:
-    default: 'data/possession_data_error.csv'
-    help: ''
-  path_viz_rapm_fit_cv_side:
-    default: 'figs/viz_rapm_fit_cv_side.png'
-    help: ''
-  path_viz_rapm_fit_side:
-    default: 'figs/viz_rapm_fit_side.png'
-    help: ''
-  path_lambda_side:
-    default: 'data/lambda.csv'
-    help: ''
-  
-  # For RAPM comparisons.'
   path_rapm_basketballanalytics:
-    default: 'data/rapm_basketballanalytics.csv'
+    default: 'data/static/basketballanalytics/rapm_basketballanalytics.csv'
     help: ''
   path_rpm_espn:
-    default: 'data/rpm_espn.csv'
-    help: ''
-  path_rapm_coefs_join:
-    default: 'data/rapm_coefs_join.csv'
-    help: ''
-  path_rapm_coefs_cors:
-    default: 'data/rapm_coefs_cors.csv'
+    default: 'data/static/espn/rpm_espn.csv'
     help: ''
    
 production:

@@ -1,7 +1,9 @@
 
 # Note that this is a work-around since `broom:::tidy.glmnet()` isn't working(?)
 .tidy_glmnet <- function(x, return_zeros = FALSE, ...) {
-  # This is the major change to `broom:::tidy.glmnet()`.
+  # This first line is the major change to `broom:::tidy.glmnet()`.
+  # (Comments from the source code are removed as well, and some other logic
+  # having to do with inheriting from `"multnet"` is removed).
   # beta <- coef(x)
   beta <- x$beta
   beta_d <-
@@ -11,7 +13,6 @@
       newcol = "term"
     )
     ret <- tidyr::gather(beta_d, step, estimate, -term)
-    # add values specific to each step
     ret <- ret %>%
       mutate(
         step = as.numeric(step),
@@ -43,8 +44,8 @@
 
 .extract_rapm_coefs_side <-
   function(...,
-           # side, # Need to include this so that it can be called with `mutate()`.
            path_rapm_fit_side = config$path_rapm_fit_side,
+           path_rapm_coefs_var_side = config$path_rapm_coefs_var_side,
            path_rapm_coefs_side = config$path_rapm_coefs_side) {
     fit <-
       .import_data_from_path(
@@ -52,6 +53,14 @@
         path = path_rapm_fit_side
       )
 
+
+    # TODO: Do something better here!
+    path_export <-
+      .export_data_from_path(
+        ...,
+        data = fit %>% .tidy_glmnet(),
+        path = path_rapm_coefs_var_side
+      )
     coefs <-
       .extract_coefs(
         ...,
@@ -67,10 +76,52 @@
     invisible(coefs)
   }
 
+# + TODO: Make this work for individual sides! (Right now, it only works for
+# `coefs` combined.
+# + This has been separated into its own function so that it can be
+# used "dynamically" in multiple places. (This is also why it does not
+# export the output data.)
+.name_coefs <-
+  function(..., coefs, players_nbastatr = NULL) {
+
+    if(is.null(players_nbastatr)) {
+      players_nbastatr <-
+        .try_import_players_nbastatr(...)
+    }
+    players_slim <-
+      players_nbastatr %>%
+      select(id = id_player, name = name_player, slug = slug_team)
+
+    coefs_named_base <-
+      coefs %>%
+      rename(id = id_player) %>%
+      left_join(players_slim, by = "id")
+
+    prefix_cols <- c("o", "d", "")
+    cols_order_base <-
+      c(
+        "id",
+        "name",
+        "slug",
+        # paste0(prefix_cols, "rapm_rank"),
+        "rank",
+        paste0(prefix_cols, "rapm")
+      )
+    cols_order_other <-
+      setdiff(names(players_slim), cols_order_base)
+    cols_order <- c(cols_order_base, cols_order_other)
+
+    coefs_named <-
+      coefs_named_base %>%
+      select(one_of(cols_order))
+    coefs_named
+
+  }
+
 extract_rapm_coefs <-
   function(...,
            path_rapm_fit_side = config$path_rapm_fit_side,
-           path_players_summary_calc = config$path_players_summary_calc,
+           # path_players_summary_calc = config$path_players_summary_calc,
            path_rapm_coefs = config$path_rapm_coefs) {
 
     will_skip <-
@@ -78,9 +129,9 @@ extract_rapm_coefs <-
         ...,
         path_reqs =
           c(
+            # .get_path_from(..., path = path_players_summary_calc)
             .get_path_from(..., path = path_rapm_fit_side, side = "o"),
-            .get_path_from(..., path = path_rapm_fit_side, side = "d"),
-            .get_path_from(..., path = path_players_summary_calc)
+            .get_path_from(..., path = path_rapm_fit_side, side = "d")
           ),
         path_deps =
           c(
@@ -108,7 +159,9 @@ extract_rapm_coefs <-
       spread(side, rapm) %>%
       rename_at(vars(o, d), funs(paste0(., "rapm"))) %>%
       mutate(rapm = orapm + drapm) %>%
-      arrange(desc(rapm))
+      arrange(desc(rapm)) %>%
+      # mutate_at(vars(matches("rapm$")), funs(rank = row_number(desc(.)))) %>%
+      mutate_at(vars(rapm), funs(rank = row_number(desc(.))))
 
 
     # Use this if cross-checking "unexpected" RAPM values with calculated stats
@@ -118,44 +171,15 @@ extract_rapm_coefs <-
     #     ...,
     #     path = path_players_summary_calc
     #   )
-    players_nbastatr <-
-      .try_import_players_nbastatr(...)
-    players_slim <-
-      players_nbastatr %>%
-      select(id = id_player, name = name_player, slug = slug_team)
-
-    coefs_pretty_base <-
-      coefs %>%
-      # mutate_at(vars(matches("rapm$")), funs(rank = row_number(desc(.)))) %>%
-      mutate_at(vars(rapm), funs(rank = row_number(desc(.)))) %>%
-      rename(id = id_player) %>%
-      left_join(players_slim, by = "id")
-
-    prefix_cols <- c("o", "d", "")
-    cols_order_base <-
-      c(
-        "id",
-        "name",
-        "slug",
-        # paste0(prefix_cols, "rapm_rank"),
-        "rank",
-        paste0(prefix_cols, "rapm")
-      )
-    cols_order_other <-
-      setdiff(names(players_slim), cols_order_base)
-    cols_order <- c(cols_order_base, cols_order_other)
-
-    coefs_pretty <-
-      coefs_pretty_base %>%
-      select(one_of(cols_order))
+    coefs_named <- coefs %>% .name_coefs(...)
 
     path_export <-
       .export_data_from_path(
         ...,
-        data = coefs_pretty,
+        data = coefs_named,
         path = path_rapm_coefs
       )
-    invisible(coefs_pretty)
+    invisible(coefs_named)
   }
 
 extract_rapm_coefs_auto <-

@@ -100,6 +100,7 @@
   )
 
 # non-nbastatr, with `f_get` ----
+
 .try_import_proj_profile <-
   function(...) {
     .try_import_thing(
@@ -217,14 +218,15 @@
     }
   )
 
-.try_import_players_summary_compare_combined <-
-  memoise::memoise(
-    function(...) {
-      .try_import_thing(
-        ...,
-        validate = FALSE,
-        f_get = combine_players_summary_compare,
-        path = .create_path_combined(config$path_players_summary_compare)
-      )
-    }
-  )
+# .try_import_players_summary_compare_combined <-
+#   memoise::memoise(
+#     function(...) {
+#       .try_import_thing(
+#         ...,
+#         validate = FALSE,
+#         f_get = combine_players_summary_compare,
+#         path = .create_path_combined(config$path_players_summary_compare)
+#       )
+#     }
+#   )
+

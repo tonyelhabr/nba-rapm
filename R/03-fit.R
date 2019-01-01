@@ -1,10 +1,15 @@
 
 .Y <- "pp100poss"
 
+# Note that intercept term must be specified by a boolean in `glmnet::glmnet()`,
+# so it does not matter if `+ 0` or `+ 1` is included in the formula.
 .FMLA <- formula(glue::glue("{.Y} ~ . - pts - n"))
+
+# TODO: Use sparseMatrix here?
 .get_x_glmnet <-
   function(possession_data, fmla = .FMLA) {
-    fmla %>% model.matrix(possession_data)
+    # fmla %>% model.matrix(possession_data)
+    fmla %>% Matrix::sparse.model.matrix(possession_data)
   }
 .get_y_glmnet <-
   function(possession_data, y = .Y) {
@@ -30,8 +35,8 @@
         data = viz,
         path = path_viz_rapm_fit_side
       )
-    # invisible(viz)
-    viz
+    invisible(viz)
+    # viz
   }
 
 .visualize_glmnet_cv <-
@@ -49,8 +54,28 @@
         data = viz,
         path = path_viz_rapm_fit_cv_side
       )
-    # invisible(viz)
+    invisible(viz)
     viz
+  }
+
+.filter_glmnet_terms_to_visualize <-
+  function(...,
+           fit) {
+    fit$glmnet.fit %>%
+      broom::tidy()
+    terms_optm_arr <-
+      terms %>%
+      filter(lambda == fit$lambda.min) %>%
+      arrange(desc(abs(estimate)))
+    terms_filt <-
+      terms %>%
+      inner_join(
+        terms_optm_arr %>%
+          select(term) %>%
+          slice(1:10),
+        by = "term"
+      )
+    terms_filt
   }
 
 .get_lambda <-
@@ -66,8 +91,8 @@
     if(!optimize) {
       .display_info(
         glue::glue(
-          "Using the specified value {scales::comma(lambda)} for",
-          " {usethis::ui_field('lambda')}."
+          "Using the specified value {scales::comma(lambda)} for ",
+          "{usethis::ui_field('lambda')}."
         ),
         ...
       )
@@ -97,21 +122,10 @@
         data = fit
       )
 
-    terms <-
-      fit$glmnet.fit %>%
-      broom::tidy()
-    terms_optm_arr <-
-      terms %>%
-      filter(lambda == fit$lambda.min) %>%
-      arrange(desc(abs(estimate)))
     terms_filt <-
-      terms %>%
-      inner_join(
-        terms_optm_arr %>%
-          select(term) %>%
-          slice(1:10),
-        by = "term"
-      )
+      fit %>%
+      .filter_glmnet_terms_to_visualize()
+
     # plot(fit$glmnet.fit)
     viz_glmnet <-
       .visualize_glmnet(
@@ -120,8 +134,10 @@
       )
     .display_info(
       glue::glue(
-        "Found {scales::comma(fit$lambda.min)} ",
-        "to be the optimal {usethis::ui_field('lambda')}."
+        "Found {scales::comma(fit$lambda.min)} to be the optimal",
+        "{usethis::ui_field('lambda')} for minimizing MSE. ",
+        "(Alsoe, found {scales::comma(fit$lambda.1se)} as the ",
+        "{usethis::ui_field('lambda')} at 1 standard error.)"
       ),
       ...
     )
@@ -132,7 +148,7 @@
     path_export <-
       .export_data_from_path(
         ...,
-        data = fit$lambda.min %>% tibble(lambda = .),
+        data = tibble(lambda_min = fit$lambda.min, lambda_1se = fit$lambda.1se),
         path = path_lambda_side
       )
     invisible(fit$lambda.min)
@@ -166,7 +182,8 @@
 
 .fit_rapm_model_byside <-
   function(...,
-           lambda, # "Catch the `lambda` here.
+           # "Catch `lambda` here to pass to `.get_lambda()`.
+           lambda,
            path_possession_data_side = config$path_possession_data_side) {
 
     possession_data <-
@@ -197,6 +214,30 @@
         lambda = lambda
       )
     fit
+  }
+
+# TODO!
+.fit_rapm_model_bothsides <-
+  function(...,
+           lambda,
+           path_possession_data_side = config$path_possession_data_side) {
+    possession_data_o <-
+      .import_data_from_path(
+        ...,
+        side = "o",
+        path = path_possession_data_side
+      )
+    possession_data_d <-
+      .import_data_from_path(
+        ...,
+        side = "d",
+        path = path_possession_data_side
+      )
+    possession_data <-
+      inner_join(
+        possession_data_o,
+        possession_data_d
+      )
   }
 
 fit_rapm_models <-
@@ -246,6 +287,7 @@ fit_rapm_models <-
         side = "d",
         lambda = lambda_d
       )
+    # fit_od <- .fit_rapm_model_bothsides(...)
     invisible(list(fit_o = fit_o, fit_d = fit_d))
   }
 

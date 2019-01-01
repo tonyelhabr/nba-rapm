@@ -1,4 +1,12 @@
 
+poss_side_wide <- .import_data_from_path(path = config$path_poss_wide_side, side = "o", season = 2017)
+n_poss_max <- poss_side_wide %>% pull(n_poss) %>% sort(decreasing = TRUE) %>% .[[1]]
+poss_side_long <- .import_data_from_path(path = config$path_poss_long_side, side = "o", season = 2017)
+poss_side_long %>%
+  mutate_at(vars(dummy), funs(. / n_poss_max)) %>%
+  .spread_poss_side()
+
+
 auto <-
   function(...) {
     # width_old <- getOption("width")

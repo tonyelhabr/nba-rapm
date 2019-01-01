@@ -36,11 +36,11 @@ default:
   path_teams_summary_calc:
     default: 'data/02-munge/dump/calc/teams_summary_calc.csv'
     help: 'Analogous to `path_players_summary_calc` for team data.'
-  path_poss_error_side:
-    default: 'data/02-munge/dump/debug/poss_error.csv'
+  path_poss_long_error_side:
+    default: 'data/02-munge/dump/debug/poss_long_error.csv'
     help: 'Path format of '
-  path_pbp_side:
-    default: 'data/02-munge/pbp.rds'
+  path_poss_long_side:
+    default: 'data/02-munge/poss_long.rds'
     help: 'Path format of "long" poss data.'
   path_poss_wide_side:
     default: 'data/02-munge/poss_wide.rds'

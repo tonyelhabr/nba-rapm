@@ -13,8 +13,11 @@ so I encourage the reader to read more about it there.
 # Highlights
 
 ![](figs/viz_proj_funcs.png)
+![](figs/viz_rapm_estimates.png)
 
 # TODO(?)
+
++ FIX `MUNGE` FUNCTION!
 
 + [x] Check that filtering in `munge` function is done correctly.
 + [x] Try no intercept with `{glmnet}` model. UPDATE: It returns weird results.

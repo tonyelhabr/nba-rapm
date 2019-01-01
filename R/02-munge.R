@@ -550,8 +550,8 @@
     .display_info(
       glue::glue(
         "{scales::comma(n_row_before)} records before filtering; ",
-        "{scales::comma(n_row_after)} records after_filter; => ",
-        "{scales::comma(n_poss_rem)} posss removed by filtering."
+        "{scales::comma(n_row_after)} records after_filter; ",
+        "({scales::comma(n_poss_rem)} posss removed by filtering)."
         ),
       ...
     )
@@ -559,37 +559,37 @@
   }
 
 .add_xid_player_col <-
-  function(poss_side, side) {
-    poss_side %>%
+  function(poss_long_side, side) {
+    poss_long_side %>%
       filter(side == !!side) %>%
       mutate(xid_player = sprintf("%s%07d", side, as.integer(id_player)))
   }
 
-.check_poss_dups <-
+.check_poss_long_side_dups <-
   function(...,
-           poss_side,
-           side,
-           path_poss_error_side = config$path_poss_error_side) {
+           # side,
+           poss_long_side,
+           path_poss_long_error_side = config$path_poss_long_error_side) {
 
-    poss_dups <-
-      poss_side %>%
+    poss_long_side_dups <-
+      poss_long_side %>%
       count(rn, xid_player, sort = TRUE) %>%
-      filter(n_poss > 1L)
+      filter(n > 1L)
 
-    n_dups <- nrow(poss_dups)
+    n_dups <- nrow(poss_long_side_dups)
     if(n_dups > 0L) {
       .display_info(
         glue::glue(
-          "There are {scales::comma(n_dups)} rows with more than one ",
-          "player-side-poss combination."
+          "There are {scales::comma(n_dups)} rows with more than 1 ",
+          "player-side-possession combination."
         ),
         ...
       )
 
       players_nbastatr <- .try_import_players_nbastatr(...)
 
-      poss_dups <-
-        poss_dups %>%
+      poss_long_side_dups <-
+        poss_long_side_dups %>%
         mutate(
           id_player = xid_player %>% str_replace("^[od]", "") %>% as.integer()
         ) %>%
@@ -601,48 +601,136 @@
       path_export <-
         .export_data_from_path(
           ...,
-          data = poss_dups,
-          side = side,
+          data = poss_long_side_dups,
+          # side = side,
           path = path_poss_error_side
         )
     }
-    invisible(poss_dups)
+    poss_long_side_dups
   }
 
 
-.refine_poss <-
-  function(poss_side, poss_dups) {
-    poss_side %>%
-      anti_join(poss_dups, by = c("rn", "xid_player")) %>%
+.refine_poss_long_side <-
+  function(...,
+           # side,
+           poss_long_side,
+           poss_long_side_dups,
+           path_poss_long_side = config$path_poss_long_side) {
+    poss_long_side <-
+      poss_long_side %>%
+      anti_join(poss_long_side_dups, by = c("rn", "xid_player")) %>%
       arrange(rn, xid_player) %>%
       mutate(dummy = 1L) %>%
       select(rn, pts, pk, xid_player, dummy)
+
+    path_export <-
+      .export_data_from_path(
+        ...,
+        data = poss_long_side,
+        # side = side,
+        path = path_poss_long_side
+      )
+    poss_long_side
   }
 
 # This is useful just to separate functionality.
-.spread_poss_side <-
-  function(poss_side) {
-    poss_side %>%
-      # semi_join(xid_players_filt) %>%
-      spread(xid_player, dummy, fill = 0L) %>%
-      select(-rn, -pk) %>%
-      mutate(n_poss) %>%
+.add_n_poss_col <-
+  function(poss_long_side) {
+    poss_long_side %>%
+      mutate(n_poss = 1) %>%
       select(pts, n_poss, everything())
   }
 
-# This is useful to "abstract away" `collapse`.
-.collapse_poss_side <-
-  function(poss_side,
-           collapse = .COLLAPSE) {
-    poss_side %>%
+
+.spread_poss_long_side <-
+  function(poss_long_side) {
+    poss_long_side %>%
+      # semi_join(xid_players_filt) %>%
+      spread(xid_player, dummy, fill = 0L) %>%
+      select(-rn, -pk) %>%
+      .add_n_poss_col()
+  }
+
+.finalize_poss_wide_side <-
+  function(...,
+           scale = .SCALE,
+           side,
+           poss_wide_side = NULL,
+           poss_long_side = NULL,
+           path_poss_wide_side = config$path_poss_wide_side,
+           path_poss_long_side = config$path_poss_long_side) {
+
+    poss_wide_side <- poss_wide_side %>% .add_y_col()
+    if(!scale) {
+      path_export <-
+        .export_data_from_path(
+          ...,
+          data = poss_wide_side,
+          side = side,
+          path = path_poss_wide_side
+        )
+      return(invisible(poss_wide_side))
+    }
+    if(is.null(poss_wide_side)) {
+      poss_wide_side <-
+        .import_data_from_path(
+          ...,
+          path = path_poss_wide_side,
+          side = side
+        )
+    }
+    n_poss_max <-
+      poss_wide_side %>%
+      summarise_at(vars(n_poss), funs(max)) %>%
+      pull(n_poss)
+
+    if(is.null(poss_long_side)) {
+      poss_long_side <-
+        .import_data_from_path(
+          ...,
+          path = path_poss_long_side,
+          side = side
+        )
+    }
+    poss_wide_side <-
+      poss_long_side %>%
+      mutate_at(vars(dummy), funs(. / n_poss_max)) %>%
+      .spread_poss_long_side()
+
+    path_export <-
+      .export_data_from_path(
+        ...,
+        data = poss_wide_side,
+        side = side,
+        path = path_poss_wide_side,
+      )
+    invisible(poss_wide_side)
+  }
+
+.summarise_poss_wide_side <-
+  function(poss_side_wide) {
+    poss_wide_side %>%
+      # mutate(n_poss = 1) %>%
+      # select(pts, n_poss, everything())
       group_by_at(vars(-pts, -n_poss)) %>%
       summarise_at(vars(pts, n_poss), funs(sum)) %>%
       ungroup()
   }
 
+# This is useful to "abstract away" `collapse`.
+.collapse_poss_wide_side <-
+  function(...,
+           poss_wide_side,
+           collapse = .COLLAPSE) {
+    if(!collapse) {
+      return(poss_wide_side)
+    }
+    poss_wide_side %>% .summarise_poss_wide_side()
+  }
+
 .add_y_col <-
-  function(poss_side) {
-    poss_side %>%
+  function(poss_wide_side) {
+    poss_wide_side %>%
       # select(pts, n_poss, everything()) %>%
       mutate(pp100poss = 100 * pts / n_poss) %>%
       select(pp100poss, pts, n_poss, everything())
@@ -656,28 +744,30 @@
            # I believe this is the one time I need to explicilty include
            # `side` due to the filtering.
            side,
-           path_poss_long_side = config$path_poss_long_side,
-           path_poss_wide_side = config$path_poss_wide_side) {
+           # path_poss_wide_side = config$path_poss_wide_side
+           path_poss_long_side = config$path_poss_long_side) {
 
-    poss_side <- pbp
-    poss_side <-
+    poss_long_side <- pbp
+    poss_long_side <-
       .add_xid_player_col(
-        poss_side = poss_side,
+        poss_side = poss_long_side,
         side = side
       )
 
-    poss_dups <-
-      poss_side %>%
-      .check_poss_dups(
+    poss_long_side_dups <-
+      poss_long_side %>%
+      .check_poss_long_side_dups(
         ...,
-        poss_side = poss_side,
-        side = side
+        # side = side,
+        poss_long_side = poss_long_sides
       )
 
-    poss_side <-
-      .refine_poss(
-        poss_side = poss_side,
-        poss_dups = poss_dups
+    poss_long_side <-
+      .refine_poss_long_side(
+        ...,
+        side = side,
+        poss_long_side = poss_long_side,
+        poss_long_side_dups = poss_long_side_dups
       )
 
     path_export <-
@@ -687,19 +777,25 @@
         side = side,
         path = path_poss_long_side
       )
-    browser()
-    poss_side <- poss_side %>% .spread_poss_side(poss_side)
-    poss_side <- .collapse_poss_side(..., poss_side = poss_side)
-    poss_side <- poss_side %>% .add_y_col()
 
-    path_export <-
-      .export_data_from_path(
+    poss_wide_side <-
+      poss_long_side %>%
+      .spread_poss_long_side()
+
+    poss_wide_side <-
+      .collapse_poss_wide_side(
+      ...,
+      poss_wide_side = poss_wide_side
+    )
+
+    poss_wide_side <-
+      .finalize_poss_wide_side(
         ...,
-        data = poss_side,
         side = side,
-        path = path_poss_wide_side
+        poss_wide_side = poss_wide_side,
+        poss_long_side = poss_long_side,
       )
-    invisible(poss_side)
+    invisible(poss_wide_side)
   }
 
 # .munge_pbp.tibble <-
@@ -774,12 +870,12 @@ munge_pbp <-
         players_summary_calc = players_summary_calc
       )
 
-    pbp <-
-      .filter_pbp(
-        ...,
-        pbp = pbp,
-        players_summary_calc = players_summary_calc
-      )
+    # pbp <-
+    #   .filter_pbp(
+    #     ...,
+    #     pbp = pbp,
+    #     players_summary_calc = players_summary_calc
+    #   )
 
     poss_o <-
       .convert_pbp_to_poss_side(

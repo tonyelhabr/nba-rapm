@@ -1,12 +1,132 @@
 
+
+.separate_lineup <-
+  function(pbp, col, prefix = "x", suffix = 1:5, sep = "-") {
+    col <- enquo(col)
+    pbp %>%
+      separate(!!col, into = glue::glue("{prefix}{suffix}"), sep = sep)
+  }
+
+
+.reformat_pbp <-
+  function(...,
+           pbp) {
+    # Suggestion: `.reformat_pbp()`
+    suppressMessages(
+      pbp <-
+        full_join(
+          pbp %>%
+            filter(is_off1) %>%
+            select(
+              rn1 = rn,
+              pk1 = pk,
+              id_game,
+              is_home = is_home1,
+              # is_off = is_off1,
+              pts = pts1,
+              mp,
+              id_team_o = id_team1,
+              id_team_d = id_team2,
+              slug_o = slug_team1,
+              slug_d = slug_team2,
+              lineup_o = lineup1,
+              lineup_d = lineup2
+            ),
+          pbp %>%
+            mutate(is_home2 = !is_home1, is_off2 = !is_off1) %>%
+            filter(is_off2) %>%
+            select(
+              rn2 = rn,
+              pk2 = pk,
+              id_game,
+              is_home = is_home2,
+              # is_off = is_off2,
+              pts = pts2,
+              mp,
+              id_team_o = id_team2,
+              id_team_d = id_team1,
+              slug_o = slug_team2,
+              slug_d = slug_team1,
+              lineup_o = lineup2,
+              lineup_d = lineup1
+            )
+        ) %>%
+        mutate(rn = coalesce(rn1, rn2), pk = coalesce(pk1, pk2)) %>%
+        select(-matches("^(rn|pk)[12]$")) %>%
+        select(rn, pk, everything()) %>%
+        arrange(rn, pk)
+    )
+
+    pbp <-
+      pbp %>%
+      .separate_lineup(lineup_o, suffix = 1:5) %>%
+      .separate_lineup(lineup_d, suffix = 6:10) %>%
+      mutate_at(vars(matches("^x")), funs(as.integer))
+
+    pbp <-
+      pbp %>%
+      group_by(id_game) %>%
+      mutate(poss_num = row_number()) %>%
+      ungroup() %>%
+      gather(dummy, id_player, matches("^x")) %>%
+      select(-dummy) %>%
+      group_by(id_game, poss_num) %>%
+      mutate(player_num = row_number()) %>%
+      ungroup() %>%
+      mutate(side = if_else(player_num <= 5L, "o", "d")) %>%
+      arrange(rn, player_num)
+    pbp
+  }
+
+.convert_lineup_to_suffix <-
+  function(x) {
+    x <- rlang::enquo(x)
+    x_chr <- rlang::quo_text(x)
+    str_sub(x_chr, start = nchar(x_chr))
+  }
+
+.unite_lineup <-
+  function(.data,
+           col,
+           prefix_rgx = "x",
+           sep = " - ",
+           remove = TRUE) {
+    col_quo <- rlang::enquo(col)
+    suffix <- .convert_lineup_to_suffix(!!col_quo)
+    suffix_rgx <-
+      case_when(suffix == "1" ~ "0[1-5]",
+                suffix == "2" ~ "[01][06-9]")
+    rgx <- glue::glue("{prefix_rgx}{suffix_rgx}")
+    .data %>%
+      unite(!!col_quo, matches(rgx), sep = sep, remove = remove)
+  }
+
+.summarise_lineup_byside <-
+  function(data, col, side) {
+
+    col_quo <- enquo(col)
+    suffix <- .convert_lineup_to_suffix(!!col_quo)
+    data %>%
+      rename(lineup = !!col_quo) %>%
+      select(id_game, lineup, poss_num, mp, pts) %>%
+      group_by(id_game, lineup) %>%
+      summarise(
+        poss_calc = n(),
+        mp_calc = sum(mp),
+        pts_calc = sum(pts)
+      ) %>%
+      ungroup() %>%
+      rename_at(vars(matches("_calc$")), funs(paste0(., "_", side)))
+  }
+
 .summarise_lineup <-
   function(...,
-           play_by_play,
+           pbp,
            path_lineup_summary_calc = config$path_lineup_summary_calc) {
     players_nbastatr <- .try_import_players_nbastatr(...)
 
-    play_by_play_aug <-
-      play_by_play %>%
+    pbp_aug <-
+      pbp %>%
       # filter(id_game == .ID_GAME_compare) %>%
       # filter(id_game >= 21700001, id_game <= 21700004) %>%
       # filter(slug_team1 == "SAS" | slug_team2 == "SAS") %>%
@@ -22,77 +142,35 @@
       ) %>%
       arrange(id_game, poss_num)
 
-    play_by_play_aug <-
-      play_by_play_aug %>%
+    pbp_aug <-
+      pbp_aug %>%
       group_by(id_game, poss_num) %>%
       mutate(player_num = row_number()) %>%
       ungroup() %>%
       mutate_at(vars(player_num), funs(sprintf("x%02d", .)))
 
-    .convert_lineup_to_suffix <-
-      function(x) {
-        x <- rlang::enquo(x)
-        x_chr <- rlang::quo_text(x)
-        str_sub(x_chr, start = nchar(x_chr))
-      }
-    .unite_lineup <-
-      function(.data,
-               col,
-               ...,
-               prefix_rgx = "x",
-               sep = " - ",
-               remove = TRUE) {
-        col_quo <- rlang::enquo(col)
-        suffix <- .convert_lineup_to_suffix(!!col_quo)
-        suffix_rgx <-
-          case_when(suffix == "1" ~ "0[1-5]",
-                    suffix == "2" ~ "[01][06-9]")
-        rgx <- glue::glue("{prefix_rgx}{suffix_rgx}")
-        .data %>%
-          unite(!!col_quo, matches(rgx), sep = sep, remove = remove, ...)
-      }
-
-    play_by_play_compare_wide <-
-      play_by_play_aug %>%
+    pbp_compare_wide <-
+      pbp_aug %>%
       select(id_game, poss_num, pts, player_num, name_player) %>%
       spread(player_num, name_player) %>%
       .unite_lineup(lineup1) %>%
       .unite_lineup(lineup2)
 
-    play_by_play_aug <-
-      play_by_play_aug %>%
+    pbp_aug <-
+      pbp_aug %>%
       select(-matches("^(id|name)_player$|^id_team$|^player_num$")) %>%
       group_by(id_game, poss_num) %>%
       filter(row_number() == 1) %>%
       ungroup() %>%
       inner_join(
-        play_by_play_compare_wide,
+        pbp_compare_wide,
         by = c("id_game", "poss_num", "pts")
       )
 
-
-    .summarise_lineup_byside <-
-      function(data, col, side = c("o", "d")) {
-
-        col_quo <- enquo(col)
-        suffix <- .convert_lineup_to_suffix(!!col_quo)
-        data %>%
-          rename(lineup = !!col_quo) %>%
-          select(id_game, lineup, poss_num, mp, pts) %>%
-          group_by(id_game, lineup) %>%
-          summarise(
-            poss_calc = n(),
-            mp_calc = sum(mp),
-            pts_calc = sum(pts)
-          ) %>%
-          ungroup() %>%
-          rename_at(vars(matches("_calc$")), funs(paste0(., "_", side)))
-      }
-
     lineup_summary_calc <-
       left_join(
-        play_by_play_aug %>% .summarise_lineup_byside(lineup1, side = "o"),
-        play_by_play_aug %>% .summarise_lineup_byside(lineup2, side = "d"),
+        pbp_aug %>% .summarise_lineup_byside(lineup1, side = "o"),
+        pbp_aug %>% .summarise_lineup_byside(lineup2, side = "d"),
         by = c("id_game", "lineup")
       ) %>%
       mutate(
@@ -111,30 +189,32 @@
     invisible(lineup_summary_calc)
   }
 
+.summarise_players_stats <-
+  function(data) {
+    data %>%
+      group_by(id_game, id_player, side) %>%
+      summarise(
+        poss_calc = n(),
+        mp_calc = sum(mp),
+        pts_calc = sum(pts)
+      ) %>%
+      ungroup()
+  }
+
 .summarise_players <-
   function(...,
-           play_by_play,
+           pbp,
            path_players_summary_calc = config$path_players_summary_calc,
            path_players_game_logs_compare = config$path_players_game_logs_compare,
            path_players_summary_compare = config$path_players_summary_compare) {
 
-    .summarise_players_stats <-
-      function(.data) {
-        .data %>%
-          group_by(id_game, id_player, side) %>%
-          summarise(
-            poss_calc = n(),
-            mp_calc = sum(mp),
-            pts_calc = sum(pts)
-          ) %>%
-          ungroup()
-      }
+
     players_game_logs_calc <-
       bind_rows(
-        play_by_play %>%
+        pbp %>%
           filter(side == "o") %>%
           .summarise_players_stats(),
-        play_by_play %>%
+        pbp %>%
           filter(side == "d") %>%
           .summarise_players_stats()
       ) %>%
@@ -384,6 +464,53 @@
     invisible(teams_summary_calc)
   }
 
+
+# Filtering out entire "stints" where a single player does not meet the criteria.
+.POSS_MIN <- 0
+.GP_MIN <- .POSS_MIN
+.MP_MIN <- .POSS_MIN
+..filter_pbp1 <-
+  function(...,
+           pbp,
+           players_summary_calc,
+           poss_min = .POSS_MIN,
+           gp_min = .GP_MIN,
+           mp_min = .MP_MIN) {
+    players_summary_calc_filt <-
+      players_summary_calc %>%
+      filter(
+        poss_calc_total < poss_min |
+          gp_calc_total < gp_min |
+          mp_calc_total < mp_min
+      )
+    pbp %>%
+      anti_join(players_summary_calc_filt, by = "id_player") %>%
+      group_by(rn) %>%
+      filter(n() == 10L) %>%
+      ungroup()
+  }
+
+# The "original" implementation (where individual players are filtererd out,
+# meaning that the stint may have less than 9 players (i.e. indicator variables)
+# when spread into "wide" form.
+..filter_pbp2 <-
+  function(...,
+           pbp,
+           players_summary_calc,
+           poss_min = .POSS_MIN,
+           gp_min = .GP_MIN,
+           mp_min = .MP_MIN) {
+    players_summary_calc_filt <-
+      players_summary_calc %>%
+      filter(
+        poss_calc_total >= poss_min,
+        gp_calc_total >= gp_min,
+        mp_calc_total >= mp_min
+      )
+    pbp %>%
+      semi_join(players_summary_calc_filt, by = "id_player")
+  }
+
 # + It is worth separating this into its own function so that the `*min` parameters
 # can be "abstracted" away (with the ellipses).
 # + NOTE: I don't think the filtering is done correclty here! (Entire stints involving
@@ -391,12 +518,12 @@
 # UPDATE: This is now implemented in one of the `..filter*()` functions,
 # but it doesn't produce better results(?). A seperate `..filter()` function
 # has been created to have the "original" filtering implementation.
-.filter_play_by_play <-
+.filter_pbp <-
   function(...,
            # poss_min = 0,
            # gp_min = 0,
            # mp_min = 0,
-           play_by_play,
+           pbp,
            # Do this so that this function can be used more "dynamically"
            # (i.e. outside the parent `munge*()` function, where `players_summary_calc`
            # may not be calculated immediately before hand).
@@ -410,11 +537,11 @@
           path = path_players_summary_calc
         )
     }
-    n_row_before <- play_by_play %>% nrow()
+    n_row_before <- pbp %>% nrow()
     res <-
-      ..filter_play_by_play2(
+      ..filter_pbp2(
         ...,
-        play_by_play = play_by_play,
+        pbp = pbp,
         players_summary_calc = players_summary_calc
       )
 
@@ -424,181 +551,166 @@
       glue::glue(
         "{scales::comma(n_row_before)} records before filtering; ",
         "{scales::comma(n_row_after)} records after_filter; => ",
-        "{scales::comma(n_poss_rem)} possessions removed by filtering."
+        "{scales::comma(n_poss_rem)} posss removed by filtering."
         ),
       ...
     )
     res
   }
 
-# Filtering out entire "stints" where a single player does not meet the criteria.
-.POSS_MIN <- 0
-.GP_MIN <- .POSS_MIN
-.MP_MIN <- .POSS_MIN
-..filter_play_by_play1 <-
+.add_xid_player_col <-
+  function(poss_side, side) {
+    poss_side %>%
+      filter(side == !!side) %>%
+      mutate(xid_player = sprintf("%s%07d", side, as.integer(id_player)))
+  }
+
+.check_poss_dups <-
   function(...,
-           play_by_play,
-           players_summary_calc,
-           poss_min = .POSS_MIN,
-           gp_min = .GP_MIN,
-           mp_min = .MP_MIN) {
-    players_summary_calc_filt <-
-      players_summary_calc %>%
-      filter(
-        poss_calc_total < poss_min |
-          gp_calc_total < gp_min |
-          mp_calc_total < mp_min
+           poss_side,
+           side,
+           path_poss_error_side = config$path_poss_error_side) {
+
+    poss_dups <-
+      poss_side %>%
+      count(rn, xid_player, sort = TRUE) %>%
+      filter(n_poss > 1L)
+
+    n_dups <- nrow(poss_dups)
+    if(n_dups > 0L) {
+      .display_info(
+        glue::glue(
+          "There are {scales::comma(n_dups)} rows with more than one ",
+          "player-side-poss combination."
+        ),
+        ...
       )
-    play_by_play %>%
-      anti_join(players_summary_calc_filt, by = "id_player") %>%
-      group_by(rn) %>%
-      filter(n() == 10L) %>%
+
+      players_nbastatr <- .try_import_players_nbastatr(...)
+
+      poss_dups <-
+        poss_dups %>%
+        mutate(
+          id_player = xid_player %>% str_replace("^[od]", "") %>% as.integer()
+        ) %>%
+        left_join(
+          players_nbastatr %>% select(id_player, name_player),
+          by = c("id_player")
+        )
+
+      path_export <-
+        .export_data_from_path(
+          ...,
+          data = poss_dups,
+          side = side,
+          path = path_poss_error_side
+        )
+    }
+    invisible(poss_dups)
+  }
+
+
+.refine_poss <-
+  function(poss_side, poss_dups) {
+    poss_side %>%
+      anti_join(poss_dups, by = c("rn", "xid_player")) %>%
+      arrange(rn, xid_player) %>%
+      mutate(dummy = 1L) %>%
+      select(rn, pts, pk, xid_player, dummy)
+  }
+
+# This is useful just to separate functionality.
+.spread_poss_side <-
+  function(poss_side) {
+    poss_side %>%
+      # semi_join(xid_players_filt) %>%
+      spread(xid_player, dummy, fill = 0L) %>%
+      select(-rn, -pk) %>%
+      mutate(n_poss) %>%
+      select(pts, n_poss, everything())
+  }
+
+# This is useful to "abstract away" `collapse`.
+.collapse_poss_side <-
+  function(poss_side,
+           collapse = .COLLAPSE) {
+    poss_side %>%
+      group_by_at(vars(-pts, -n_poss)) %>%
+      summarise_at(vars(pts, n_poss), funs(sum)) %>%
       ungroup()
   }
 
-# The "original" implementation (where individual players are filtererd out,
-# meaning that the stint may have less than 9 players (i.e. indicator variables)
-# when spread into "wide" form.
-..filter_play_by_play2 <-
-  function(...,
-           play_by_play,
-           players_summary_calc,
-           poss_min = .POSS_MIN,
-           gp_min = .GP_MIN,
-           mp_min = .MP_MIN) {
-    players_summary_calc_filt <-
-      players_summary_calc %>%
-      filter(
-        poss_calc_total >= poss_min,
-          gp_calc_total >= gp_min,
-          mp_calc_total >= mp_min
-      )
-    play_by_play %>%
-      semi_join(players_summary_calc_filt, by = "id_player")
+.add_y_col <-
+  function(poss_side) {
+    poss_side %>%
+      # select(pts, n_poss, everything()) %>%
+      mutate(pp100poss = 100 * pts / n_poss) %>%
+      select(pp100poss, pts, n_poss, everything())
   }
 
-.widen_data_byside <-
+# TODO: Change the name of this function to `.convert_pbp_to_poss()`?
+.convert_pbp_to_poss_side <-
   function(...,
-           play_by_play,
+           pbp,
+           # scale = .SCALE,
            # I believe this is the one time I need to explicilty include
            # `side` due to the filtering.
            side,
-           path_possession_data_side = config$path_possession_data_side,
-           path_possession_data_error_side = config$path_possession_data_error_side) {
+           path_poss_long_side = config$path_poss_long_side,
+           path_poss_wide_side = config$path_poss_wide_side) {
 
-    play_by_play_side <-
-      play_by_play %>%
-      filter(side == !!side) %>%
-      mutate(xid_player = sprintf("%s%07d", side, as.integer(id_player)))
+    poss_side <- pbp
+    poss_side <-
+      .add_xid_player_col(
+        poss_side = poss_side,
+        side = side
+      )
 
-    dups_n <-
-      play_by_play_side %>%
-      count(rn, xid_player, sort = TRUE) %>%
-      filter(n > 1L)
+    poss_dups <-
+      poss_side %>%
+      .check_poss_dups(
+        ...,
+        poss_side = poss_side,
+        side = side
+      )
 
-    n_dups <- nrow(dups_n)
-      if(n_dups > 0L) {
-        .display_info(
-          glue::glue(
-            "There are {scales::comma(n_dups)} rows with more than one ",
-            "player-side-possession combination."
-          ),
-          ...
-        )
-
-        players_nbastatr <- .try_import_players_nbastatr(...)
-
-        dups_n_aug <-
-          dups_n %>%
-          mutate(
-            id_player = xid_player %>% str_replace("^[od]", "") %>% as.integer()
-          ) %>%
-          left_join(
-            players_nbastatr %>% select(id_player, name_player),
-            by = c("id_player")
-          )
-
-        path_export <-
-          .export_data_from_path(
-            ...,
-            data = dups_n_aug,
-            side = side,
-            path = path_possession_data_error_side
-          )
-    }
-
-    if(FALSE) {
-      xid_players <-
-        play_by_play_side %>%
-        anti_join(dups_n, by = c("rn", "xid_player")) %>%
-        arrange(xid_player) %>%
-        count(xid_player)
-      xid_players_filt <-
-        xid_players %>%
-        slice(1:50)
-    }
-
-    possession_data_side <-
-      play_by_play_side %>%
-      anti_join(dups_n, by = c("rn", "xid_player")) %>%
-      arrange(rn, xid_player) %>%
-      mutate(dummy = 1L) %>%
-      select(rn, xid_player, pts, dummy) %>%
-      # semi_join(xid_players_filt) %>%
-      spread(xid_player, dummy, fill = 0L) %>%
-      select(-rn) %>%
-      mutate(n = 1L) %>%
-      group_by_at(vars(-pts, -n)) %>%
-      summarise_at(vars(pts, n), funs(sum)) %>%
-      ungroup() %>%
-      # select(pts, n, everything()) %>%
-      mutate(pp100poss = 100 * pts / n) %>%
-      select(pp100poss, pts, n, everything())
-
-    if(FALSE) {
-      possession_data_side %>%
-      # possession_data %>%
-        # arrange(desc(n)) %>%
-        arrange(n) %>%
-        slice(1) %>%
-        gather(side_id, dummy, -pts, -n, -pp100poss) %>%
-        filter(dummy > 0)
-      possession_data_side %>% arrange(desc(pts))
-      possession_data_side %>% count(n) %>% arrange(n)
-      possession_data_side %>% count(n) %>% arrange(desc(n))
-
-      possession_data_side %>%
-        # filter(n > 1) %>%
-        # filter(pts > 2) %>%
-        filter(abs(pts) <= 500)
-    }
+    poss_side <-
+      .refine_poss(
+        poss_side = poss_side,
+        poss_dups = poss_dups
+      )
 
     path_export <-
       .export_data_from_path(
         ...,
-        data = possession_data_side,
+        data = poss_side,
         side = side,
-        path = path_possession_data_side
+        path = path_poss_long_side
       )
-    invisible(possession_data_side)
+    browser()
+    poss_side <- poss_side %>% .spread_poss_side(poss_side)
+    poss_side <- .collapse_poss_side(..., poss_side = poss_side)
+    poss_side <- poss_side %>% .add_y_col()
+
+    path_export <-
+      .export_data_from_path(
+        ...,
+        data = poss_side,
+        side = side,
+        path = path_poss_wide_side
+      )
+    invisible(poss_side)
   }
 
-.separate_lineup <-
-  function(play_by_play, col, prefix = "x", suffix = 1:5, sep = "-") {
-    col <- enquo(col)
-    play_by_play %>%
-      separate(!!col, into = glue::glue("{prefix}{suffix}"), sep = sep)
-  }
-
-# .munge_play_by_play.tibble <-
+# .munge_pbp.tibble <-
 #   function(...) {
 #
 #   }
 
-munge_play_by_play <-
+munge_pbp <-
   function(...,
-           path_play_by_play = config$path_play_by_play,
-           path_possession_data_side = config$path_possession_data_side,
+           path_pbp = config$path_pbp,
+           path_poss_wide_side = config$path_poss_wide_side,
            path_players_summary_calc = config$path_players_summary_calc) {
 
     will_skip <-
@@ -606,13 +718,13 @@ munge_play_by_play <-
         ...,
         path_reqs =
           c(
-            .get_path_from(..., path = path_play_by_play)
+            .get_path_from(..., path = path_pbp)
           ),
         path_deps =
           c(
             .get_path_from(..., path = path_players_summary_calc),
-            .get_path_from(..., path = path_possession_data_side, side = "o"),
-            .get_path_from(..., path = path_possession_data_side, side = "d")
+            .get_path_from(..., path = path_poss_wide_side, side = "o"),
+            .get_path_from(..., path = path_poss_wide_side, side = "d")
           )
       )
     if(will_skip) {
@@ -624,75 +736,22 @@ munge_play_by_play <-
       ...
     )
 
-    play_by_play <-
+    pbp <-
       .import_data_from_path(
         ...,
-        path = path_play_by_play
+        path = path_pbp
       )
 
-    # UseMethod(".munge_play_by_play")
+    # UseMethod(".munge_pbp")
 
-    suppressMessages(
-      play_by_play <-
-        full_join(
-          play_by_play %>%
-            filter(is_off1) %>%
-            select(
-              rn1 = rn,
-              id_game,
-              is_home = is_home1,
-              # is_off = is_off1,
-              pts = pts1,
-              mp,
-              id_team_o = id_team1,
-              id_team_d = id_team2,
-              slug_o = slug_team1,
-              slug_d = slug_team2,
-              lineup_o = lineup1,
-              lineup_d = lineup2
-            ),
-          play_by_play %>%
-            mutate(is_home2 = !is_home1, is_off2 = !is_off1) %>%
-            filter(is_off2) %>%
-            select(
-              rn2 = rn,
-              id_game,
-              is_home = is_home2,
-              # is_off = is_off2,
-              pts = pts2,
-              mp,
-              id_team_o = id_team2,
-              id_team_d = id_team1,
-              slug_o = slug_team2,
-              slug_d = slug_team1,
-              lineup_o = lineup2,
-              lineup_d = lineup1
-            )
-        ) %>%
-        mutate(rn = coalesce(rn1, rn2)) %>%
-        select(-matches("^rn[12]$")) %>%
-        select(rn, everything()) %>%
-        arrange(rn)
-    )
+    # TODO: Convert some of the following actions into their own functions (for modularity/clarity)?
+    pbp <-
+      .reformat_pbp(
+        ...,
+        pbp = pbp
+      )
 
-    play_by_play <-
-      play_by_play %>%
-      .separate_lineup(lineup_o, suffix = 1:5) %>%
-      .separate_lineup(lineup_d, suffix = 6:10) %>%
-      mutate_at(vars(matches("^x")), funs(as.integer))
-
-    play_by_play <-
-      play_by_play %>%
-      group_by(id_game) %>%
-      mutate(poss_num = row_number()) %>%
-      ungroup() %>%
-      gather(dummy, id_player, matches("^x")) %>%
-      select(-dummy) %>%
-      group_by(id_game, poss_num) %>%
-      mutate(player_num = row_number()) %>%
-      ungroup() %>%
-      mutate(side = if_else(player_num <= 5L, "o", "d")) %>%
-      arrange(rn, player_num)
+    # END: `.reforma
 
     # Note that the `players_summary_calc` is the only `_calc` object
     # that that matters
@@ -700,13 +759,13 @@ munge_play_by_play <-
     lineup_summary_calc <-
       .summarise_lineup(
         ...,
-        play_by_play = play_by_play
+        pbp = pbp
       )
 
     players_summary_calc <-
       .summarise_players(
         ...,
-        play_by_play = play_by_play
+        pbp = pbp
       )
 
     teams_summary_calc <-
@@ -715,36 +774,37 @@ munge_play_by_play <-
         players_summary_calc = players_summary_calc
       )
 
-    play_by_play <-
-      .filter_play_by_play(
+    pbp <-
+      .filter_pbp(
         ...,
-        play_by_play = play_by_play,
+        pbp = pbp,
         players_summary_calc = players_summary_calc
       )
 
-    possession_data_o <-
-      .widen_data_byside(
+    poss_o <-
+      .convert_pbp_to_poss_side(
         ...,
-        play_by_play = play_by_play,
+        pbp = pbp,
         side = "o"
       )
-    possession_data_d <-
-      .widen_data_byside(
+
+    poss_d <-
+      .convert_pbp_to_poss_side(
         ...,
-        play_by_play = play_by_play,
+        pbp = pbp,
         side = "d"
       )
 
     invisible(
       list(
-        possession_data_o = possession_data_o,
-        possession_data_d = possession_data_d
+        poss_o = poss_o,
+        poss_d = poss_d
       )
     )
   }
 
 
-munge_play_by_play_auto <-
+munge_pbp_auto <-
   function(...,
            season = config$season,
            poss_min = config$poss_min,
@@ -756,7 +816,7 @@ munge_play_by_play_auto <-
            backup = config$backup,
            clean = config$clean,
            n_keep = config$n_keep) {
-    munge_play_by_play(
+    munge_pbp(
       ...,
       season = season,
       poss_min = poss_min,
@@ -771,90 +831,3 @@ munge_play_by_play_auto <-
     )
   }
 
-
-# WARNING: This is experimental!
-# Reference: https://stackoverflow.com/questions/19253820/how-to-implement-coalesce-efficiently-in-r
-.coalesce <- function(...) {
-  Reduce(function(x, y) {
-    i <- which(is.na(x))
-    x[i] <- y[i]
-    x},
-    list(...))
-}
-.coalesce_multi <- function(...) {
-  Reduce(.coalesce, list(...))
-}
-# Reference: https://stackoverflow.com/questions/12232041/how-to-reorder-data-table-columns-without-copying
-.move_col_to_first <- function(dt, col) {
-  setcolorder(dt, neworder = c(col, setdiff(colnames(dt), col)))
-}
-
-# data.table ----
-# .separate_lineup.dt <- function(dt, col, prefix = "x", suffix = 1:5, sep = "-") {
-#   col <- enquo(col)
-#   cols_new <- paste0(prefix, suffix)
-#   dt[, (cols_new) := tstrsplit(lineup_o, "-", fixed = FALSE)]
-# }
-# .separate_lineup.dt(dt)[]
-
-.munge_play_by_play.data.table <-
-  function(play_by_play, ...) {
-
-    library("data.table")
-    dt <- .import_data_from_path(season = .SEASON, path = config$path_play_by_play)
-    # dt <- setkey(as.data.table(dt), rn)
-    dt <- as.data.table(dt)
-    # class(dt)
-    dt <- dt[id_game == 21700001]
-    dt <-
-      merge(
-        dt[
-          is_off1 == TRUE,
-          .(rn1 = rn,
-            id_game,
-            is_home = is_home1,
-            # is_off = is_off1,
-            pts = pts1,
-            mp,
-            id_team_o = id_team1,
-            id_team_d = id_team2,
-            slug_o = slug_team1,
-            slug_d = slug_team2,
-            lineup_o = lineup1,
-            lineup_d = lineup2
-          )],
-        dt[,c("is_home2", "is_off2") := .(!is_home1, !is_off1)]
-        [is_off1 == FALSE,
-          .(rn2 = rn,
-            id_game,
-            is_home = is_home2,
-            # is_off = is_off2,
-            pts = pts2,
-            mp,
-            id_team_o = id_team2,
-            id_team_d = id_team1,
-            slug_o = slug_team2,
-            slug_d = slug_team1,
-            lineup_o = lineup2,
-            lineup_d = lineup1
-          )],
-        all = TRUE
-      )
-
-    dt <-
-      dt[,
-         rn := .coalesce(rn1, rn2)
-         ][,
-           `:=`(rn1 = NULL, rn2 = NULL)
-           ][
-             order(rn)
-             ]
-    # dt <- .move_col_to_first(dt, "rn")
-    dt <- setkey(dt, rn)
-    # dt[, .I]
-    dt <- dt[, (paste0("x", 1:5)) := tstrsplit(lineup_o, "-", fixed = FALSE)]
-    dt <- dt[, (paste0("x", 6:10)) := tstrsplit(lineup_d, "-", fixed = FALSE)]
-    dt <- dt[,`:=`(lineup_o = NULL, lineup_d = NULL)]
-    dt[]
-    dt <- setDT(dt)
-  }

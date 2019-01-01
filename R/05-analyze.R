@@ -148,8 +148,8 @@
       ) %>%
       mutate(idx_grp = row_number()) %>%
       select(idx_grp, everything())
-    f_clean <- memoise::memoise(clean_play_by_play_auto)
-    f_munge <- memoise::memoise(munge_play_by_play_auto)
+    f_clean <- memoise::memoise(clean_pbp_auto)
+    f_munge <- memoise::memoise(munge_pbp_auto)
 
     if (progress) {
       .pb <- .create_pb(total = nrow(params_grid))
@@ -162,12 +162,12 @@
       ),
       .f = ~ {
         .display_progress(glue::glue("{.season}, {.poss_min}, {.lambda_o}, {.lambda_d}"))
-        f_clean(# clean_play_by_play_auto(
+        f_clean(# clean_pbp_auto(
           season = .season,
           # skip = FALSE
           skip = TRUE
         )
-        f_munge(# munge_play_by_play_auto(
+        f_munge(# munge_pbp_auto(
           season = .season,
           poss_min = .poss_min,
           skip = FALSE

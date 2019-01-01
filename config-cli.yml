@@ -42,22 +42,23 @@ default:
     default: true
     help: 'Whether to use multiple user computer cores.'
   n_core:
-    default: 4
+    default: 1
     help: 'Number of cores to use. Only relevant if `multi_core = TRUE`.
     (Requires `{parallel}` package, as well as `{doParallel}` package on Windows.)'
+    
+    
+  # `munge` parameters
   season:
     default: 2017
     help: 'NBA season to process. Used as "suffix" for all path formats 
     (where it is subsituted in placed for the "sprintf"-style format "%04d").'
-
-  # Model-fitting parameters.
   season_type:
     default: 'regular'
     help: 'Valid choices include "regular". ("playoffs" and "all" have not been implemented).'
   poss_min:
     # default: 5000
-    default: 200
-    help: 'Minimum number of possession in which a player must have 
+    default: 1000
+    help: 'Minimum number of poss in which a player must have 
     participated  (offense and defense combined) in order to qualify for model fitting process.
     (Model quality generally improves if players with less time played are removed
     from consideration because they can represent outliers and have high leverage on 
@@ -70,12 +71,18 @@ default:
     # default: 250
     default: 0
     help: 'Analogous to `poss_min` for minutes played.'
+  collapse:
+    default: true
+    help: 'If `TRUE`, "collapses" plays into stints.'
+
+   
+   # `fit` parameters
   intercept:
     default: true
     help: 'If `TRUE`, includes intercept term.'
   scale:
     default: false
-    help: 'If `TRUE`, scales dummy/indicator variables (by number of possessions).'
+    help: 'If `TRUE`, scales dummy/indicator variables (by number of posss).'
   optimize:
     default: false
     # default: true
@@ -88,11 +95,11 @@ default:
     help: 'Seed to use for regression cross-validation.'
   lambda_o:
     # default: 100
-    default: 200
-    help: 'Value to use for lambda in model fit if `optimize_lambda_o = FALSE`.'
+    default: 100
+    help: 'Value to use for lambda in model fit if `optimize = FALSE`.'
   lambda_d:
     # default: 250
-    default: 500
-    help: 'Analogous to `lambda_optm_o`.'
+    default: 350
+    help: 'Analogous to `lambda_o`.'
 
 production:

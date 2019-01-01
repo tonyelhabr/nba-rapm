@@ -1,5 +1,5 @@
 
-# raw_play_by_play ----
+# raw_pbp ----
 # Links derived from public google drive folders at
 # https://drive.google.com/drive/folders/1GMiP-3Aoh2AKFCoGZ8f0teMYNlkm87dm.
 # Id identified by clickiing on desired folder, copying share link,
@@ -55,8 +55,8 @@
     invisible(paths_renamed)
   }
 
-download_raw_play_by_play_files <-
-  function(..., season = .SEASONS, path = config$path_raw_play_by_play) {
+download_raw_pbp_files <-
+  function(..., season = .SEASONS, path = config$path_raw_pbp) {
     paths_exist <-
       .check_dst_files_download(
         ...,

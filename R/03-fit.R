@@ -3,17 +3,26 @@
 
 # Note that intercept term must be specified by a boolean in `glmnet::glmnet()`,
 # so it does not matter if `+ 0` or `+ 1` is included in the formula.
-.FMLA <- formula(glue::glue("{.Y} ~ . - pts - n"))
+.FMLA <- formula(glue::glue("{.Y} ~ . - pts - n_poss"))
 
-# TODO: Use sparseMatrix here?
+.SCALE <- TRUE
 .get_x_glmnet <-
-  function(possession_data, fmla = .FMLA) {
-    # fmla %>% model.matrix(possession_data)
-    fmla %>% Matrix::sparse.model.matrix(possession_data)
+  function(data, fmla = .FMLA, ..., scale = .SCALE) {
+    browser()
+    # fmla %>% model.matrix(poss)
+    if(scale) {
+      data <-
+        data %>%
+        gather(xid_player, .n_poss, matches("^[o|d]")) %>%
+        spread(xid_player, n_scaled)
+    }
+    fmla %>% Matrix::sparse.model.matrix(data)
   }
 .get_y_glmnet <-
-  function(possession_data, y = .Y) {
-    possession_data %>% pull(!!sym(y))
+  function(data, y = .Y, ...) {
+    data %>%
+      # mutate(pp100poss = pts / n_poss) %>%
+      pull(!!sym(y))
   }
 
 # NOTE: Need to make sure the number of terms is not large!
@@ -83,6 +92,7 @@
            x,
            y,
            intercept = .INTERCEPT,
+           scale = .SCALE,
            optimize = .OPTIMIZE,
            lambda = .LAMBDA,
            seed = .SEED,
@@ -159,6 +169,7 @@
            x,
            y,
            intercept = .INTERCEPT,
+           # scale = .SCALE,
            lambda = .LAMBDA,
            seed = .SEED,
            path_rapm_fit_side = config$path_rapm_fit_side) {
@@ -182,21 +193,19 @@
 
 .fit_rapm_model_byside <-
   function(...,
-           # "Catch `lambda` here to pass to `.get_lambda()`.
+           # "Catch `lambda` here to pass to `.get_lambda()` (which otherwise
+           # may confict with the `lambda` passed to `.fit_rapm_model_side()`
+           # if passed through `...`.)
            lambda,
-           path_possession_data_side = config$path_possession_data_side) {
+           path_poss_wide_side = config$path_poss_wide_side) {
 
-    possession_data <-
+    poss <-
       .import_data_from_path(
         ...,
-        path = path_possession_data_side
+        path = path_poss_wide_side
       )
-    x_glmnet <-
-      possession_data %>%
-      .get_x_glmnet()
-    y_glmnet <-
-      possession_data %>%
-      .get_y_glmnet()
+    x_glmnet <- .get_x_glmnet(..., data = poss)
+    y_glmnet <- .get_y_glmnet(..., data = poss)
 
     lambda <-
       .get_lambda(
@@ -216,33 +225,33 @@
     fit
   }
 
-# TODO!
+# TODO!(Use `pk`?)
 .fit_rapm_model_bothsides <-
   function(...,
            lambda,
-           path_possession_data_side = config$path_possession_data_side) {
-    possession_data_o <-
+           path_poss_wide_side = config$path_poss_wide_side) {
+    poss_o <-
       .import_data_from_path(
         ...,
         side = "o",
-        path = path_possession_data_side
+        path = path_poss_wide_side
       )
-    possession_data_d <-
+    poss_d <-
       .import_data_from_path(
         ...,
         side = "d",
-        path = path_possession_data_side
+        path = path_poss_wide_side
       )
-    possession_data <-
+    poss <-
       inner_join(
-        possession_data_o,
-        possession_data_d
+        poss_o,
+        poss_d
       )
   }
 
 fit_rapm_models <-
   function(...,
-           path_possession_data_side = config$path_possession_data_side,
+           path_poss_wide_side = config$path_poss_wide_side,
            path_rapm_fit_side = config$path_rapm_fit_side,
            # optimize = .OPTIMIZE,
            # seed = .SEED,
@@ -256,8 +265,8 @@ fit_rapm_models <-
         ...,
         path_reqs =
           c(
-            .get_path_from(..., path = path_possession_data_side, side = "o"),
-            .get_path_from(..., path = path_possession_data_side, side = "d")
+            .get_path_from(..., path = path_poss_wide_side, side = "o"),
+            .get_path_from(..., path = path_poss_wide_side, side = "d")
           ),
         path_deps =
           c(
@@ -295,6 +304,7 @@ fit_rapm_models_auto <-
   function(...,
            season = config$season,
            intercept = config$intercept,
+           scale = config$scale,
            optimize = config$optimize,
            seed = config$seed,
            lambda_o = config$lambda_o,
@@ -309,6 +319,7 @@ fit_rapm_models_auto <-
       # ...,
       season = season,
       intercept = intercept,
+      scale = scale,
       optimize = optimize,
       seed = seed,
       lambda_o = lambda_o,

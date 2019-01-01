@@ -5,11 +5,11 @@ auto <-
     # options(width = 80L)
     pre_auto()
     # setup_cores_auto()
-    clean_play_by_play_auto(
+    clean_pbp_auto(
       ...,
-      skip = FALSE
+      skip = TRUE
     )
-    munge_play_by_play_auto(
+    munge_pbp_auto(
       ...,
       skip = FALSE
     )
@@ -41,8 +41,8 @@ auto <-
 #   # .SEASONS[3],
 #   .SEASONS,
 #   .f = function(x) {
-#     # clean_play_by_play_auto(season = x, skip = TRUE)
-#     munge_play_by_play_auto(season = x, skip = FALSE)
+#     # clean_pbp_auto(season = x, skip = TRUE)
+#     munge_pbp_auto(season = x, skip = FALSE)
 #     fit_rapm_models_auto(
 #       season = x,
 #       skip = FALSE,

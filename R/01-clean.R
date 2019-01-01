@@ -1,43 +1,43 @@
 
 # .filter_season_type <-
-#   function(play_by_play, season_type, ...) {
-#     if(!any("season_type" %in% names(play_by_play))) {
+#   function(pbp, season_type, ...) {
+#     if(!any("season_type" %in% names(pbp))) {
 #       .display_info(
-#         "Not filtering for `season_type` since there is `season_type` column in `play_by_play`.",
+#         "Not filtering for `season_type` since there is `season_type` column in `pbp`.",
 #         ...
 #       )
-#       return(play_by_play)
+#       return(pbp)
 #     }
 #     # TODO: Implement this better (although this seems like it would work).
 #     # .validate_season_type(season_type)
 #     # if (season_type == .SEASON_TYPES[3] |
 #     #     (season_type != .SEASON_TYPES[1] &
 #     #     season_type != .SEASON_TYPES[2])) {
-#     #   return(play_by_play)
+#     #   return(pbp)
 #     # }
-#     # play_by_play %>% filter(season_type == !!season_type)
-#     play_by_play %>% filter(season_type == "Regular Season")
+#     # pbp %>% filter(season_type == !!season_type)
+#     pbp %>% filter(season_type == "Regular Season")
 #   }
 
-clean_play_by_play <-
+clean_pbp <-
   function(...,
            # Some of these are included here exclusively for the `.try_skip()` function.
            # This is true with some of the other functions as well.
-           path_raw_play_by_play = config$path_raw_play_by_play,
-           path_play_by_play = config$path_play_by_play,
+           path_raw_pbp = config$path_raw_pbp,
+           path_pbp = config$path_pbp,
            path_game_final_scores_error = config$path_game_final_scores_error,
-           path_play_by_play_error = config$path_play_by_play_error) {
+           path_pbp_error = config$path_pbp_error) {
 
     will_skip <-
       .try_skip(
         ...,
         path_reqs =
           c(
-            .get_path_from(..., path = path_raw_play_by_play)
+            .get_path_from(..., path = path_raw_pbp)
           ),
         path_deps =
           c(
-            .get_path_from(..., path = path_play_by_play)
+            .get_path_from(..., path = path_pbp)
           )
       )
 
@@ -50,10 +50,10 @@ clean_play_by_play <-
       ...
     )
 
-    raw_play_by_play <-
+    raw_pbp <-
       .import_data_from_path(
         ...,
-        path = path_raw_play_by_play
+        path = path_raw_pbp
       )
 
     teams_game_logs_nbastatr <- .try_import_teams_game_logs_nbastatr(...)
@@ -62,7 +62,7 @@ clean_play_by_play <-
 
     # Check that final scores are correct.
     raw_game_final_scores <-
-      raw_play_by_play %>%
+      raw_pbp %>%
       # .filter_season_type(...) %>%
       filter(season_type == "Regular Season") %>%
       filter(play_type == "EndOfPeriod") %>%
@@ -126,21 +126,21 @@ clean_play_by_play <-
       )
 
     # if(FALSE) {
-    #   raw_play_by_play <-
+    #   raw_pbp <-
     #     .import_data_from_path(
     #       season = .SEASON,
-    #       path = config$path_raw_play_by_play
+    #       path = config$path_raw_pbp
     #     )
-    #   raw_play_by_play <-
-    #     raw_play_by_play %>%
+    #   raw_pbp <-
+    #     raw_pbp %>%
     #     filter(game_id == .ID_GAME_DEBUG) %>%
     #     arrange(period, time_elapsed)
     # }
     play_types_valid <-
       c("Make", "Miss", "Turnover", "Timeout", "Ejection", "Foul")
 
-    play_by_play <-
-      raw_play_by_play %>%
+    pbp <-
+      raw_pbp %>%
       # .filter_season_type(...)
       filter(season_type == "Regular Season") %>%
       # Throw out completely mis-labeled points (e.g. 21600236).
@@ -182,8 +182,8 @@ clean_play_by_play <-
 
     # Do this for better readability, as well as to get the all important
     # `location_game`, which cannot be derived directly from the raw data.
-    play_by_play <-
-      play_by_play %>%
+    pbp <-
+      pbp %>%
       left_join(
         teams_game_logs_nbastatr %>%
           group_by(id_game) %>%
@@ -228,8 +228,8 @@ clean_play_by_play <-
       # Note that somehow things may become unsorted a bit.
       arrange(id_game, period, sec_elapsed, pts_total, event_num)
 
-    play_by_play <-
-      play_by_play %>%
+    pbp <-
+      pbp %>%
       filter(!play_type %in% c("Foul", "Rebound")) %>%
       # Aggregate free throws.
       group_by(id_game, player1_id, play_type, sec_elapsed) %>%
@@ -241,8 +241,8 @@ clean_play_by_play <-
       select(rn, everything())
 
     # This is the key step/assumption (but it SHOULD be correct due to the pre-processing).
-    play_by_play <-
-      play_by_play %>%
+    pbp <-
+      pbp %>%
       mutate(
         is_off1 = if_else(player1_id_team == id_team1, TRUE, FALSE),
         is_home1 = if_else(location_game1 == "H", TRUE, FALSE)
@@ -256,8 +256,8 @@ clean_play_by_play <-
       select(matches("^is_"), everything()) %>%
       select(matches("^pts"), everything())
 
-    play_by_play <-
-      play_by_play %>%
+    pbp <-
+      pbp %>%
       group_by(id_game) %>%
       mutate(poss_num = row_number()) %>%
       mutate(
@@ -268,8 +268,8 @@ clean_play_by_play <-
       mutate_at(vars(matches("^pts_team|mp")), funs(coalesce(., 0))) %>%
       mutate_at(vars(matches("^pts")), funs(as.integer))
 
-    play_by_play <-
-      play_by_play %>%
+    pbp <-
+      pbp %>%
       group_by(id_game) %>%
       mutate(
         pts1 = pts_team1 - dplyr::lag(pts_team1, default = 0L),
@@ -283,8 +283,8 @@ clean_play_by_play <-
     path_export <-
       .export_data_from_path(
         ...,
-        data = play_by_play %>% filter(pts1 > 0, pts2 > 0),
-        path = path_play_by_play_error
+        data = pbp %>% filter(pts1 > 0, pts2 > 0),
+        path = path_pbp_error
       )
 
     suffix12 <- as.character(1:2)
@@ -304,21 +304,21 @@ clean_play_by_play <-
 
     # # Other possibly useful columns?
     # cols_order <- c(cols_order, "description", "pc_time_string", "poss_num")
-    play_by_play <-
-      play_by_play %>%
+    pbp <-
+      pbp %>%
       select(one_of(cols_keep))
 
     path_export <-
       .export_data_from_path(
         ...,
-        data = play_by_play,
-        path = path_play_by_play
+        data = pbp,
+        path = path_pbp
       )
 
-    invisible(play_by_play)
+    invisible(pbp)
   }
 
-clean_play_by_play_auto <-
+clean_pbp_auto <-
   function(...,
            season = config$season,
            season_type = config$season_type,
@@ -328,7 +328,7 @@ clean_play_by_play_auto <-
            backup = config$backup,
            clean = config$clean,
            n_keep = config$n_keep) {
-    clean_play_by_play(
+    clean_pbp(
       # ...,
       season = season,
       season_type = season_type,

@@ -149,7 +149,7 @@
     invisible(dir)
   }
 
-# path <- "data-raw/play_by_play_with_lineup/play_by_play_with_lineup_2017-18.csv"
+# path <- "data-raw/pbp_with_lineup/pbp_with_lineup_2017-18.csv"
 # Add `verbose`, etc. (i.e. `backup`) to this(?).
 .import_data <-
   function(..., path) {
@@ -207,13 +207,23 @@
       )
       return(invisible(NULL))
     }
-    path_info <- fs::file_info(path)
 
     data <- .import_data(..., path = path)
+
+    # TODO: Maybe limit this message to only times less than 1 hour/day?
+    # path_info <- fs::file_info(path)
+    # # diff_time0 <- lubridate::as.difftime(Sys.time() - path_info$modification_time)
+    # diff_time <-
+    #   sprintf(
+    #     "%.1f",
+    #     (lubridate::interval(path_info$modification_time, Sys.time()) / lubridate::minutes(1))
+    #   )
     .display_info(
       glue::glue(
-        "Successfully imported data from {usethis::ui_path(path)}.",
-        " (Last modification at {path_info$modification_time})."
+        "Successfully imported data from {usethis::ui_path(path)}."# ,
+        # " (Last modification at {path_info$modification_time})."
+        # "{diff_time0}."
+        # " (Last modification: {diff_time} min. ago)."
       ),
       ...
     )

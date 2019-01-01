@@ -1,18 +1,18 @@
 default:
 
-  path_raw_play_by_play:
-    default: 'data-raw/play_by_play_with_lineup.csv'
+  path_raw_pbp:
+    default: 'data-raw/pbp_with_lineup.csv'
     help: 'Path format of raw play-by-play data file to clean.'
     
     
   path_game_final_scores_error:
     default: 'data/01-clean/dump/error/game_final_scores_error.csv'
     help: ''
-  path_play_by_play_error:
-    default: 'data/01-clean/dump/error/play_by_play_error.csv'
+  path_pbp_error:
+    default: 'data/01-clean/dump/error/pbp_error.csv'
     help: 'Path format of '
-  path_play_by_play:
-    default: 'data/01-clean/play_by_play.csv'
+  path_pbp:
+    default: 'data/01-clean/pbp.csv'
     help: 'Path format of cleaned play-by-play data file.'
 
     
@@ -31,17 +31,20 @@ default:
   path_players_summary_calc:
     default: 'data/02-munge/dump/calc/players_summary_calc.csv'
     help: 'Path format of summarized cleaned player data.
-     Relevant in the same cases as `path_possession_data_o`.
+     Relevant in the same cases as `path_poss_o`.
      Used to add names and other player-relevant information to final output.'
   path_teams_summary_calc:
     default: 'data/02-munge/dump/calc/teams_summary_calc.csv'
     help: 'Analogous to `path_players_summary_calc` for team data.'
-  path_possession_data_error_side:
-    default: 'data/02-munge/dump/debug/possession_data_error.csv'
+  path_poss_error_side:
+    default: 'data/02-munge/dump/debug/poss_error.csv'
     help: 'Path format of '
-  path_possession_data_side:
-    default: 'data/02-munge/possession_data.rds'
-    help: 'Path format of "wide" offensive possession data.'
+  path_pbp_side:
+    default: 'data/02-munge/pbp.rds'
+    help: 'Path format of "long" poss data.'
+  path_poss_wide_side:
+    default: 'data/02-munge/poss_wide.rds'
+    help: 'Path format of "wide" poss data.'
 
 
     
@@ -56,14 +59,14 @@ default:
     help: 'Path format of '
   path_rapm_fit_side:
     default: 'data/03-fit/rapm_fit.rds'
-    help: 'Path format of RAPM model fitted for offensive/defensive possession data.'
+    help: 'Path format of RAPM model fitted for offensive/defensive poss data.'
 
 
   path_rapm_coefs_side:
     default: 'data/04-extract/dump/info/rapm_coefs.csv'
     help: 'Path format of final player-specific offensive/defensive RAPM coefs.'
   path_rapm_coefs_var_side:
-    default: 'data/04-extract/dump/info/rapm_coefs_var.rds'
+    default: 'data/04-extract/dump/info/rapm_coefs_var.csv'
     help: 'Path format of RAPM model coefficent variance values.'
   path_rapm_coefs:
     default: 'data/04-extract/rapm_coefs.csv'

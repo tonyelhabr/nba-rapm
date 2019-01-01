@@ -11,7 +11,7 @@ combine_rapm_basketballanalytics()
 
 # process ----
 # This is the "meat".
-download_raw_play_by_play_files(overwrite = FALSE)
+download_raw_pbp_files(overwrite = FALSE)
 # auto()
 
 # analyze ----

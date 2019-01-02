@@ -520,9 +520,6 @@
 # has been created to have the "original" filtering implementation.
 .filter_pbp <-
   function(...,
-           # poss_min = 0,
-           # gp_min = 0,
-           # mp_min = 0,
            pbp,
            # Do this so that this function can be used more "dynamically"
            # (i.e. outside the parent `munge*()` function, where `players_summary_calc`
@@ -558,8 +555,9 @@
     res
   }
 
-.add_xid_player_col <-
-  function(poss_long_side, side) {
+# .convert_pbp_to_poss_side, start ----
+.convert_pbp_to_poss_long_side <-
+  function(..., pbp, side) {
     poss_long_side %>%
       filter(side == !!side) %>%
       mutate(xid_player = sprintf("%s%07d", side, as.integer(id_player)))
@@ -567,7 +565,6 @@
 
 .check_poss_long_side_dups <-
   function(...,
-           # side,
            poss_long_side,
            path_poss_long_error_side = config$path_poss_long_error_side) {
 
@@ -602,7 +599,6 @@
         .export_data_from_path(
           ...,
           data = poss_long_side_dups,
-          # side = side,
           path = path_poss_error_side
         )
     }
@@ -610,12 +606,18 @@
   }
 
 
-.refine_poss_long_side <-
+.finalize_poss_long_side <-
   function(...,
-           # side,
            poss_long_side,
-           poss_long_side_dups,
            path_poss_long_side = config$path_poss_long_side) {
+
+    poss_long_side_dups <-
+      poss_long_side %>%
+      .check_poss_long_side_dups(
+        ...,
+        poss_long_side = poss_long_side
+      )
+
     poss_long_side <-
       poss_long_side %>%
       anti_join(poss_long_side_dups, by = c("rn", "xid_player")) %>%
@@ -627,91 +629,34 @@
       .export_data_from_path(
         ...,
         data = poss_long_side,
-        # side = side,
         path = path_poss_long_side
       )
     poss_long_side
   }
 
 # This is useful just to separate functionality.
-.add_n_poss_col <-
-  function(poss_long_side) {
-    poss_long_side %>%
-      mutate(n_poss = 1) %>%
-      select(pts, n_poss, everything())
-  }
-
-
-.spread_poss_long_side <-
+.widen_poss_long_side <-
   function(poss_long_side) {
     poss_long_side %>%
       # semi_join(xid_players_filt) %>%
       spread(xid_player, dummy, fill = 0L) %>%
       select(-rn, -pk) %>%
-      .add_n_poss_col()
+      mutate(n_poss = 1) %>%
+      select(pts, n_poss, everything())
   }
 
-.finalize_poss_wide_side <-
-  function(...,
-           scale = .SCALE,
-           side,
-           poss_wide_side = NULL,
-           poss_long_side = NULL,
-           path_poss_wide_side = config$path_poss_wide_side,
-           path_poss_long_side = config$path_poss_long_side) {
-
-    poss_wide_side <- poss_wide_side %>% .add_y_col()
-    if(!scale) {
-      path_export <-
-        .export_data_from_path(
-          ...,
-          data = poss_wide_side,
-          side = side,
-          path = path_poss_wide_side
-        )
-      return(invisible(poss_wide_side))
-    }
-    if(is.null(poss_wide_side)) {
-      poss_wide_side <-
-        .import_data_from_path(
-          ...,
-          path = path_poss_wide_side,
-          side = side
-        )
-    }
-    n_poss_max <-
-      poss_wide_side %>%
-      summarise_at(vars(n_poss), funs(max)) %>%
-      pull(n_poss)
-
-    if(is.null(poss_long_side)) {
-      poss_long_side <-
-        .import_data_from_path(
-          ...,
-          path = path_poss_long_side,
-          side = side
-        )
-    }
-    poss_wide_side <-
-      poss_long_side %>%
-      mutate_at(vars(dummy), funs(. / n_poss_max)) %>%
-      .spread_poss_long_side()
-
-    path_export <-
-      .export_data_from_path(
-        ...,
-        data = poss_wide_side,
-        side = side,
-        path = path_poss_wide_side,
-      )
-    invisible(poss_wide_side)
-  }
-
+# cols_summ <- c("cyl", "carb")
+# cols_grp <- mtcars %>% names() %>% setdiff(cols_summ)
+# cols_summ <- syms(cols_summ)
+# mtcars %>% group_by_at(vars(!!!cols_summ))
+# This should separate from `.collapse*()` so that `n_poss_max` can be identified
+# without having to check `collapse`?
 .summarise_poss_wide_side <-
   function(poss_side_wide) {
+    cols_grp <- c("pts", "n_poss")
     poss_wide_side %>%
       # mutate(n_poss = 1) %>%
-      # select(pts, n_poss, everything())
+      # select(pts, n_poss, everything()) %>%
       group_by_at(vars(-pts, -n_poss)) %>%
       summarise_at(vars(pts, n_poss), funs(sum)) %>%
       ungroup()
@@ -722,81 +667,104 @@
   function(...,
            poss_wide_side,
            collapse = .COLLAPSE) {
-    if(!collapse) {
-      return(poss_wide_side)
+    if(collapse) {
+      poss_wide_side <-
+        poss_wide_side %>%
+        .summarise_poss_wide_side()
     }
-    poss_wide_side %>% .summarise_poss_wide_side()
-  }
-
-.add_y_col <-
-  function(poss_wide_side) {
     poss_wide_side %>%
       # select(pts, n_poss, everything()) %>%
       mutate(pp100poss = 100 * pts / n_poss) %>%
       select(pp100poss, pts, n_poss, everything())
   }
 
-# TODO: Change the name of this function to `.convert_pbp_to_poss()`?
-.convert_pbp_to_poss_side <-
+.pull_max_at <- function(data, col) {
+  col <- enquo(col)
+  data %>%
+    summarise_at(vars(!!col), funs(max)) %>%
+    pull(!!col)
+}
+
+.finalize_poss_wide_side <-
   function(...,
-           pbp,
-           # scale = .SCALE,
-           # I believe this is the one time I need to explicilty include
-           # `side` due to the filtering.
+           scale = .SCALE,
            side,
-           # path_poss_wide_side = config$path_poss_wide_side
-           path_poss_long_side = config$path_poss_long_side) {
+           poss_wide_side,
+           poss_long_side,
+           path_poss_wide_side = config$path_poss_wide_side) {
 
-    poss_long_side <- pbp
-    poss_long_side <-
-      .add_xid_player_col(
-        poss_side = poss_long_side,
-        side = side
-      )
 
-    poss_long_side_dups <-
-      poss_long_side %>%
-      .check_poss_long_side_dups(
+    poss_wide_side <-
+      .collapse_poss_wide_side(
         ...,
-        # side = side,
-        poss_long_side = poss_long_sides
+        poss_wide_side = poss_wide_side
       )
 
-    poss_long_side <-
-      .refine_poss_long_side(
-        ...,
-        side = side,
-        poss_long_side = poss_long_side,
-        poss_long_side_dups = poss_long_side_dups
-      )
+    if(scale) {
+      # if(is.null(poss_wide_side)) {
+      #   poss_wide_side <-
+      #     .import_data_from_path(
+      #       ...,
+      #       side = side,
+      #       path = path_poss_wide_side
+      #     )
+      # }
+      n_poss_max <-
+        poss_wide_side %>%
+        .pull_max(n_poss)
+
+      # if(is.null(poss_long_side)) {
+      #   poss_long_side <-
+      #     .import_data_from_path(
+      #       ...,
+      #       side = side,
+      #       path = path_poss_long_side
+      #     )
+      # }
+      poss_wide_side <-
+        poss_long_side %>%
+        mutate_at(vars(dummy), funs(. / n_poss_max)) %>%
+        .widen_poss_long_side()
+    }
 
     path_export <-
       .export_data_from_path(
         ...,
-        data = poss_side,
         side = side,
-        path = path_poss_long_side
+        data = poss_wide_side,
+        path = path_poss_wide_side
+      )
+    poss_wide_side
+  }
+
+.convert_pbp_to_poss_side <-
+  function(...,
+           pbp) {
+
+    poss_long_side <-
+      pbp %>%
+      .convert_pbp_to_poss_long_side()
+
+    poss_long_side <-
+      .finalize_poss_long_side(
+        ...,
+        poss_long_side = poss_long_side,
+        poss_long_side_dups = poss_long_side_dups
       )
 
     poss_wide_side <-
       poss_long_side %>%
-      .spread_poss_long_side()
-
-    poss_wide_side <-
-      .collapse_poss_wide_side(
-      ...,
-      poss_wide_side = poss_wide_side
-    )
+      .widen_poss_long_side()
 
     poss_wide_side <-
       .finalize_poss_wide_side(
         ...,
-        side = side,
         poss_wide_side = poss_wide_side,
         poss_long_side = poss_long_side,
       )
-    invisible(poss_wide_side)
+    poss_wide_side
   }
+# .convert_pbp_to_poss_side, end ----
 
 # .munge_pbp.tibble <-
 #   function(...) {

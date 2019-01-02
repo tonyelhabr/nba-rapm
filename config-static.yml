@@ -1,7 +1,8 @@
 default:
 
+  # Note to self: Change the sub-folders of `dump/`. (It's too "verbose".)
   path_raw_pbp:
-    default: 'data-raw/pbp_with_lineup.csv'
+    default: 'data-raw/play_by_play_with_lineup.csv'
     help: 'Path format of raw play-by-play data file to clean.'
     
     
@@ -13,9 +14,11 @@ default:
     help: 'Path format of '
   path_pbp:
     default: 'data/01-clean/pbp.csv'
-    help: 'Path format of cleaned play-by-play data file.'
+    help: 'Path format of cleaned play-by-play data.'
 
-    
+  path_pbp_reformatted:
+    default: 'data/02-munge/dump/pbp_reformatted.rds'
+    help: 'Path format of munged play-by-play data prior to conversion to possession data.'
   path_lineup_summary_calc:
     default: 'data/02-munge/dump/calc/lineup_summary_calc.csv'
     help: 'Path format of '

@@ -8,14 +8,7 @@
 .SCALE <- TRUE
 .get_x_glmnet <-
   function(data, fmla = .FMLA, ..., scale = .SCALE) {
-    browser()
     # fmla %>% model.matrix(poss)
-    if(scale) {
-      data <-
-        data %>%
-        gather(xid_player, .n_poss, matches("^[o|d]")) %>%
-        spread(xid_player, n_scaled)
-    }
     fmla %>% Matrix::sparse.model.matrix(data)
   }
 .get_y_glmnet <-
@@ -67,10 +60,11 @@
     viz
   }
 
+# TODO: `slice()` specific players.
 .filter_glmnet_terms_to_visualize <-
-  function(...,
-           fit) {
-    fit$glmnet.fit %>%
+  function(fit) {
+    terms <-
+      fit$glmnet.fit %>%
       broom::tidy()
     terms_optm_arr <-
       terms %>%
@@ -144,9 +138,9 @@
       )
     .display_info(
       glue::glue(
-        "Found {scales::comma(fit$lambda.min)} to be the optimal",
+        "Found {scales::comma(fit$lambda.min)} to be the optimal ",
         "{usethis::ui_field('lambda')} for minimizing MSE. ",
-        "(Alsoe, found {scales::comma(fit$lambda.1se)} as the ",
+        "(Also, found {scales::comma(fit$lambda.1se)} as the ",
         "{usethis::ui_field('lambda')} at 1 standard error.)"
       ),
       ...
@@ -249,7 +243,7 @@
       )
   }
 
-fit_rapm_models <-
+.fit_models <-
   function(...,
            path_poss_wide_side = config$path_poss_wide_side,
            path_rapm_fit_side = config$path_rapm_fit_side,
@@ -279,7 +273,7 @@ fit_rapm_models <-
       return(invisible(NULL))
     }
 
-    .display_progress(
+    .display_auto_step(
       glue::glue("Step 3: Fitting models."),
       ...
     )
@@ -300,7 +294,7 @@ fit_rapm_models <-
     invisible(list(fit_o = fit_o, fit_d = fit_d))
   }
 
-fit_rapm_models_auto <-
+fit_models_auto <-
   function(...,
            season = config$season,
            intercept = config$intercept,
@@ -315,7 +309,7 @@ fit_rapm_models_auto <-
            backup = config$backup,
            clean = config$clean,
            n_keep = config$n_keep) {
-    fit_rapm_models(
+    .fit_models(
       # ...,
       season = season,
       intercept = intercept,

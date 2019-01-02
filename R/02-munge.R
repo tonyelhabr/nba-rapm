@@ -10,8 +10,8 @@
 
 .reformat_pbp <-
   function(...,
-           pbp) {
-    # Suggestion: `.reformat_pbp()`
+           pbp,
+           path_pbp_reformatted = config$path_pbp_reformatted) {
     suppressMessages(
       pbp <-
         full_join(
@@ -75,6 +75,13 @@
       ungroup() %>%
       mutate(side = if_else(player_num <= 5L, "o", "d")) %>%
       arrange(rn, player_num)
+
+    path_export <-
+      .export_data_from_path(
+        ...,
+        data = pbp,
+        path = path_pbp_reformatted
+      )
     pbp
   }
 
@@ -186,7 +193,7 @@
         data = lineup_summary_calc,
         path = path_lineup_summary_calc
       )
-    invisible(lineup_summary_calc)
+    lineup_summary_calc
   }
 
 .summarise_players_stats <-
@@ -404,7 +411,7 @@
         data = players_summary_compare,
         path = path_players_summary_compare
       )
-    invisible(players_summary_calc)
+    players_summary_calc
   }
 
 
@@ -461,7 +468,7 @@
         data = teams_summary_compare,
         path = path_teams_summary_compare
       )
-    invisible(teams_summary_calc)
+    teams_summary_calc
   }
 
 
@@ -555,16 +562,10 @@
     res
   }
 
-# .convert_pbp_to_poss_side, start ----
-.convert_pbp_to_poss_long_side <-
-  function(..., pbp, side) {
-    poss_long_side %>%
-      filter(side == !!side) %>%
-      mutate(xid_player = sprintf("%s%07d", side, as.integer(id_player)))
-  }
-
+# .convert_to_poss_side, start ----
 .check_poss_long_side_dups <-
   function(...,
+           side,
            poss_long_side,
            path_poss_long_error_side = config$path_poss_long_error_side) {
 
@@ -598,23 +599,30 @@
       path_export <-
         .export_data_from_path(
           ...,
+          side = side,
           data = poss_long_side_dups,
-          path = path_poss_error_side
+          path = path_poss_long_error_side
         )
     }
     poss_long_side_dups
   }
 
 
-.finalize_poss_long_side <-
+.convert_to_poss_long_side <-
   function(...,
-           poss_long_side,
+           side,
+           pbp,
            path_poss_long_side = config$path_poss_long_side) {
+    poss_long_side <-
+      pbp %>%
+      filter(side == !!side) %>%
+      mutate(xid_player = sprintf("%s%07d", side, as.integer(id_player)))
 
     poss_long_side_dups <-
       poss_long_side %>%
       .check_poss_long_side_dups(
         ...,
+        side = side,
         poss_long_side = poss_long_side
       )
 
@@ -635,42 +643,43 @@
   }
 
 # This is useful just to separate functionality.
-.widen_poss_long_side <-
-  function(poss_long_side) {
-    poss_long_side %>%
-      # semi_join(xid_players_filt) %>%
-      spread(xid_player, dummy, fill = 0L) %>%
-      select(-rn, -pk) %>%
-      mutate(n_poss = 1) %>%
-      select(pts, n_poss, everything())
-  }
+# Maybe change this so that it doesn't accept `...`, since it's not intended
+# to "catch" anything (e.g. `side`). This is how `.summarise_poss_wide_side()`
+# is written. (The downside is that the calling function has to know that
+# it can't pass extra arguments.)
+# .widen_poss_long_side <- function(...)
 
 # cols_summ <- c("cyl", "carb")
 # cols_grp <- mtcars %>% names() %>% setdiff(cols_summ)
 # cols_summ <- syms(cols_summ)
 # mtcars %>% group_by_at(vars(!!!cols_summ))
-# This should separate from `.collapse*()` so that `n_poss_max` can be identified
-# without having to check `collapse`?
-.summarise_poss_wide_side <-
-  function(poss_side_wide) {
-    cols_grp <- c("pts", "n_poss")
-    poss_wide_side %>%
-      # mutate(n_poss = 1) %>%
-      # select(pts, n_poss, everything()) %>%
-      group_by_at(vars(-pts, -n_poss)) %>%
-      summarise_at(vars(pts, n_poss), funs(sum)) %>%
-      ungroup()
-  }
 
 # This is useful to "abstract away" `collapse`.
 .collapse_poss_wide_side <-
   function(...,
            poss_wide_side,
+           scale = .SCALE,
            collapse = .COLLAPSE) {
+    # TODO: Make a switch statement to tell the user about any combination
+    # of `scale` and `collapse`?
+    if(scale & !collapse) {
+      .display_warning(
+        glue::glue(
+          "Setting {usethis::ui_field('scale')} = {scale} and ",
+          "usethis::ui_field('collapse')} = {collapse}` is probably a bad idea."
+        ),
+        ...
+      )
+    }
     if(collapse) {
+      # cols_grp <- c("pts", "n_poss")
       poss_wide_side <-
         poss_wide_side %>%
-        .summarise_poss_wide_side()
+        # mutate(n_poss = 1) %>%
+        # select(pts, n_poss, everything()) %>%
+        group_by_at(vars(-pts, -n_poss)) %>%
+        summarise_at(vars(pts, n_poss), funs(sum)) %>%
+        ungroup()
     }
     poss_wide_side %>%
       # select(pts, n_poss, everything()) %>%
@@ -678,21 +687,49 @@
       select(pp100poss, pts, n_poss, everything())
   }
 
-.pull_max_at <- function(data, col) {
-  col <- enquo(col)
-  data %>%
-    summarise_at(vars(!!col), funs(max)) %>%
-    pull(!!col)
-}
+# .pull_max <- function(data, col) {
+#   col <- enquo(col)
+#   data %>%
+#     summarise_at(vars(!!col), funs(max)) %>%
+#     pull(!!col)
+# }
 
-.finalize_poss_wide_side <-
+.convert_to_poss_wide_side <-
   function(...,
            scale = .SCALE,
-           side,
-           poss_wide_side,
            poss_long_side,
            path_poss_wide_side = config$path_poss_wide_side) {
 
+    if(scale) {
+
+      # Note that this action was created as a shortcut to `spread()`
+      # and `summarise()` the "long" data, which is done more "formally"
+      # in the `.collapse*()` function.
+      n_poss_max <-
+        poss_long_side %>%
+        group_by(pk) %>%
+        summarise_at(
+          vars(xid_player),
+          funs(paste0(., collapse = "-", sep = ""))
+        ) %>%
+        ungroup() %>%
+        select(-pk) %>%
+        count(xid_player, sort = TRUE) %>%
+        slice(1) %>%
+        pull(n)
+
+      poss_long_side <-
+        poss_long_side %>%
+        mutate_at(vars(dummy), funs(. / n_poss_max))
+
+    }
+
+    poss_wide_side <-
+      poss_long_side %>%
+      spread(xid_player, dummy, fill = 0L) %>%
+      select(-rn, -pk) %>%
+      mutate(n_poss = 1) %>%
+      select(pts, n_poss, everything())
 
     poss_wide_side <-
       .collapse_poss_wide_side(
@@ -700,79 +737,47 @@
         poss_wide_side = poss_wide_side
       )
 
-    if(scale) {
-      # if(is.null(poss_wide_side)) {
-      #   poss_wide_side <-
-      #     .import_data_from_path(
-      #       ...,
-      #       side = side,
-      #       path = path_poss_wide_side
-      #     )
-      # }
-      n_poss_max <-
-        poss_wide_side %>%
-        .pull_max(n_poss)
-
-      # if(is.null(poss_long_side)) {
-      #   poss_long_side <-
-      #     .import_data_from_path(
-      #       ...,
-      #       side = side,
-      #       path = path_poss_long_side
-      #     )
-      # }
-      poss_wide_side <-
-        poss_long_side %>%
-        mutate_at(vars(dummy), funs(. / n_poss_max)) %>%
-        .widen_poss_long_side()
-    }
-
     path_export <-
       .export_data_from_path(
         ...,
-        side = side,
         data = poss_wide_side,
         path = path_poss_wide_side
       )
     poss_wide_side
   }
 
-.convert_pbp_to_poss_side <-
-  function(...,
-           pbp) {
+.convert_to_poss_side <-
+  function(..., pbp) {
 
     poss_long_side <-
-      pbp %>%
-      .convert_pbp_to_poss_long_side()
-
-    poss_long_side <-
-      .finalize_poss_long_side(
+      .convert_to_poss_long_side(
         ...,
-        poss_long_side = poss_long_side,
-        poss_long_side_dups = poss_long_side_dups
+        pbp = pbp
       )
 
     poss_wide_side <-
-      poss_long_side %>%
-      .widen_poss_long_side()
-
-    poss_wide_side <-
-      .finalize_poss_wide_side(
+      .convert_to_poss_wide_side(
         ...,
-        poss_wide_side = poss_wide_side,
-        poss_long_side = poss_long_side,
+        poss_long_side = poss_long_side
       )
     poss_wide_side
   }
-# .convert_pbp_to_poss_side, end ----
+# .convert_to_poss_side, end ----
 
-# .munge_pbp.tibble <-
+# ..munge_pbp.tibble <-
 #   function(...) {
 #
 #   }
 
-munge_pbp <-
+.munge_pbp <-
   function(...,
+           # Note: Should edit out this `skip_` stuff later. However, it's useful for
+           # experimenting with some stuff right now.s
+           skip_reformat = TRUE,
+           # skip_reformat = FALSE,
+           path_pbp_reformatted = config$path_pbp_reformatted,
+           skip_compare = TRUE,
+           # skip_compare = FALSE,
            path_pbp = config$path_pbp,
            path_poss_wide_side = config$path_poss_wide_side,
            path_players_summary_calc = config$path_players_summary_calc) {
@@ -795,49 +800,62 @@ munge_pbp <-
       return(invisible(NULL))
     }
 
-    .display_progress(
+    .display_auto_step(
       glue::glue("Step 2: Munging play-by-play data."),
       ...
     )
 
-    pbp <-
-      .import_data_from_path(
-        ...,
-        path = path_pbp
-      )
+    if(!skip_reformat) {
+      pbp <-
+        .import_data_from_path(
+          ...,
+          path = path_pbp
+        )
 
-    # UseMethod(".munge_pbp")
+      # UseMethod("..munge_pbp")
 
-    # TODO: Convert some of the following actions into their own functions (for modularity/clarity)?
-    pbp <-
-      .reformat_pbp(
-        ...,
-        pbp = pbp
-      )
-
-    # END: `.reforma
+      pbp <-
+        .reformat_pbp(
+          ...,
+          pbp = pbp
+        )
+    } else {
+      pbp <-
+        .import_data_from_path(
+          ...,
+          path = path_pbp_reformatted
+        )
+    }
 
     # Note that the `players_summary_calc` is the only `_calc` object
     # that that matters
     # (because the subsequent filtering depends on it).
-    lineup_summary_calc <-
-      .summarise_lineup(
-        ...,
-        pbp = pbp
-      )
+    if(!skip_compare) {
+      lineup_summary_calc <-
+        .summarise_lineup(
+          ...,
+          pbp = pbp
+        )
 
-    players_summary_calc <-
-      .summarise_players(
-        ...,
-        pbp = pbp
-      )
+      players_summary_calc <-
+        .summarise_players(
+          ...,
+          pbp = pbp
+        )
 
-    teams_summary_calc <-
-      .summarise_teams(
-        ...,
-        players_summary_calc = players_summary_calc
-      )
-
+      teams_summary_calc <-
+        .summarise_teams(
+          ...,
+          players_summary_calc = players_summary_calc
+        )
+    } else {
+      players_summary_calc <-
+        .import_data_from_path(
+          ...,
+          path = path_players_summary_calc
+        )
+    }
+    # Skip this for now...
     # pbp <-
     #   .filter_pbp(
     #     ...,
@@ -846,14 +864,14 @@ munge_pbp <-
     #   )
 
     poss_o <-
-      .convert_pbp_to_poss_side(
+      .convert_to_poss_side(
         ...,
         pbp = pbp,
         side = "o"
       )
 
     poss_d <-
-      .convert_pbp_to_poss_side(
+      .convert_to_poss_side(
         ...,
         pbp = pbp,
         side = "d"
@@ -867,7 +885,6 @@ munge_pbp <-
     )
   }
 
-
 munge_pbp_auto <-
   function(...,
            season = config$season,
@@ -880,7 +897,7 @@ munge_pbp_auto <-
            backup = config$backup,
            clean = config$clean,
            n_keep = config$n_keep) {
-    munge_pbp(
+    .munge_pbp(
       ...,
       season = season,
       poss_min = poss_min,

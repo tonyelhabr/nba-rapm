@@ -9,7 +9,7 @@
 
 }
 
-.display_progress <- function(x, ..., .envir = parent.frame(), verbose = .VERBOSE) {
+.display_auto_step <- function(x, ..., .envir = parent.frame(), verbose = .VERBOSE) {
   # .display_msg(..., verbose = verbose, type = "info")
   if(!verbose) {
     return(invisible(NULL))
@@ -17,7 +17,7 @@
   # usethis::ui_todo(glue::glue("TODO: {x}"), .envir = .envir)
   # usethis::ui_todo(glue::glue("Info: {x}", .envir = .envir))
   # usethis::ui_line(glue::glue("Info: {x}"), .envir = .envir)
-  cli::cat_rule(left = sprintf("TODO: %s", x), line = 2)
+  cli::cat_rule(left = sprintf("%s", x), line = 2)
 }
 
 .display_warning <- function(x, ..., .envir = parent.frame()) {

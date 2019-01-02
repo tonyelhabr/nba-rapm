@@ -161,7 +161,7 @@
         .season, .poss_min, .lambda_o, .lambda_d
       ),
       .f = ~ {
-        .display_progress(glue::glue("{.season}, {.poss_min}, {.lambda_o}, {.lambda_d}"))
+        .display_auto_step(glue::glue("{.season}, {.poss_min}, {.lambda_o}, {.lambda_d}"))
         f_clean(# clean_pbp_auto(
           season = .season,
           # skip = FALSE
@@ -172,7 +172,7 @@
           poss_min = .poss_min,
           skip = FALSE
         )
-        fit_rapm_models_auto(
+        fit_models_auto(
           season = .season,
           skip = FALSE,
           # skip = TRUE,
@@ -180,7 +180,7 @@
           lambda_d = .lambda_d,
           optimize = FALSE
         )
-        extract_rapm_coefs_auto(
+        extract_coefs_auto(
           season = .season,
           skip = FALSE
         )

@@ -64,13 +64,11 @@
       }
     }
     .display_info(msg, ...)
-    if(return_early) {
-      return(invisible(NULL))
-    }
-    if(is.null(f)) {
-      return(invisible(NULL))
+    if(return_early | is.null(f)) {
+      return(invisible(FALSE))
     }
     f(...)
+    invisible(TRUE)
   }
 
 .check_dst_files_download <-

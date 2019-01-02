@@ -19,7 +19,7 @@
 #     pbp %>% filter(season_type == "Regular Season")
 #   }
 
-clean_pbp <-
+.clean_pbp <-
   function(...,
            # Some of these are included here exclusively for the `.try_skip()` function.
            # This is true with some of the other functions as well.
@@ -45,7 +45,7 @@ clean_pbp <-
       return(invisible(NULL))
     }
 
-    .display_progress(
+    .display_auto_step(
       glue::glue("Step 1: Cleaning play-by-play data."),
       ...
     )
@@ -328,7 +328,7 @@ clean_pbp_auto <-
            backup = config$backup,
            clean = config$clean,
            n_keep = config$n_keep) {
-    clean_pbp(
+    .clean_pbp(
       # ...,
       season = season,
       season_type = season_type,

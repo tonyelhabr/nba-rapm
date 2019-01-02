@@ -65,8 +65,8 @@ visualize_proj_funcs <- function(..., path_proj_funcs = config$path_viz_proj_fun
   # # Maybe `cli::tree()` using something like...
   # proj_funcs %>%
   #   select(func_grp, func) %>%
-  #   filter(func_grp == "clean_pbp") %>%
-  #   cli::tree(root = "clean_pbp")
+  #   filter(func_grp == ".clean_pbp") %>%
+  #   cli::tree(root = ".clean_pbp")
   suppressWarnings(suppressPackageStartupMessages(library("ggrepel")))
   viz <-
     proj_funcs %>%

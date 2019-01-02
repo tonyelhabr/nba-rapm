@@ -4,7 +4,7 @@
 # poss_side_long <- .import_data_from_path(path = config$path_poss_long_side, side = "o", season = 2017)
 # poss_side_long %>% mutate_at(vars(dummy), funs(. / n_poss_max)) %>%.spread_poss_side()
 
-auto <-
+main_auto <-
   function(...) {
     # width_old <- getOption("width")
     # options(width = 80L)
@@ -16,19 +16,20 @@ auto <-
     )
     munge_pbp_auto(
       ...,
-      skip = FALSE
+      skip = TRUE,
+      # skip = FALSE
     )
-    fit_rapm_models_auto(
+    fit_models_auto(
       ...,
       intercept = TRUE,
-      # optimize = TRUE,
-      optimize = FALSE,
-      lambda_o = 200,
+      optimize = TRUE,
+      # optimize = FALSE,
+      # lambda_o = 200,
       # lambda_d = 500,
       skip = FALSE
     )
     res <-
-      extract_rapm_coefs_auto(
+      extract_coefs_auto(
         ...,
         skip = FALSE
       )
@@ -48,22 +49,21 @@ auto <-
 #   .f = function(x) {
 #     # clean_pbp_auto(season = x, skip = TRUE)
 #     munge_pbp_auto(season = x, skip = FALSE)
-#     fit_rapm_models_auto(
+#     fit_models_auto(
 #       season = x,
 #       skip = FALSE,
 #       # skip = TRUE,
 #       # optimize = TRUE
 #       optimize = FALSE
 #     )
-#     extract_rapm_coefs_auto(season = x, skip = FALSE)
+#     extract_coefs_auto(season = x, skip = FALSE)
 #   }
 # )
 #
 # # desetup_cores_auto()
 # # post_auto()
 
-
-setup_cores <-
+.setup_cores <-
   function(..., multi_core = TRUE, n_core = 4L) {
     if(.Platform$OS.type != "windows") {
       if(multi_core) {
@@ -124,19 +124,22 @@ setup_cores <-
   }
 
 setup_cores_auto <-
-  purrr::partial(
-    setup_cores,
-    verbose = config$verbose,
-    multi_core = ifelse(interactive(), FALSE, config$multi_core),
-    # TODO: Fix this. It's causing issues (possibly because
-    # "too many" clusters are being registered and not properly unregistered,
-    # which can cause this to hang.
-    # multi_core = config$multi_core,
-    n_core = config$n_core
-  )
+  function(...,
+           multi_core = ifelse(interactive(), FALSE, config$multi_core),
+           # TODO: Fix this. It's causing issues (possibly because
+           # "too many" clusters are being registered and not properly unregistered,
+           # which can cause this to hang.
+           # multi_core = config$multi_core,
+           n_core = config$n_core) {
+    .setup_cores(
+      ...,
+      multi_core = multi_core,
+      n_core = n_core
+    )
+  }
 
 # Reference: https://stackoverflow.com/questions/25097729/un-register-a-doparallel-cluster
-desetup_cores <-
+.desetup_cores <-
   function(...) {
     env <- foreach:::.foreachGlobals
     rm(list = ls(name = env), pos = env)
@@ -147,10 +150,11 @@ desetup_cores <-
   }
 
 desetup_cores_auto <-
-  purrr::partial(
-    desetup_cores,
-    verbose = config$verbose,
-  )
+  function(...) {
+    .desetup_cores(
+      ...
+    )
+  }
 
 # from other projects ----
 # TODO: Call `.display_info()` here?

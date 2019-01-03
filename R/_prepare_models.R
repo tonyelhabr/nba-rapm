@@ -53,22 +53,29 @@
 # UPDATE: This is now implemented in one of the `..filter*()` functions,
 # but it doesn't produce better results(?). A seperate `..filter()` function
 # has been created to have the "original" filtering implementation.
+# + Make the function "flexibile/dynamic" with `NULL` parameters.
+# Do this so that this function can be used
+# (i.e. outside the parent `reshape*()` function, where `players_summary_calc`
+# may not be calculated immediately before hand).
 .filter_pbp <-
   function(...,
-           pbp,
-           # Do this so that this function can be used more "dynamically"
-           # (i.e. outside the parent `munge*()` function, where `players_summary_calc`
-           # may not be calculated immediately before hand).
-           players_summary_calc = NULL,
+           # pbp = NULL,
+           path_pbp = config$path_pbp,
+           # path_players_summary_calc = NULL,
            path_players_summary_calc = config$path_players_summary_calc){
 
-    if(is.null(players_summary_calc)) {
-      players_summary_calc <-
-        .import_data_from_path(
-          ...,
-          path = path_players_summary_calc
-        )
-    }
+    # if(is.null(pbp))
+    pbp <-
+      .import_data_from_path(
+        ...,
+        path = path_pbp
+      )
+
+    players_summary_calc <-
+      .import_data_from_path(
+        ...,
+        path = path_players_summary_calc
+      )
     n_row_before <- pbp %>% nrow()
     # pbp <-
     #   ..filter_pbp1(
@@ -302,38 +309,15 @@
   }
 
 
-# ..munge_pbp.tibble <-
+# ..prepare_rapm_models.tibble <-
 #   function(...) {
 #
 #   }
 
-.munge_pbp <-
-  function(...,
-           skip_compare = TRUE,
-           # skip_compare = FALSE,
-           path_pbp = config$path_pbp,
-           path_players_summary_calc = config$path_players_summary_calc,
-           path_poss_wide_side = config$path_poss_wide_side) {
+.prepare_rapm_models <-
+  function(...) {
 
-    will_skip <-
-      .try_skip(
-        ...,
-        path_reqs =
-          c(
-            .get_path_from(..., path = path_pbp),
-            .get_path_from(..., path = path_players_summary_calc)
-          ),
-        path_deps =
-          c(
-            .get_path_from(..., path = path_poss_wide_side, side = "o"),
-            .get_path_from(..., path = path_poss_wide_side, side = "d")
-          )
-      )
-    if(will_skip) {
-      return(invisible(NULL))
-    }
-
-    .display_auto_step_step(
+    .display_auto_step(
       glue::glue("Step 2: Munging play-by-play data."),
       ...
     )
@@ -352,9 +336,7 @@
 
     pbp <-
       .filter_pbp(
-        ...,
-        pbp = pbp,
-        players_summary_calc = players_summary_calc
+        ...
       )
 
     poss_o <-
@@ -379,7 +361,7 @@
     )
   }
 
-auto_munge_pbp <-
+auto_prepare_rapm_models <-
   function(...,
            season = config$season,
            poss_min = config$poss_min,
@@ -393,7 +375,8 @@ auto_munge_pbp <-
            backup = config$backup,
            clean = config$clean,
            n_keep = config$n_keep) {
-    .munge_pbp(
+
+    .prepare_rapm_models(
       ...,
       season = season,
       poss_min = poss_min,

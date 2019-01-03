@@ -21,7 +21,7 @@
 .visualize_glmnet <-
   function(...,
            data,
-           path_viz_rapm_fit_side = config$path_viz_rapm_fit_side) {
+           path_viz_rapm_model_side = config$path_viz_rapm_model_side) {
     # suppressWarnings(suppressPackageStartupMessages(library("ggfortify")))
     # # viz <- data %>% autoplot()
     viz <-
@@ -34,7 +34,7 @@
       .export_data_from_path(
         ...,
         data = viz,
-        path = path_viz_rapm_fit_side
+        path = path_viz_rapm_model_side
       )
     invisible(viz)
     # viz
@@ -43,7 +43,7 @@
 .visualize_glmnet_cv <-
   function(...,
            data,
-           path_viz_rapm_fit_cv_side = config$path_viz_rapm_fit_cv_side) {
+           path_viz_rapm_model_cv_side = config$path_viz_rapm_model_cv_side) {
     suppressWarnings(suppressPackageStartupMessages(library("ggfortify")))
     viz <-
       data %>%
@@ -53,7 +53,7 @@
       .export_data_from_path(
         ...,
         data = viz,
-        path = path_viz_rapm_fit_cv_side
+        path = path_viz_rapm_model_cv_side
       )
     invisible(viz)
     viz
@@ -165,7 +165,7 @@
            intercept = .INTERCEPT,
            lambda = .LAMBDA,
            seed = .SEED,
-           path_rapm_fit_side = config$path_rapm_fit_side) {
+           path_rapm_model_side = config$path_rapm_model_side) {
     set.seed(seed)
     fit <-
       glmnet::glmnet(
@@ -180,7 +180,7 @@
       .export_data_from_path(
         ...,
         data = fit,
-        path = path_rapm_fit_side
+        path = path_rapm_model_side
       )
     invisible(fit)
   }
@@ -243,37 +243,14 @@
       )
   }
 
-.fit_models <-
+.fit_rapm_models <-
   function(...,
-           path_poss_wide_side = config$path_poss_wide_side,
-           path_rapm_fit_side = config$path_rapm_fit_side,
-           # optimize = .OPTIMIZE,
-           # seed = .SEED,
            # Unfortunately, these cant be abstracted away with `...`
            # because they have _[o|d]` suffixes.
            lambda_o = .LAMBDA,
            lambda_d = .LAMBDA) {
 
-    will_skip <-
-      .try_skip(
-        ...,
-        path_reqs =
-          c(
-            .get_path_from(..., path = path_poss_wide_side, side = "o"),
-            .get_path_from(..., path = path_poss_wide_side, side = "d")
-          ),
-        path_deps =
-          c(
-            .get_path_from(..., path = path_rapm_fit_side, side = "o"),
-            .get_path_from(..., path = path_rapm_fit_side, side = "d")
-          )
-      )
-
-    if(will_skip) {
-      return(invisible(NULL))
-    }
-
-    .display_auto_step_step(
+    .display_auto_step(
       glue::glue("Step 3: Fitting models."),
       ...
     )
@@ -294,11 +271,10 @@
     invisible(list(fit_o = fit_o, fit_d = fit_d))
   }
 
-auto_fit_models <-
+auto_fit_rapm_models <-
   function(...,
            season = config$season,
            intercept = config$intercept,
-           scale = config$scale,
            optimize = config$optimize,
            seed = config$seed,
            lambda_o = config$lambda_o,
@@ -309,8 +285,8 @@ auto_fit_models <-
            backup = config$backup,
            clean = config$clean,
            n_keep = config$n_keep) {
-    .fit_models(
-      # ...,
+    .fit_rapm_models(
+      ...,
       season = season,
       intercept = intercept,
       scale = scale,

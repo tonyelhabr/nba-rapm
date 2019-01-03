@@ -2,17 +2,7 @@
 # *
 **.csv
 **.rds
-01-clean/*
-02-munge/*
-03-fit/*
-04-extract/*
-05-analyze/*
 *dump/*
-# !*dump/*
-# !*dump/compare/*
-# !*dump/calc/*
-# !*dump/error/*
-# !*dump/info/*
 misc/*
 static/*
 

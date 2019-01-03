@@ -263,7 +263,7 @@
       separate(!!col, into = glue::glue("{prefix}{suffix}"), sep = sep)
   }
 
-.reformat_pbp <-
+.reshape_pbp <-
   function(...,
            pbp_parse,
            path_pbp = config$path_pbp) {
@@ -776,7 +776,7 @@
       return(invisible(NULL))
     }
 
-    .display_auto_step_step(
+    .display_auto_step(
       glue::glue("Step 1: Cleaning play-by-play data."),
       ...
     )
@@ -794,7 +794,7 @@
       )
 
     pbp <-
-      .reformat_pbp(
+      .reshape_pbp(
         ...,
         pbp_parse = pbp_parse
       )

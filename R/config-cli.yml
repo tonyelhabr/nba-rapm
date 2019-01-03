@@ -47,7 +47,7 @@ default:
     (Requires `{parallel}` package, as well as `{doParallel}` package on Windows.)'
     
     
-  # `clean`/`munge` parameters
+  # `clean`/`reshape` parameters
   season:
     default: 2017
     help: 'NBA season to process. Used as "suffix" for all path formats 

@@ -27,7 +27,7 @@
     as_tibble(ret)
   }
 
-..extract_coefs <-
+..extract_rapm_coefs <-
   function(..., fit) {
     fit %>%
       # broom::tidy() %>%
@@ -42,15 +42,15 @@
       filter(!is.na(id_player))
   }
 
-.extract_coefs_side <-
+.extract_rapm_coefs_side <-
   function(...,
-           path_rapm_fit_side = config$path_rapm_fit_side,
+           path_rapm_model_side = config$path_rapm_model_side,
            path_rapm_coefs_var_side = config$path_rapm_coefs_var_side,
            path_rapm_coefs_side = config$path_rapm_coefs_side) {
     fit <-
       .import_data_from_path(
         ...,
-        path = path_rapm_fit_side
+        path = path_rapm_model_side
       )
 
 
@@ -62,7 +62,7 @@
         path = path_rapm_coefs_var_side
       )
     rapm_coefs <-
-      ..extract_coefs(
+      ..extract_rapm_coefs(
         ...,
         fit = fit
       )
@@ -76,7 +76,7 @@
     invisible(rapm_coefs)
   }
 
-.join_coefs_od <-
+.join_rapm_coefs_od <-
   function(...,
            rapm_coefs_o = NULL,
            rapm_coefs_d = NULL,
@@ -164,47 +164,16 @@
       rapm_coefs_named_base %>%
       select(one_of(cols_order))
     rapm_coefs_named
-
   }
 
-.extract_coefs <-
+.finalize_rapm_coefs <-
   function(...,
-           path_rapm_fit_side = config$path_rapm_fit_side,
-           # path_players_summary_calc = config$path_players_summary_calc,
+           rapm_coefs,
            path_rapm_coefs = config$path_rapm_coefs) {
-
-    will_skip <-
-      .try_skip(
-        ...,
-        path_reqs =
-          c(
-            # .get_path_from(..., path = path_players_summary_calc)
-            .get_path_from(..., path = path_rapm_fit_side, side = "o"),
-            .get_path_from(..., path = path_rapm_fit_side, side = "d")
-          ),
-        path_deps =
-          c(
-            .get_path_from(..., path = path_rapm_coefs)
-          )
-      )
-
-    if(will_skip) {
-      return(invisible(NULL))
-    }
-
-    .display_auto_step_step(
-      glue::glue("Step 4: Extracting model rapm_coefs."),
-      ...
-    )
-
-    rapm_coefs_o <- .extract_coefs_side(..., side = "o")
-    rapm_coefs_d <- .extract_coefs_side(..., side = "d")
-
     rapm_coefs <-
-      .join_coefs_od(
+      .name_coefs(
         ...,
-        rapm_coefs_o = rapm_coefs_o,
-        rapm_coefs_d = rapm_coefs_d
+        rapm_coefs = rapm_coefs
       )
 
     # Use this if cross-checking "unexpected" RAPM values with calculated stats
@@ -214,18 +183,44 @@
     #     ...,
     #     path = path_players_summary_calc
     #   )
-    rapm_coefs_named <- .name_coefs(..., rapm_coefs = rapm_coefs)
 
     path_export <-
       .export_data_from_path(
         ...,
-        data = rapm_coefs_named,
+        data = rapm_coefs,
         path = path_rapm_coefs
       )
-    invisible(rapm_coefs_named)
+    rapm_coefs
   }
 
-auto_extract_coefs <-
+.extract_rapm_coefs <-
+  function(...,
+           # path_players_summary_calc = config$path_players_summary_calc,
+           path_rapm_coefs = config$path_rapm_coefs) {
+    .display_auto_step(
+      glue::glue("Step 4: Extracting model rapm_coefs."),
+      ...
+    )
+
+    rapm_coefs_o <- .extract_rapm_coefs_side(..., side = "o")
+    rapm_coefs_d <- .extract_rapm_coefs_side(..., side = "d")
+
+    rapm_coefs <-
+      .join_rapm_coefs_od(
+        ...,
+        rapm_coefs_o = rapm_coefs_o,
+        rapm_coefs_d = rapm_coefs_d
+      )
+
+    rapm_coefs <-
+      .finalize_rapm_coefs(
+        ...,
+        rapm_coefs = rapm_coefs
+      )
+    invisible(rapm_coefs)
+  }
+
+auto_extract_rapm_coefs <-
   function(...,
            season = config$season,
            skip = config$skip,
@@ -235,7 +230,7 @@ auto_extract_coefs <-
            clean = config$clean,
            n_keep = config$n_keep) {
 
-    .extract_coefs(
+    .extract_rapm_coefs(
       # ...,
       season = season,
       skip = skip,
@@ -248,8 +243,8 @@ auto_extract_coefs <-
   }
 
 # # This was used once "ad-hoc".
-# .extract_coefs_manual <-
+# .extract_rapm_coefs_manual <-
 #   function(..., skip = FALSE, season = .SEASONS) {
-#     purrr::map(season, ~.extract_coefs(..., skip = skip, season = .x))
+#     purrr::map(season, ~.extract_rapm_coefs(..., skip = skip, season = .x))
 #   }
 

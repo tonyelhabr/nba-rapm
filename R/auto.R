@@ -13,14 +13,14 @@ auto_main <-
       ...,
       skip = TRUE
     )
-    auto_munge_pbp(
+    auto_prepare_rapm_models(
       ...,
       scale = FALSE,
       collapse = TRUE,
       # skip = TRUE,
       skip = FALSE
     )
-    auto_fit_models(
+    auto_fit_rapm_models(
       ...,
       intercept = TRUE,
       # optimize = TRUE,
@@ -30,7 +30,7 @@ auto_main <-
       skip = FALSE
     )
     res <-
-      auto_extract_coefs(
+      auto_extract_rapm_coefs(
         ...,
         skip = FALSE
       )
@@ -56,15 +56,15 @@ auto_main <-
 #   .SEASONS,
 #   .f = function(x) {
 #     # auto_clean_pbp(season = x, skip = TRUE)
-#     auto_munge_pbp(season = x, skip = FALSE)
-#     auto_fit_models(
+#     auto_reshape_pbp(season = x, skip = FALSE)
+#     auto_fit_rapm_models(
 #       season = x,
 #       skip = FALSE,
 #       # skip = TRUE,
 #       # optimize = TRUE
 #       optimize = FALSE
 #     )
-#     auto_extract_coefs(season = x, skip = FALSE)
+#     auto_extract_rapm_coefs(season = x, skip = FALSE)
 #   }
 # )
 #

@@ -149,7 +149,7 @@
       mutate(idx_grp = row_number()) %>%
       select(idx_grp, everything())
     f_clean <- memoise::memoise(auto_clean_pbp)
-    f_munge <- memoise::memoise(auto_munge_pbp)
+    f_reshape <- memoise::memoise(auto_reshape_pbp)
 
     if (progress) {
       .pb <- .create_pb(total = nrow(params_grid))
@@ -161,18 +161,18 @@
         .season, .poss_min, .lambda_o, .lambda_d
       ),
       .f = ~ {
-        .display_auto_step_step(glue::glue("{.season}, {.poss_min}, {.lambda_o}, {.lambda_d}"))
+        .display_auto_step(glue::glue("{.season}, {.poss_min}, {.lambda_o}, {.lambda_d}"))
         f_clean(# auto_clean_pbp(
           season = .season,
           # skip = FALSE
           skip = TRUE
         )
-        f_munge(# auto_munge_pbp(
+        f_reshape(# auto_reshape_pbp(
           season = .season,
           poss_min = .poss_min,
           skip = FALSE
         )
-        auto_fit_models(
+        auto_fit_rapm_models(
           season = .season,
           skip = FALSE,
           # skip = TRUE,
@@ -180,7 +180,7 @@
           lambda_d = .lambda_d,
           optimize = FALSE
         )
-        auto_extract_coefs(
+        auto_extract_rapm_coefs(
           season = .season,
           skip = FALSE
         )

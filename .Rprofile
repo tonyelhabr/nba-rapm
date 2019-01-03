@@ -65,5 +65,5 @@ rm("paths_funcs")
 # if(interactive()) {
 #   config <- import_config()
 # }
-config <- import_config()
+config <- import_config(file_static = )
 

@@ -1,6 +1,8 @@
 
 # Don't use `_combined` paths/objects?
-.join_rapm_coefs <- function(..., path_rapm_coefs_join = config$path_rapm_coefs_join) {
+.join_rapm_coefs <-
+  function(...,
+           path_rapm_coefs_join = config$path_rapm_coefs_join) {
 
   # browser()
   rapm_coefs <- .try_import_rapm_coefs(...)

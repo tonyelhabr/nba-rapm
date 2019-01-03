@@ -84,12 +84,12 @@
       )
 
     n_row_after <- pbp %>% nrow()
-    n_poss_rem <- (n_row_before - n_row_after) / 10
+    n_row_rem <- n_row_before - n_row_after
     .display_info(
       glue::glue(
-        "{scales::comma(n_row_before)} records before filtering; ",
-        "{scales::comma(n_row_after)} records after_filter; ",
-        "({scales::comma(n_poss_rem)} posss removed by filtering)."
+        "{scales::comma(0.1 * n_row_before)}/{scales::comma(0.1 * n_row_after)} ",
+        "possessions before/after filtering; ",
+        "(i.e. {scales::comma(0.1 * n_row_rem)} removed by filtering)."
       ),
       ...
     )
@@ -159,11 +159,13 @@
         poss_long_side = poss_long_side
       )
 
+    # .dummy <-  switch(side, o = 1L, d = -1L)
+    .dummy <- 1L
     poss_long_side <-
       poss_long_side %>%
       anti_join(poss_long_side_dups, by = c("rn", "xid_player")) %>%
       arrange(rn, xid_player) %>%
-      mutate(dummy = 1L) %>%
+      mutate(dummy = .dummy) %>%
       select(rn, pts, pk, xid_player, dummy)
 
     path_export <-
@@ -193,7 +195,7 @@
   function(...,
            side,
            poss_wide_side,
-           scale = .SCALE,
+           scale,
            collapse = .COLLAPSE) {
     # TODO: Make a switch statement to tell the user about any combination
     # of `scale` and `collapse`?
@@ -207,7 +209,7 @@
       )
     }
     if(collapse) {
-      # cols_grp <- c("pts", "n_poss")
+      # Do something less "hard-coded" here?
       poss_wide_side <-
         poss_wide_side %>%
         # mutate(n_poss = 1) %>%
@@ -227,13 +229,6 @@
       # mutate(pp100poss = pts / n_poss) %>%
       select(pp100poss, pts, n_poss, everything())
   }
-
-# .pull_max <- function(data, col) {
-#   col <- enquo(col)
-#   data %>%
-#     summarise_at(vars(!!col), funs(max)) %>%
-#     pull(!!col)
-# }
 
 .convert_to_poss_wide_side <-
   function(...,
@@ -262,7 +257,6 @@
       poss_long_side <-
         poss_long_side %>%
         mutate_at(vars(dummy), funs(. / n_poss_max))
-
     }
 
     poss_wide_side <-
@@ -275,12 +269,15 @@
     poss_wide_side <-
       .collapse_poss_wide_side(
         ...,
+        # side = side,
+        scale = scale,
         poss_wide_side = poss_wide_side
       )
 
     path_export <-
       .export_data_from_path(
         ...,
+        # side = side,
         data = poss_wide_side,
         path = path_poss_wide_side
       )

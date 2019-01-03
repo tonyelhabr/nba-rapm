@@ -8,7 +8,6 @@ auto_main <-
   function(...) {
     # width_old <- getOption("width")
     # options(width = 80L)
-    auto_pre()
     # auto_register_cores()
     auto_clean_pbp(
       ...,
@@ -36,7 +35,6 @@ auto_main <-
         skip = FALSE
       )
     # auto_unregister_cores()
-    auto_post()
     if(interactive()) {
       file.show(
         .get_path_from(
@@ -166,25 +164,24 @@ auto_unregister_cores <-
     )
   }
 
-# from other projects ----
-# TODO: Call `.display_info()` here?
-auto_pre <-
-  function(..., execute = !interactive()) {
-    if(!execute) {
-      return(invisible(NULL))
-    }
-    message(rep("*", 80L))
-    msg <- sprintf("Started script at %s.", Sys.time())
-    message(msg)
-  }
-
-auto_post <-
-  function(..., execute = !interactive()) {
-    if(!execute) {
-      return(invisible(NULL))
-    }
-    msg <- sprintf("Finished script at %s.", Sys.time())
-    message(msg)
-    message(rep("*", 80L))
-  }
+# # TODO: Call `.display_info()` here?
+# auto_pre <-
+#   function(..., execute = !interactive()) {
+#     if(!execute) {
+#       return(invisible(NULL))
+#     }
+#     message(rep("*", 80L))
+#     msg <- sprintf("Started script at %s.", Sys.time())
+#     message(msg)
+#   }
+#
+# auto_post <-
+#   function(..., execute = !interactive()) {
+#     if(!execute) {
+#       return(invisible(NULL))
+#     }
+#     msg <- sprintf("Finished script at %s.", Sys.time())
+#     message(msg)
+#     message(rep("*", 80L))
+#   }
 

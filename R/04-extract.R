@@ -192,7 +192,7 @@
       return(invisible(NULL))
     }
 
-    .display_auto_step(
+    .display_auto_step_step(
       glue::glue("Step 4: Extracting model rapm_coefs."),
       ...
     )
@@ -225,7 +225,7 @@
     invisible(rapm_coefs_named)
   }
 
-extract_coefs_auto <-
+auto_extract_coefs <-
   function(...,
            season = config$season,
            skip = config$skip,

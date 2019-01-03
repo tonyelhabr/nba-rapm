@@ -9,7 +9,7 @@
 
 }
 
-.display_auto_step <- function(x, ..., .envir = parent.frame(), verbose = .VERBOSE) {
+.display_auto_step_step <- function(x, ..., .envir = parent.frame(), verbose = .VERBOSE) {
   # .display_msg(..., verbose = verbose, type = "info")
   if(!verbose) {
     return(invisible(NULL))

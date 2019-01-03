@@ -39,9 +39,9 @@ suppressWarnings(suppressPackageStartupMessages(library("teplot")))
 .N_KEEP <- 0L
 .OVERWRITE <- FALSE
 
-.COLLAPSE <- TRUE
-.INTERCEPT <- TRUE
 .SCALE <- FALSE
+.COLLAPSE <- !.SCALE
+.INTERCEPT <- TRUE
 .OPTIMIZE <- FALSE
 .SEED <- 42
 .LAMBDA <- 200
@@ -55,7 +55,7 @@ suppressWarnings(suppressPackageStartupMessages(library("teplot")))
 paths_funcs <-
   list.files(
     path = file.path("R"),
-    pattern = "^[0-9]{2}|^func",
+    pattern = "R$",
     full.names = TRUE
   )
 invisible(sapply(paths_funcs, source))

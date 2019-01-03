@@ -1,49 +1,51 @@
 default:
 
   # Note to self: Change the sub-folders of `dump/`. (It's too "verbose".)
-  path_raw_pbp:
+  path_pbp_raw:
     default: 'data-raw/play_by_play_with_lineup.csv'
     help: 'Path format of raw play-by-play data file to clean.'
     
     
   path_game_final_scores_error:
-    default: 'data/01-clean/dump/error/game_final_scores_error.csv'
+    default: 'data/01-clean/dump/game_final_scores_error.csv'
     help: ''
-  path_pbp_error:
-    default: 'data/01-clean/dump/error/pbp_error.csv'
+  path_pbp_parse_error:
+    default: 'data/01-clean/dump/pbp_parse_error.csv'
     help: 'Path format of '
-  path_pbp:
-    default: 'data/01-clean/pbp.csv'
-    help: 'Path format of cleaned play-by-play data.'
-
-  path_pbp_reformatted:
-    default: 'data/02-munge/dump/pbp_reformatted.rds'
-    help: 'Path format of munged play-by-play data prior to conversion to possession data.'
+  path_pbp_parse:
+    default: 'data/01-clean/dump/pbp_parse.csv'
+    help: 'Path format of parsed raw play-by-play data.'
   path_lineup_summary_calc:
-    default: 'data/02-munge/dump/calc/lineup_summary_calc.csv'
+    default: 'data/01-clean/dump/lineup_summary_calc.csv'
     help: 'Path format of '
   path_players_game_logs_compare:
-    default: 'data/02-munge/dump/compare/players_game_logs_compare.csv'
+    default: 'data/01-clean/dump/players_game_logs_compare.csv'
     help: ''
   path_players_summary_compare:
-    default: 'data/02-munge/dump/compare/players_summary_compare.csv'
+    default: 'data/01-clean/dump/players_summary_compare.csv'
     help: ''
   path_teams_summary_compare:
-    default: 'data/02-munge/dump/compare/teams_summary_compare.csv'
+    default: 'data/01-clean/dump/teams_summary_compare.csv'
     help: ''
   path_players_summary_calc:
-    default: 'data/02-munge/dump/calc/players_summary_calc.csv'
+    default: 'data/01-clean/dump/players_summary_calc.csv'
     help: 'Path format of summarized cleaned player data.
      Relevant in the same cases as `path_poss_o`.
      Used to add names and other player-relevant information to final output.'
   path_teams_summary_calc:
-    default: 'data/02-munge/dump/calc/teams_summary_calc.csv'
+    default: 'data/01-clean/dump/teams_summary_calc.csv'
     help: 'Analogous to `path_players_summary_calc` for team data.'
+  path_pbp:
+    default: 'data/01-clean/pbp.rds'
+    help: 'Path format of parsed AND cleaned raw play-by-play data.'
+    
+    
+    
   path_poss_long_error_side:
-    default: 'data/02-munge/dump/debug/poss_long_error.csv'
+    default: 'data/02-munge/dump/poss_long_error.csv'
     help: 'Path format of '
   path_poss_long_side:
-    default: 'data/02-munge/poss_long.rds'
+    default: 'data/02-munge/dump/poss_long.rds'
     help: 'Path format of "long" poss data.'
   path_poss_wide_side:
     default: 'data/02-munge/poss_wide.rds'
@@ -58,7 +60,7 @@ default:
     default: 'figs/viz_rapm_fit_side.png'
     help: 'Path format of '
   path_lambda_side:
-    default: 'data/03-fit/dump/info/lambda.csv'
+    default: 'data/03-fit/dump/lambda.csv'
     help: 'Path format of '
   path_rapm_fit_side:
     default: 'data/03-fit/rapm_fit.rds'
@@ -66,10 +68,10 @@ default:
 
 
   path_rapm_coefs_side:
-    default: 'data/04-extract/dump/info/rapm_coefs.csv'
+    default: 'data/04-extract/dump/rapm_coefs.csv'
     help: 'Path format of final player-specific offensive/defensive RAPM coefs.'
   path_rapm_coefs_var_side:
-    default: 'data/04-extract/dump/info/rapm_coefs_var.csv'
+    default: 'data/04-extract/dump/rapm_coefs_var.csv'
     help: 'Path format of RAPM model coefficent variance values.'
   path_rapm_coefs:
     default: 'data/04-extract/rapm_coefs.csv'
@@ -78,7 +80,7 @@ default:
 
     
   path_rapm_coefs_join:
-    default: 'data/05-analyze/dump/info/rapm_coefs_join.csv'
+    default: 'data/05-analyze/dump/rapm_coefs_join.csv'
     help: ''
   path_rapm_coefs_cors:
     default: 'data/05-analyze/rapm_coefs_cors.csv'

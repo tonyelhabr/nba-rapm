@@ -5,9 +5,8 @@
 # so it does not matter if `+ 0` or `+ 1` is included in the formula.
 .FMLA <- formula(glue::glue("{.Y} ~ . - pts - n_poss"))
 
-.SCALE <- TRUE
 .get_x_glmnet <-
-  function(data, fmla = .FMLA, ..., scale = .SCALE) {
+  function(data, fmla = .FMLA, ...) {
     # fmla %>% model.matrix(poss)
     fmla %>% Matrix::sparse.model.matrix(data)
   }
@@ -114,6 +113,7 @@
         parallel = TRUE,
         keep = TRUE,
         intercept = intercept,
+        # standardize = TRUE,
         x = x,
         y = y,
         alpha = 0
@@ -163,7 +163,6 @@
            x,
            y,
            intercept = .INTERCEPT,
-           # scale = .SCALE,
            lambda = .LAMBDA,
            seed = .SEED,
            path_rapm_fit_side = config$path_rapm_fit_side) {
@@ -171,6 +170,7 @@
     fit <-
       glmnet::glmnet(
         intercept = intercept,
+        # standardize = FALSE,
         x = x,
         y = y,
         lambda = lambda,
@@ -273,7 +273,7 @@
       return(invisible(NULL))
     }
 
-    .display_auto_step(
+    .display_auto_step_step(
       glue::glue("Step 3: Fitting models."),
       ...
     )
@@ -294,7 +294,7 @@
     invisible(list(fit_o = fit_o, fit_d = fit_d))
   }
 
-fit_models_auto <-
+auto_fit_models <-
   function(...,
            season = config$season,
            intercept = config$intercept,

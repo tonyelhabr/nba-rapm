@@ -47,7 +47,7 @@ default:
     (Requires `{parallel}` package, as well as `{doParallel}` package on Windows.)'
     
     
-  # `munge` parameters
+  # `clean`/`munge` parameters
   season:
     default: 2017
     help: 'NBA season to process. Used as "suffix" for all path formats 
@@ -71,6 +71,9 @@ default:
     # default: 250
     default: 0
     help: 'Analogous to `poss_min` for minutes played.'
+  scale:
+    default: false
+    help: 'If `TRUE`, scales dummy/indicator variables (by number of posss).'
   collapse:
     default: true
     help: 'If `TRUE`, "collapses" plays into stints.'
@@ -80,9 +83,6 @@ default:
   intercept:
     default: true
     help: 'If `TRUE`, includes intercept term.'
-  scale:
-    default: false
-    help: 'If `TRUE`, scales dummy/indicator variables (by number of posss).'
   optimize:
     default: false
     # default: true

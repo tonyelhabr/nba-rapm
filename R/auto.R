@@ -4,66 +4,76 @@
 # poss_side_long <- .import_data_from_path(path = config$path_poss_long_side, side = "o", season = 2017)
 # poss_side_long %>% mutate_at(vars(dummy), funs(. / n_poss_max)) %>%.spread_poss_side()
 
-main_auto <-
+auto_main <-
   function(...) {
     # width_old <- getOption("width")
     # options(width = 80L)
-    pre_auto()
-    # setup_cores_auto()
-    clean_pbp_auto(
+    auto_pre()
+    # auto_register_cores()
+    auto_clean_pbp(
       ...,
       skip = TRUE
     )
-    munge_pbp_auto(
+    auto_munge_pbp(
       ...,
-      skip = TRUE,
-      # skip = FALSE
+      scale = FALSE,
+      collapse = TRUE,
+      # skip = TRUE,
+      skip = FALSE
     )
-    fit_models_auto(
+    auto_fit_models(
       ...,
       intercept = TRUE,
-      optimize = TRUE,
-      # optimize = FALSE,
+      # optimize = TRUE,
+      optimize = FALSE,
       # lambda_o = 200,
       # lambda_d = 500,
       skip = FALSE
     )
     res <-
-      extract_coefs_auto(
+      auto_extract_coefs(
         ...,
         skip = FALSE
       )
-    # desetup_cores_auto()
-    post_auto()
+    # auto_unregister_cores()
+    auto_post()
+    if(interactive()) {
+      file.show(
+        .get_path_from(
+          season = config$season,
+          path = config$path_rapm_coefs
+        )
+      )
+    }
     # options(width = width_old)
     invisible(res)
   }
 
 
-# # pre_auto()
-# # setup_cores_auto()
+# # auto_pre()
+# # auto_register_cores()
 #
 # purrr::walk(
 #   # .SEASONS[3],
 #   .SEASONS,
 #   .f = function(x) {
-#     # clean_pbp_auto(season = x, skip = TRUE)
-#     munge_pbp_auto(season = x, skip = FALSE)
-#     fit_models_auto(
+#     # auto_clean_pbp(season = x, skip = TRUE)
+#     auto_munge_pbp(season = x, skip = FALSE)
+#     auto_fit_models(
 #       season = x,
 #       skip = FALSE,
 #       # skip = TRUE,
 #       # optimize = TRUE
 #       optimize = FALSE
 #     )
-#     extract_coefs_auto(season = x, skip = FALSE)
+#     auto_extract_coefs(season = x, skip = FALSE)
 #   }
 # )
 #
-# # desetup_cores_auto()
-# # post_auto()
+# # auto_unregister_cores()
+# # auto_post()
 
-.setup_cores <-
+.register_cores <-
   function(..., multi_core = TRUE, n_core = 4L) {
     if(.Platform$OS.type != "windows") {
       if(multi_core) {
@@ -123,7 +133,7 @@ main_auto <-
     return(invisible(NULL))
   }
 
-setup_cores_auto <-
+auto_register_cores <-
   function(...,
            multi_core = ifelse(interactive(), FALSE, config$multi_core),
            # TODO: Fix this. It's causing issues (possibly because
@@ -131,7 +141,7 @@ setup_cores_auto <-
            # which can cause this to hang.
            # multi_core = config$multi_core,
            n_core = config$n_core) {
-    .setup_cores(
+    .register_cores(
       ...,
       multi_core = multi_core,
       n_core = n_core
@@ -139,7 +149,7 @@ setup_cores_auto <-
   }
 
 # Reference: https://stackoverflow.com/questions/25097729/un-register-a-doparallel-cluster
-.desetup_cores <-
+.unregister_cores <-
   function(...) {
     env <- foreach:::.foreachGlobals
     rm(list = ls(name = env), pos = env)
@@ -149,16 +159,16 @@ setup_cores_auto <-
     )
   }
 
-desetup_cores_auto <-
+auto_unregister_cores <-
   function(...) {
-    .desetup_cores(
+    .unregister_cores(
       ...
     )
   }
 
 # from other projects ----
 # TODO: Call `.display_info()` here?
-pre_auto <-
+auto_pre <-
   function(..., execute = !interactive()) {
     if(!execute) {
       return(invisible(NULL))
@@ -168,7 +178,7 @@ pre_auto <-
     message(msg)
   }
 
-post_auto <-
+auto_post <-
   function(..., execute = !interactive()) {
     if(!execute) {
       return(invisible(NULL))

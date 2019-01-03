@@ -148,8 +148,8 @@
       ) %>%
       mutate(idx_grp = row_number()) %>%
       select(idx_grp, everything())
-    f_clean <- memoise::memoise(clean_pbp_auto)
-    f_munge <- memoise::memoise(munge_pbp_auto)
+    f_clean <- memoise::memoise(auto_clean_pbp)
+    f_munge <- memoise::memoise(auto_munge_pbp)
 
     if (progress) {
       .pb <- .create_pb(total = nrow(params_grid))
@@ -161,18 +161,18 @@
         .season, .poss_min, .lambda_o, .lambda_d
       ),
       .f = ~ {
-        .display_auto_step(glue::glue("{.season}, {.poss_min}, {.lambda_o}, {.lambda_d}"))
-        f_clean(# clean_pbp_auto(
+        .display_auto_step_step(glue::glue("{.season}, {.poss_min}, {.lambda_o}, {.lambda_d}"))
+        f_clean(# auto_clean_pbp(
           season = .season,
           # skip = FALSE
           skip = TRUE
         )
-        f_munge(# munge_pbp_auto(
+        f_munge(# auto_munge_pbp(
           season = .season,
           poss_min = .poss_min,
           skip = FALSE
         )
-        fit_models_auto(
+        auto_fit_models(
           season = .season,
           skip = FALSE,
           # skip = TRUE,
@@ -180,7 +180,7 @@
           lambda_d = .lambda_d,
           optimize = FALSE
         )
-        extract_coefs_auto(
+        auto_extract_coefs(
           season = .season,
           skip = FALSE
         )
@@ -317,7 +317,7 @@
     viz
   }
 
-analyze_rapm_coefs <-
+.analyze_rapm_coefs <-
   function(...) {
     .summarise_rapm_coefs_cors(...)
     .visualize_rapm_coefs_cors(...)
@@ -325,7 +325,7 @@ analyze_rapm_coefs <-
 
 # This is primarily so that this step can/will be caught by the function(s)
 # to analyze profiling information.
-analyze_rapm_coefs_auto <-
+auto_analyze_rapm_coefs <-
   function(...,
            season = config$season,
            # skip = config$skip,
@@ -334,7 +334,7 @@ analyze_rapm_coefs_auto <-
            backup = config$backup,
            clean = config$clean,
            n_keep = config$n_keep) {
-    analyze_rapm_coefs(
+    .analyze_rapm_coefs(
       # ...,
       season = config$season,
       # skip = config$skip,

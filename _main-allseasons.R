@@ -11,13 +11,13 @@ combine_rapm_basketballanalytics()
 
 # process ----
 # This is the "meat".
-download_raw_pbp_files(overwrite = FALSE)
+download_pbp_raw_files(overwrite = FALSE)
 # main_auto()
 
 # analyze ----
 # This takes a while, so it's not vectorized across all seasons (yet).
 visualize_proj_funcs()
-analyze_rapm_coefs_auto()
+auto_analyze_rapm_coefs()
 
 
 # post-process ----

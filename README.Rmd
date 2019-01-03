@@ -36,8 +36,8 @@ should be done with "one-time" functions (e.g. `combine*()`, `download*()`, etc.
 + [x] Try `intercept = FALSE` with models. 
     + It returns weird results.
 + [x] Try `standardize = FALSE` with models.
-    + Seems to generate more accurate results in terms of ranks, but the values
-    of `RAPM` are off.
+    + Seems to generate more accurate results in terms of ranks, but the coefficient
+    values are off (in terms of magnitude).
 + [x] Try `scale = TRUE`, where the dummy variables (in the stint matrix) are
 normalized according to number of possessions (relative to the maximum number of
 possessions played by any stint).
@@ -69,3 +69,9 @@ one of the `.Rmd` files.)
 can possibly be skipped).
 + [ ] Evaluate variance of coefficients. (This doesn't seem to come directly
 with `broom::tidy.glmnet()`, so it doesn't seem trivial.)
++ [ ] Add box-score plus-minus (i.e. BPM) model and use it to stabilize RAPM models.
+    + Possibly can just use `players_summary_nbastatr` data and run a regression.
+    Need to consult "the literature" to figure out which features to use as predictors,
+    as well as to figure out how to "add" the results of the model to the traditional
+    RAPM model.
+

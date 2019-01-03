@@ -1,4 +1,14 @@
 
+# x <- .get_x_glmnet(data = mtcars, fmla = formula("mpg ~ ."))
+# y <- .get_y_glmnet(data = mtcars, "mpg")
+# glmnet::glmnet(x, y) %>% broom::tidy()
+#
+# fit_cv <- glmnet::cv.glmnet(x, y)
+# fit_cv$lambda.1se
+# fit_cv$lambda.min # 0.6647582
+# fit <- glmnet::glmnet(x, y, lambda = 0.6647582)
+# fit %>% broom::tidy()
+
 .Y <- "pp100poss"
 
 # Note that intercept term must be specified by a boolean in `glmnet::glmnet()`,
@@ -251,7 +261,7 @@
            lambda_d = .LAMBDA) {
 
     .display_auto_step(
-      glue::glue("Step 3: Fitting models."),
+      glue::glue("Step 3: Fitting RAPM models."),
       ...
     )
 

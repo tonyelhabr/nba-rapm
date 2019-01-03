@@ -4,9 +4,9 @@
   if(!verbose) {
     return(invisible(NULL))
   }
-  # usethis::ui_done(glue::glue("Info: {x}"), .envir = .envir)
-  usethis::ui_line(glue::glue("Info: {x}"), .envir = .envir)
-
+  # usethis::ui_line(glue::glue("Info: {x}"), .envir = .envir)
+  usethis::ui_line(glue::glue("{x}"), .envir = .envir)
+  # cli::cat_rule(left = x, width = 80L)
 }
 
 .display_auto_step <- function(x, ..., .envir = parent.frame(), verbose = .VERBOSE) {
@@ -17,7 +17,7 @@
   # usethis::ui_todo(glue::glue("TODO: {x}"), .envir = .envir)
   # usethis::ui_todo(glue::glue("Info: {x}", .envir = .envir))
   # usethis::ui_line(glue::glue("Info: {x}"), .envir = .envir)
-  cli::cat_rule(left = sprintf("%s", x), line = 2)
+  cli::cat_rule(left = x, line = 2)
 }
 
 .display_warning <- function(x, ..., .envir = parent.frame()) {

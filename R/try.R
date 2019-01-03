@@ -154,14 +154,14 @@
       )
     }
 
-.try_import_rapm_basketballanalytics <-
+.try_import_rapm_szou <-
   memoise::memoise(
     function(...) {
       .try_import_thing(
         ...,
         validate = FALSE,
         f_get = NULL,
-        path = config$path_rapm_basketballanalytics
+        path = config$path_rapm_szou
       )
     }
   )
@@ -194,14 +194,14 @@
     }
   )
 
-.try_import_rapm_basketballanalytics_combined <-
+.try_import_rapm_szou_combined <-
   memoise::memoise(
     function(...) {
       .try_import_thing(
         ...,
         validate = FALSE,
-        f_get = .download_combine_rapm_basketballanalytics,
-        path = .create_path_combined(config$path_rapm_basketballanalytics)
+        f_get = .download_combine_rapm_szou,
+        path = .create_path_combined(config$path_rapm_szou)
       )
     }
   )

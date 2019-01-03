@@ -135,8 +135,8 @@ default:
   path_players_summary_nbastatr:
     default: 'data/static/players_summary_nbastatr.csv'
     help: 'Analogous to `path_teams_nbastatr` for player summary data.'
-  path_rapm_basketballanalytics:
-    default: 'data/static/rapm_basketballanalytics.csv'
+  path_rapm_szou:
+    default: 'data/static/rapm_szou.csv'
     help: ''
   path_rpm_espn:
     default: 'data/static/rpm_espn.csv'

@@ -169,17 +169,48 @@
     invisible(res)
   }
 
+# Use something like this to get player-slugs for a specific year?
+.get_players_details_nbastatr <-
+  function(..., season = .SEASON, path) {
+    players <- nbastatR::dictionary_bref_players()
+    url <-
+      players %>%
+      filter(namePlayerBREF == "Kevin Love") %>%
+      pull(urlPlayerBioBREF)
+    page_html <-
+      url %>%
+      xml2::read_html()
+    table <-
+      page_html %>%
+      rvest::html_table() %>%
+      pluck(1) %>%
+      as_tibble()
+  }
+
+
 .get_players_summary_nbastatr <-
   function(..., season = .SEASON, path) {
 
-    res <-
-      nbastatR::bref_players_stats(
-        seasons = season + 1,
-        assign_to_environment = FALSE,
-        return_message = FALSE
-      ) %>%
-      unnest() %>%
-      janitor::clean_names()
+    # Note that this will still assign `df_dict_nba_players` to the .GlobalEnv
+    suppressWarnings(
+      suppressMessages(
+        res <-
+          nbastatR::bref_players_stats(
+            seasons = season + 1,
+            # tables = c("advanced", "totals"), # default
+            # include_all_nba = FALSE, # default
+            # only_totals = TRUE, # default
+            # nest_data = TRUE, # default
+            nest_data = FALSE,
+            # widen_data = TRUE, # default
+            # join_data = TRUE, # default
+            assign_to_environment = FALSE,
+            return_message = FALSE
+          ) %>%
+          # unnest() %>%
+          janitor::clean_names()
+      )
+    )
 
     .export_data_from_path(
       ...,

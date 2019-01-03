@@ -35,14 +35,6 @@ auto_main <-
         skip = FALSE
       )
     # auto_unregister_cores()
-    if(interactive()) {
-      file.show(
-        .get_path_from(
-          season = config$season,
-          path = config$path_rapm_coefs
-        )
-      )
-    }
     # options(width = width_old)
     invisible(res)
   }

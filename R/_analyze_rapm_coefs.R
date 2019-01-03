@@ -6,7 +6,7 @@
 
   # browser()
   rapm_coefs <- .try_import_rapm_coefs(...)
-  rapm_basektball_analytics <- .try_import_rapm_basketballanalytics(...)
+  rapm_basektball_analytics <- .try_import_rapm_szou(...)
   rpm_espn <- .try_import_rpm_espn(...)
 
   rapm_coefs_slim <-
@@ -19,7 +19,7 @@
     )
   rapm_basektball_analytics_slim <-
     rapm_basektball_analytics %>%
-    rename_at(vars(matches("rank|rapm")), funs(paste0(., "_basketballanalytics"))) %>%
+    rename_at(vars(matches("rank|rapm")), funs(paste0(., "_szou"))) %>%
     select(
       name,
       slug,
@@ -71,7 +71,7 @@
   invisible(rapm_coefs_join)
 }
 
-.SRC <- c("calc", "basketballanalytics", "espn")
+.SRC <- c("calc", "szou", "espn")
 .SRC_DEBUG <- c(.SRC, "nbastatr")
 .create_rgx <-
   function(x) {
@@ -239,7 +239,7 @@
 .visualize_rapm_coefs_cors <-
   function(...,
            src1 = "calc",
-           src2 = "basketballanalytics",
+           src2 = "szou",
            poss_min = NULL,
            path_viz_rapm_coefs_cors_grid = config$path_viz_rapm_coefs_cors_grid) {
     rapm_coefs_cors_grid <- .try_import_rapm_coefs_cors_grid(...)
@@ -337,7 +337,7 @@ auto_analyze_rapm_coefs <-
            clean = config$clean,
            n_keep = config$n_keep) {
     .analyze_rapm_coefs(
-      # ...,
+      ...,
       season = config$season,
       # skip = config$skip,
       verbose = config$verbose,

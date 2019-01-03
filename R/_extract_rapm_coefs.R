@@ -32,7 +32,11 @@
     fit %>%
       # broom::tidy() %>%
       .tidy_glmnet() %>%
-      filter(term != "(Intercept)") %>%
+      # filter(term == "(Intercept)") %>%
+      mutate_at(
+        vars(term),
+        funs(if_else(. != "(Intercept)", ., "0"))
+      ) %>%
       mutate_at(
         vars(term),
         funs(str_replace_all(., "^[od]", "") %>% as.integer())
@@ -169,6 +173,7 @@
 .finalize_rapm_coefs <-
   function(...,
            rapm_coefs,
+           show = TRUE,
            path_rapm_coefs = config$path_rapm_coefs) {
     rapm_coefs <-
       .name_coefs(
@@ -190,15 +195,23 @@
         data = rapm_coefs,
         path = path_rapm_coefs
       )
+
+    if(interactive() & show) {
+      file.show(
+        .get_path_from(
+          ...,
+          path = path_rapm_coefs
+        )
+      )
+    }
+
     rapm_coefs
   }
 
 .extract_rapm_coefs <-
-  function(...,
-           # path_players_summary_calc = config$path_players_summary_calc,
-           path_rapm_coefs = config$path_rapm_coefs) {
+  function(...) {
     .display_auto_step(
-      glue::glue("Step 4: Extracting model rapm_coefs."),
+      glue::glue("Step 4: Extracting RAPM model coefficients."),
       ...
     )
 

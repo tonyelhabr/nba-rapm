@@ -65,11 +65,11 @@ combine_rpm_espn <-
     )
   }
 
-combine_rapm_basketballanalytics <-
+combine_rapm_szou <-
   function(...) {
     .combine_data_from_paths(
       ...,
-      path = config$path_rapm_basketballanalytics
+      path = config$path_rapm_szou
     )
   }
 

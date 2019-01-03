@@ -166,8 +166,8 @@
         poss_long_side = poss_long_side
       )
 
-    # .dummy <-  switch(side, o = 1L, d = -1L)
-    .dummy <- 1L
+    .dummy <-  switch(side, o = 1L, d = -1L)
+    # .dummy <- 1L
     poss_long_side <-
       poss_long_side %>%
       anti_join(poss_long_side_dups, by = c("rn", "xid_player")) %>%
@@ -225,11 +225,11 @@
         summarise_at(vars(pts, n_poss), funs(sum)) %>%
         ungroup()
     }
-    if(side == "d") {
-      poss_wide_side <-
-        poss_wide_side %>%
-        mutate_at(vars(pts), funs(-.))
-    }
+    # if(side == "d") {
+    #   poss_wide_side <-
+    #     poss_wide_side %>%
+    #     mutate_at(vars(pts), funs(-.))
+    # }
     poss_wide_side %>%
       # select(pts, n_poss, everything()) %>%
       mutate(pp100poss = 100 * pts / n_poss) %>%
@@ -318,21 +318,9 @@
   function(...) {
 
     .display_auto_step(
-      glue::glue("Step 2: Munging play-by-play data."),
+      glue::glue("Step 2: Preparing data for RAPM models."),
       ...
     )
-
-    pbp <-
-      .import_data_from_path(
-        ...,
-        path = path_pbp
-      )
-
-    players_summary_calc <-
-      .import_data_from_path(
-        ...,
-        path = path_players_summary_calc
-      )
 
     pbp <-
       .filter_pbp(

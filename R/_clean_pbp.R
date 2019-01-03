@@ -751,13 +751,14 @@
   function(...,
            # This boolean is a convenience for development. It probably shouldn't
            # be allowed in the final version of this function.
-           skip_compare = FALSE,
+           skip_calc = FALSE,
            # Some of these are included here exclusively for the `.try_skip()` function.
            # This is true with some of the other functions as well.
            path_pbp_raw = config$path_pbp_raw,
            path_pbp = config$path_pbp,
            path_players_summary_calc = config$path_players_summary_calc) {
 
+    # TODO: Keep this `skip` logic? (Mayve only for this function...)
     will_skip <-
       .try_skip(
         ...,
@@ -801,7 +802,7 @@
 
     # Note that the `players_summary_calc` is the only `_calc` object
     # that matters (because the subsequent filtering depends on it).
-    if(skip_compare) {
+    if(!skip_calc) {
       lineup_summary_calc <-
         .summarise_lineup(
           ...,

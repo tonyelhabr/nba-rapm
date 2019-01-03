@@ -98,8 +98,8 @@ default:
     default: 100
     help: 'Value to use for lambda in model fit if `optimize = FALSE`.'
   lambda_d:
-    # default: 250
-    default: 350
+    default: 200
+    # default: 350
     help: 'Analogous to `lambda_o`.'
 
 production:

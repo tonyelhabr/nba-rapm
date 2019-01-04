@@ -29,11 +29,6 @@ auto_main <-
       # lambda_d = 500,
       skip = FALSE
     )
-    res <-
-      auto_extract_rapm_coefs(
-        ...,
-        skip = FALSE
-      )
     # auto_unregister_cores()
     # options(width = width_old)
     invisible(res)

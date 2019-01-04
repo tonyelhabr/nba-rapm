@@ -57,6 +57,7 @@
 # Do this so that this function can be used
 # (i.e. outside the parent `reshape*()` function, where `players_summary_calc`
 # may not be calculated immediately before hand).
+# + May or may not actually use `side` in some of the following functions.
 .filter_pbp <-
   function(...,
            # pbp = NULL,
@@ -105,7 +106,7 @@
 
 .check_poss_long_side_dups <-
   function(...,
-           side,
+           # side,
            poss_long_side,
            path_poss_long_error_side = config$path_poss_long_error_side) {
 
@@ -114,7 +115,7 @@
       count(rn, xid_player, sort = TRUE) %>%
       filter(n > 1L)
 
-    n_dups <- nrow(poss_long_side_dups)
+    n_dups <- poss_long_side_dups %>% nrow()
     if(n_dups > 0L) {
       .display_info(
         glue::glue(
@@ -139,7 +140,7 @@
       path_export <-
         .export_data_from_path(
           ...,
-          side = side,
+          # side = side,
           data = poss_long_side_dups,
           path = path_poss_long_error_side
         )
@@ -147,26 +148,30 @@
     poss_long_side_dups
   }
 
+.filter_side <-
+  function(pbp, side, ...) {
+    pbp %>% filter(side == !!side)
+  }
 
 .convert_to_poss_long_side <-
   function(...,
-           side,
+           # side,
            pbp,
            path_poss_long_side = config$path_poss_long_side) {
     poss_long_side <-
       pbp %>%
-      filter(side == !!side) %>%
+      .filter_side(...) %>%
       mutate(xid_player = sprintf("%s%07d", side, as.integer(id_player)))
 
     poss_long_side_dups <-
       poss_long_side %>%
       .check_poss_long_side_dups(
         ...,
-        side = side,
+        # side = side,
         poss_long_side = poss_long_side
       )
 
-    .dummy <-  switch(side, o = 1L, d = -1L)
+    .dummy <- switch(side, o = 1L, d = -1L)
     # .dummy <- 1L
     poss_long_side <-
       poss_long_side %>%
@@ -178,7 +183,7 @@
     path_export <-
       .export_data_from_path(
         ...,
-        side = side,
+        # side = side,
         data = poss_long_side,
         path = path_poss_long_side
       )
@@ -200,7 +205,7 @@
 # This is useful to "abstract away" `collapse`.
 .collapse_poss_wide_side <-
   function(...,
-           side,
+           # side,
            poss_wide_side,
            scale,
            collapse = .COLLAPSE) {
@@ -225,11 +230,7 @@
         summarise_at(vars(pts, n_poss), funs(sum)) %>%
         ungroup()
     }
-    # if(side == "d") {
-    #   poss_wide_side <-
-    #     poss_wide_side %>%
-    #     mutate_at(vars(pts), funs(-.))
-    # }
+
     poss_wide_side %>%
       # select(pts, n_poss, everything()) %>%
       mutate(pp100poss = 100 * pts / n_poss) %>%
@@ -239,6 +240,7 @@
 
 .convert_to_poss_wide_side <-
   function(...,
+           # side,
            scale = .SCALE,
            poss_long_side,
            path_poss_wide_side = config$path_poss_wide_side) {
@@ -291,6 +293,15 @@
     poss_wide_side
   }
 
+.collapse_poss_wide_od <-
+  function(..., poss_wide_od) {
+    .collapse_poss_wide_side(
+      ...,
+      side = NULL,
+      poss_wide_side = poss_wide_od
+    )
+  }
+
 .convert_to_poss_side <-
   function(..., pbp) {
 
@@ -308,6 +319,34 @@
     poss_wide_side
   }
 
+.convert_to_poss_od <-
+  function(..., pbp, path_poss_long_side = config$path_poss_long_side) {
+    # Note that it doesn't seem easier to re-create these with `.convert_to_poss_long_side()`.
+    poss_long_o <-
+      .import_data_from_path(
+        ...,
+        side = "o",
+        path = path_poss_long_side
+      )
+    poss_long_d <-
+      .import_data_from_path(
+        ...,
+        side = "d",
+        path = path_poss_long_side
+      )
+    poss_long_od <-
+      bind_rows(
+        poss_long_o,
+        poss_long_d
+      )
+    poss_wide_side <-
+      .convert_to_poss_wide(
+        ...,
+        side = NULL,
+        poss_long_side = poss_long_od
+      )
+  }
+
 
 # ..prepare_rapm_models.tibble <-
 #   function(...) {
@@ -318,7 +357,7 @@
   function(...) {
 
     .display_auto_step(
-      glue::glue("Step 2: Preparing data for RAPM models."),
+      glue::glue("Preparing data for RAPM models."),
       ...
     )
 
@@ -338,6 +377,12 @@
       .convert_to_poss_side(
         ...,
         side = "d",
+        pbp = pbp
+      )
+
+    poss_od <-
+      .convert_to_poss_od(
+        ...,
         pbp = pbp
       )
 

@@ -115,8 +115,8 @@
 
 import_config <-
   function(...,
-           file_static = "R/config-static.yml",
-           file_cli = "R/config-cli.yml",
+           file_static = "R/_config-static.yml",
+           file_cli = "R/_config-cli.yml",
            argv = commandArgs(trailingOnly = TRUE)) {
 
     # IMPORTANT: Don't pass dots here!

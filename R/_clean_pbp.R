@@ -778,7 +778,7 @@
     }
 
     .display_auto_step(
-      glue::glue("Step 1: Cleaning play-by-play data."),
+      glue::glue("Cleaning play-by-play data."),
       ...
     )
 

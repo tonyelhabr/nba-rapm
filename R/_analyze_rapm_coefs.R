@@ -1,4 +1,15 @@
 
+.compare_allinone_metrics <-
+  function(...,
+           path_rapm_coefs_join = config$path_rapm_coefs_join,
+           path_allinone_metrics_compare = config$path_allineone_metrics_compare) {
+    rapm_coefs_join <-
+      .import_data_from_path(
+        ...,
+        path = path_rapm_coefs_join
+      )
+  }
+
 
 .SRC <- c("calc", "szou", "espn")
 .SRC_DEBUG <- c(.SRC, "nbastatr")
@@ -10,12 +21,15 @@
 
 .correlate_rapm_coefs <-
   function(...,
-           rapm_coefs_join = NULL,
+           path_rapm_coefs_join = config$path_rapm_coefs_join,
            src = .SRC,
            path_rapm_coefs_cors = config$path_rapm_coefs_cors) {
-    if(is.null(rapm_coefs_join)) {
-      rapm_coefs_join <- .join_rapm_coefs(...)
-    }
+    rapm_coefs_join <-
+      .import_data_from_path(
+        ...,
+        path = path_rapm_coefs_join
+      )
+
     rgx_src <- src %>% .create_rgx()
     rapm_coefs_tidy <-
       rapm_coefs_join %>%

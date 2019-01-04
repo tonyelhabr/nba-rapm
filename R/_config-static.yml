@@ -4,8 +4,6 @@ default:
   path_pbp_raw:
     default: 'data-raw/play_by_play_with_lineup.csv'
     help: 'Path format of raw play-by-play data file to clean.'
-    
-    
   path_game_final_scores_error:
     default: 'data/dump/game_final_scores_error.csv'
     help: ''
@@ -46,13 +44,16 @@ default:
     help: 'Path format of '
   path_poss_long_side:
     default: 'data/dump/poss_long.rds'
-    help: 'Path format of "long" poss data.'
+    help: 'Path format of "long" possession data (either offensive or defensive).'
+  path_poss_long:
+    default: 'data/dump/poss_long.rds'
+    help: 'Path format of "long" possession data (both offensive and defensive). TODO!'
   path_poss_wide_side:
     default: 'data/dump/poss_wide.rds'
-    help: 'Path format of "wide" poss data.'
-
-
-    
+    help: 'Path format of "wide" possession data (either offensive or defensive).'
+  path_poss_wide:
+    default: 'data/dump/poss_wide.rds'
+    help: 'Path format of "long" possession data (both offensive and defensive). TODO!'
   path_viz_rapm_model_cv_side:
     default: 'figs/viz_rapm_model_cv_side.png'
     help: 'Path format of '
@@ -65,23 +66,21 @@ default:
   path_rapm_model_side:
     default: 'data/dump/rapm_model.rds'
     help: 'Path format of RAPM model fitted for offensive/defensive poss data.'
-
-
   path_rapm_coefs_side:
     default: 'data/dump/rapm_coefs.csv'
-    help: 'Path format of final player-specific offensive/defensive RAPM coefs.'
+    help: 'Path format of final player-specific offensive/defensive RAPM coefficients.'
   path_rapm_coefs_var_side:
     default: 'data/dump/rapm_coefs_var.csv'
     help: 'Path format of RAPM model coefficent variance values.'
   path_rapm_coefs:
-    default: 'data/rapm_coefs.csv'
-    help: 'Path format of final combined offensive and defensive RAPM coefs.'
-
-
-    
+    default: 'data/dump/rapm_coefs.csv'
+    help: 'Path format of final combined offensive and defensive RAPM coefficients.'
   path_rapm_coefs_join:
-    default: 'data/dump/rapm_coefs_join.csv'
+    default: 'data/rapm_coefs_join.csv'
     help: ''
+
+
+
   path_rapm_coefs_cors:
     default: 'data/rapm_coefs_cors.csv'
     help: ''

@@ -11,7 +11,7 @@ auto_main <-
     # auto_register_cores()
     auto_clean_pbp(
       ...,
-      skip = TRUE
+      skip = FALSE
     )
     auto_prepare_rapm_models(
       ...,

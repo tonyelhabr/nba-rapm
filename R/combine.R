@@ -2,7 +2,7 @@
 
 .create_path_combined <-
   function(x) {
-    x %>% str_replace_all("\\.", "_combined")
+    x %>% str_replace_all("\\.", "_combined.")
   }
 
 .combine_data_from_paths <-

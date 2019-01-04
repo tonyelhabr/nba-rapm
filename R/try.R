@@ -189,7 +189,7 @@
         ...,
         validate = FALSE,
         f_get = .download_combine_rpm_espn,
-        path = .creat_path_combined(config$path_rpm_espn)
+        path = .create_path_combined(config$path_rpm_espn)
       )
     }
   )

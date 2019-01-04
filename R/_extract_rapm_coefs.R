@@ -173,7 +173,7 @@
 .finalize_rapm_coefs <-
   function(...,
            rapm_coefs,
-           show = TRUE,
+           show = FALSE,
            path_rapm_coefs = config$path_rapm_coefs) {
     rapm_coefs <-
       .name_coefs(
@@ -204,8 +204,92 @@
         )
       )
     }
-
     rapm_coefs
+  }
+
+# Note that this can be used interactively (due to the `NULL` logic).
+.join_rapm_coefs <-
+  function(...,
+           show = TRUE,
+           rapm_coefs = NULL,
+           path_rapm_coefs = config$path_rapm_coefs,
+           path_rapm_coefs_join = config$path_rapm_coefs_join) {
+
+    # browser()
+    if(is.null(rapm_coefs)) {
+      rapm_coefs <- .try_import_rapm_coefs(...)
+    }
+    rapm_basektball_analytics <- .try_import_rapm_szou(...)
+    rpm_espn <- .try_import_rpm_espn(...)
+
+    rapm_coefs_slim <-
+      rapm_coefs %>%
+      select(-matches("[o|d]rapm_rank")) %>%
+      rename_at(vars(matches("rank|rapm")), funs(paste0(., "_calc"))) %>%
+      select(
+        name,
+        matches("rank|rapm")
+      )
+    rapm_basektball_analytics_slim <-
+      rapm_basektball_analytics %>%
+      rename_at(vars(matches("rank|rapm")), funs(paste0(., "_szou"))) %>%
+      select(
+        name,
+        slug,
+        matches("rank|rapm")
+      )
+    rpm_espn_slim <-
+      rpm_espn %>%
+      rename_at(vars(matches("rank|rpm")), funs(paste0(., "_espn"))) %>%
+      select(
+        name,
+        position,
+        matches("rank|rpm")
+      )
+
+    suppressMessages(
+      rapm_coefs_join <-
+        rapm_coefs_slim %>%
+        left_join(rapm_basektball_analytics_slim) %>%
+        left_join( rpm_espn_slim) %>%
+        select(
+          name,
+          slug,
+          matches("rank"),
+          matches("^r"),
+          matches("^o"),
+          matches("^d")
+        )
+    )
+
+    # Make names distinct.
+    suppressMessages(
+      rapm_coefs_join <-
+        rapm_coefs_join %>%
+        # group_by(name) %>%
+        # filter(row_number() == 1) %>%
+        # ungroup()
+        group_by(name) %>%
+        summarise_at(vars(slug), funs(paste(., collapse = ", ", sep = ""))) %>%
+        ungroup() %>%
+        left_join(rapm_coefs_join)
+    )
+
+    path_export <-
+      .export_data_from_path(
+        ...,
+        data = rapm_coefs_join,
+        path = path_rapm_coefs_join
+      )
+    if(interactive() & show) {
+      file.show(
+        .get_path_from(
+          ...,
+          path = path_rapm_coefs_join
+        )
+      )
+    }
+    invisible(rapm_coefs_join)
   }
 
 .extract_rapm_coefs <-
@@ -227,6 +311,12 @@
 
     rapm_coefs <-
       .finalize_rapm_coefs(
+        ...,
+        rapm_coefs = rapm_coefs
+      )
+
+    rapm_coefs_join <-
+      .join_rapm_coefs(
         ...,
         rapm_coefs = rapm_coefs
       )

@@ -1,0 +1,27 @@
+---
+title: "Untitled"
+output: github_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+knitr::opts_chunk$set(
+  echo = FALSE,
+  # include = FALSE,
+  fig.align = "center",
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+## Profiling
+
+```{r}
+# prof <- readr::read_rds("profile.rds")
+# prof %>% 
+#   proftools::filterProfileData(focus = "clean_play_by_play") %>% 
+#   # proftools::plotProfileCallGraph(maxnodes=10)
+#   proftools::printProfileCallGraph(GC = FALSE, total.pct = 0.1, file = "afile.txt")
+```
+
+![](profvis-manual.html)

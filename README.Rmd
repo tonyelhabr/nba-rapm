@@ -2,6 +2,14 @@
 output: github_document
 ---
 
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  error = FALSE,
+  warning = FALSE,
+  echo = TRUE
+)
+```
+
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 # Introduction
@@ -9,69 +17,63 @@ output: github_document
 This primary goal of this project is to calculate 
 [Regularized Adjusted Plus-Minus](https://www.nbastuffer.com/analytics101/regularized-adjusted-plus-minus-rapm/) 
 (RAPM)---an "advanced statistic"---for NBA players. 
-The calculated values can be found in the set of `rapm_estimates` 
+The calculated values can be found in the set of `metrics_join` 
 CSVs in the project's repository.
 
-I've written about this project in more detail [on my blog](https://tonyelhabr.rbind.io).
+I plan to write about this project in more detail [on my blog](https://tonyelhabr.rbind.io).
 so I encourage the reader to read more about it there.
+
+# Usage
+
+If you were to fork this project and try to run it from scratch, below
+shows the required order of function calls.
+
+First, download all of the data needed.
+
+```{r usage_all, eval = FALSE}
+# pre-process ----
+# Note that `overwrite = FALSE` is the default, but setting it explciitly here to remind
+# the user that it is an option.
+# This goes to the
+download_pbp_raw_files(overwrite = FALSE)
+
+download_nbastatr(overwrite = FALSE)
+download_rpm_espn(overwrite = FALSE)
+download_rapm_sz(overwrite = FALSE)
+```
+
+Next, run the "main" function. This is what is run with the command-line interface (CLI)
+that also comes with the project.
+
+```{r usage_main, eval = FALSE}
+# This reads from the config.yml files.
+auto_main()
+```
+
+Finally, there are functions to explore other things about the data/project.
+
+```{r usage_extra, eval = FALSE}
+visualize_proj_profile()
+```
+
 
 # Highlights
 
-![](figs/viz_proj_funcs.png)
-![](figs/viz_rapm_coefs.png)
+A visual comparison of various RAPM-related metrics, either calculated in this
+project (i.e. `cacl`) or retrieved from an external source.
 
-# TODO(?)
+![](data/final/viz_metrics_join_summary_2017.png)
 
-+ [ ] Prefix main functions with `rapm_` (instead of `auto_`).
-(This could be useful if additional functionality is added to the project,
-such as for calculating team strength.) If this is done, not sure if same
-should be done with "one-time" functions (e.g. `combine*()`, `download*()`, etc.).
-+ [x] Check that filtering for `poss_min` (and other criteria) is done correctly.
-    + I've implemented two versions. One version removes entire lineups
-    where any 1 player does not meet the criteria (probably more correct, if
-    any kind of filtering is going to be done, although the corresponding
-    offensive/defensive lineup should probably also be removed),
-    while the other removes individual players who meet ther criteria
-    (which seems "less correct", but produces better results(?), anecdotally).
-+ [x] Try `intercept = FALSE` with models. 
-    + It returns weird results.
-+ [x] Try `standardize = FALSE` with models.
-    + Seems to generate more accurate results in terms of ranks, but the coefficient
-    values are off (in terms of magnitude).
-+ [x] Try `scale = TRUE`, where the dummy variables (in the stint matrix) are
-normalized according to number of possessions (relative to the maximum number of
-possessions played by any stint).
-    + This produced some very strange/wrong results.
-+ [x] Try negative dummy variables for defense vs. negative response variable for defense. 
-    + No difference.
-+ [x] Try `collapse = TRUE/FALSE` (i.e. summarising by stints vs. not).
-    + `collapse = TRUE` seems to generate more reasonable results (although 
-    should have tested `ppp` as response instead of `pp100p` when `collapse = FALSE`)
+The data behind the visual.
 
-+ [x] Check/emulate how `{glmnet}` is used at:
-    + https://github.com/dgrtwo/data-screencasts/blob/3e1e3d0e14abdff00ae1493d4273e8f3b49a0a77/medium-datasci.Rmd
-    + https://github.com/juliasilge/blog_by_hugo/blob/f847b7836bfcedc396e7e82867c4601ae8357853/content/blog/2018/2018-12-24-tidy-text-classification.Rmd
-+ [ ] Re-do calculations to follow code shown at
-    + https://squared2020.com/2017/09/18/deep-dive-on-regularized-adjusted-plus-minus-i-introductory-example/
-    + https://squared2020.com/2017/09/18/deep-dive-on-regularized-adjusted-plus-minus-ii-basic-application-to-2017-nba-data-with-r/.
-    + https://squared2020.com/2018/12/24/regularized-adjusted-plus-minus-part-iii-what-had-really-happened-was/
-        + [x] Note: I'm 99% confident that I'm not making the additive rating mistake identified in the article
-        (because I calculate `pp100poss` AFTER summing `pts` across all possessions `n`).
-        + [ ] Maybe try combining offensive and defensive matrices(?), although Jacobs seems to take opinions on both sides
-        of the argument of whether or not this should be done.
-+ [ ] Re-do `clean` and `reshape` functions with `{data.table}` (and use S3 methods to differentiate with `{tibble}` methods).
-+ [ ] Compare calculations with those at http://nbashotcharts.com/ (e.g. http://nbashotcharts.com/rapm?id=1113190703 for 2017 season)
-+ [ ] Create function to automatically plot ORAPM vs. DRAPM. (Code/logic is already in
-one of the `.Rmd` files.)
-+ [ ] LOW PRIORITY: Create function to regenerate profile html widgets.
-(Code/logic already exists somewhere in the project.)
-+ [x] Move filtering function to last step before fitting (so that `reshape` step
-can possibly be skipped).
-+ [ ] Evaluate variance of coefficients. (This doesn't seem to come directly
-with `broom::tidy.glmnet()`, so it doesn't seem trivial.)
-+ [ ] Add box-score plus-minus (i.e. BPM) model and use it to stabilize RAPM models.
-    + Possibly can just use `players_summary_nbastatr` data and run a regression.
-    Need to consult "the literature" to figure out which features to use as predictors,
-    as well as to figure out how to "add" the results of the model to the traditional
-    RAPM model.
+```{r metrics_join_summary, echo = FALSE}
+metrics_join_summary <-
+  .import_data_from_path(
+    season = .SEASON,
+    path = config$path_metrics_join_summary
+  )
+metrics_join_summary %>%
+  spread(x, adj_r_squared) %>% 
+  knitr::kable()
+```
 

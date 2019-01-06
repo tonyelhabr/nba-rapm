@@ -1,0 +1,18 @@
+# References:
+# + https://github.com/rstudio/rmarkdown-website-examples
+# + https://bookdown.org/yihui/rmarkdown/pdf-document.html#syntax-highlighting
+
+name: "Tony's NBA RAPM Project"
+navbar:
+  title: "My Website"
+  type: inverse
+  left:
+    - text: "Home"
+      icon: fa-home
+      href: index.html
+    - text: "README"
+      icon: fa-info-circle
+      href: README.html
+    - text: "Developer Notes"
+      icon: fa-list-ol
+      href: TODO.html

@@ -1,4 +1,4 @@
 !.gitignore
 # *
-misc/*
 raw/*
+intermediate/*

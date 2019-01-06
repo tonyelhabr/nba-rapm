@@ -1,7 +1,6 @@
 
 .get_proj_profile <-
-  function(..., path) {
-    path_src <- "_main.R"
+  function(..., path_src = "R/_main.R", path) {
     stopifnot(file.exists(path_src))
     pd <- proftools::profileExpr(source(path_src))
     path_export <- readr::write_rds(x = pd, path = path)
@@ -15,6 +14,17 @@
     #   )
     pd
   }
+
+.try_import_proj_profile <-
+  function(...) {
+    .try_import_thing(
+      ...,
+      validate = FALSE, # Because this is not associated with a season.
+      f_get = .get_proj_profile,
+      path = config$path_proj_profile
+    )
+  }
+
 
 .extract_proj_profile <-
   function(...) {
@@ -38,8 +48,8 @@
         pd_arr_filt %>%
         left_join(
           pd_arr_filt %>%
-            filter(str_detect(label, "_auto$")) %>%
-            mutate(grp = str_remove(label, "_auto$"), idx_grp = row_number())
+            filter(str_detect(label, "^auto_")) %>%
+            mutate(grp = str_remove(label, "^auto_"), idx_grp = row_number())
         ) %>%
         fill(grp) %>%
         fill(idx_grp) %>%
@@ -59,7 +69,9 @@
     proj_funcs
   }
 
-visualize_proj_profile <- function(..., path_proj_profile = config$path_viz_proj_profile) {
+visualize_proj_profile <-
+  function(...,
+           path_proj_profile = config$path_viz_proj_profile) {
   proj_funcs <- .extract_proj_profile(...)
   n_func_grps <- nrow(proj_funcs)
   # # Maybe `cli::tree()` using something like...
@@ -99,6 +111,5 @@ visualize_proj_profile <- function(..., path_proj_profile = config$path_viz_proj
       height = 7,
       width = 9
     )
-  # viz
   viz
 }

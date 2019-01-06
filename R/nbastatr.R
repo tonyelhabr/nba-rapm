@@ -220,18 +220,29 @@
     res
   }
 
-# Note that this is a bit different since it depends on `players_summary_nbastatr`
+# TODO: Hard-code the output `path` for all `.get*nbastatr()` functions? (and
+# make the `.try_import*()` functions simpler (by removing the `path` argument)?
+# + Note that this is a bit different since it depends on `players_summary_nbastatr`
 # already existing.
-.get_players_bpm_nbastatr <-
-  function(..., path) {
-    players_summary_nbastatr <- .try_import_players_summary_nbastatr(...)
+# + Also, can't `.try_import*()` something here because there will be an error where
+# `.return_type` is a repeated argument.
+.get_bpm_nbastatr <-
+  function(..., path_players_summary_nbastatr = config$path_players_summary_nbastatr, path) {
+
+    players_summary_nbastatr <-
+      .import_data_from_path(
+        ...,
+        path = path_players_summary_nbastatr
+      )
+
     res <-
       players_summary_nbastatr %>%
       select(id = id_player_nba, name = name_player, matches("ratio.*pm$")) %>%
-      rename_at(vars(matches("ratio.*pm$")), funs(str_remove(., "ratio_")))
+      rename_at(vars(matches("ratio.*pm$")), funs(str_remove(., "ratio_"))) %>%
+      .rank_arrange(col = "bpm")
+
     .export_data_from_path(
       ...,
-      season = season,
       data = res,
       path = path
     )
@@ -240,14 +251,29 @@
 
 # Note that this is also different since it depends on `players_summary_compare`
 # already existing.
-.get_players_pm <-
-  function(..., path) {
-    players_summary_compare <- .try_import_players_summary_compare(...)
+.get_pm_nbastatr <-
+  function(..., path_players_summary_compare = config$path_players_summary_compare, path) {
+
+    players_summary_compare <-
+      .import_data_from_path(
+        ...,
+        path = path_players_summary_compare
+      )
     res <-
-      players_summary_compare
+      players_summary_compare %>%
+      select(
+        id = id_player,
+        name = name_player,
+        gp_calc,
+        poss_both_calc,
+        mp_both_calc,
+        pm_calc,
+        pm_nbastatr
+      ) %>%
+      .rank_arrange(col = "pm_nbastatr")
+
     .export_data_from_path(
       ...,
-      season = season,
       data = res,
       path = path
     )

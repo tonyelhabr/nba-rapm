@@ -1,6 +1,6 @@
 default:
-
-  # Note to self: Change the sub-folders of `dump/`. (It's too "verbose".)
+  
+  # `clean_pbp()`.
   path_pbp_raw:
     default: 'input/play_by_play_with_lineup.csv'
     help: 'Path format of raw play-by-play data file to clean.'
@@ -38,7 +38,7 @@ default:
     help: 'Path format of parsed AND cleaned raw play-by-play data.'
     
     
-    
+  # `fit_models()` and `tidy_models()`.
   path_poss_long_error_side:
     default: 'output/data/dump/poss_long_error.csv'
     help: 'Path format of '
@@ -62,13 +62,13 @@ default:
     help: 'Path format of RAPM model fitted for offensive/defensive possession data.'
   path_apm_model_side:
     default: 'output/data/dump/apm_model.rds'
-    help: 'TODO'
+    help: ''
   path_rapm_coefs_side:
     default: 'output/data/dump/rapm_coefs.csv'
     help: 'Path format of final player-specific offensive/defensive RAPM coefficients.'
   path_apm_coefs_side:
     default: 'output/data/dump/apm_coefs.csv'
-    help: 'TODO'
+    help: ''
   # path_rapm_coefs_var_side:
   #   default: 'output/data/dump/rapm_coefs_var.csv'
   #   help: 'Path format of RAPM model coefficent variance values.'
@@ -77,13 +77,20 @@ default:
     help: 'Path format of final combined offensive and defensive RAPM coefficients.'
   path_apm_coefs_calc:
     default: 'output/data/dump/apm_coefs.csv'
-    help: 'TODO'
+    help: ''
   path_metrics_join:
     default: 'output/data/metrics_join.csv'
     help: ''
 
-
-
+  
+  # `analyze_models()`.
+  path_metrics_join_summary:
+    default: 'output/data/metrics_join_summary.csv'
+    help: ''
+  path_viz_metrics_join_summary:
+    default: 'output/figs/viz_metrics_join_summary.png'
+    help: ''
+  # TODO: Haven't worked on these in a while...
   path_metrics_cors:
     default: 'output/data/metrics_cors.csv'
     help: ''
@@ -102,7 +109,7 @@ default:
 
 
 
-  # Supplementary/meta project information (`analyze` and profiling)
+  # Supplementary/meta project information (profiling).
   path_proj_profile:
     default: 'output/data/misc/proj_profile.rds'
     help: 'Path format of a profile (i.e. timing/execution order of functions)
@@ -115,7 +122,7 @@ default:
 
 
 
-  # Static data.
+  # Static data (mostly from `download*()`).
   path_teams_nbastatr:
     default: 'output/data/static/teams_nbastatr.csv'
     help: 'Path format of team data to export.

@@ -109,7 +109,7 @@
     if (ext == "") {
      .display_error(
        glue::glue(
-         "Bad path name ({usethis::ui_path(path)}). Should include a recognizable file extension."
+         "Bad path name ({crayon::yellow(path)}). Should include a recognizable file extension."
        ),
        ...
      )
@@ -140,7 +140,7 @@
     if(!dir.exists(dir)) {
       invisible(dir.create(dir, recursive = TRUE))
       .display_info(
-        glue::glue("Created {usethis::ui_path(dir)} at {Sys.time()}."),
+        glue::glue("Created {crayon::yellow(dir)} at {Sys.time()}."),
         ...
       )
     }
@@ -185,9 +185,9 @@
            # for `.export_*()`. In reality, `skip` is used before this function
            # is ever called, so `import` is irrelevant.
            import = TRUE,
-           # This `return_type` argument was created spcifically for the `.try_import*nbastatr()`
+           # This `.return_type` argument was created spcifically for the `.try_import*nbastatr()`
            # family of functions, which depends on NOT throwing an error if the file does not exist.
-           return_type = c("error", "warning")) {
+           .return_type = c("error", "warning")) {
     if(!import) {
       return(invisible(NULL))
     }
@@ -195,11 +195,11 @@
     # browser()
     path <- .get_path_from(..., path = path)
     if(!file.exists(path)) {
-      return_type <- match.arg(return_type)
+      .return_type <- match.arg(.return_type)
       f_display <-
-        switch(return_type, error = .display_error, warning = .display_warning)
+        switch(.return_type, error = .display_error, warning = .display_warning)
       f_display(
-        glue::glue("No file at {usethis::ui_path(path)} exists."),
+        glue::glue("No file at {crayon::yellow(path)} exists."),
         ...
       )
       return(invisible(NULL))
@@ -217,8 +217,8 @@
     #   )
     .display_info(
       glue::glue(
-        "{crayon::green('Imported')} data from {usethis::ui_path(path)}."
-        # "Imported data from {usethis::ui_path(path)}."# ,
+        "{crayon::green('Imported')} data from {crayon::yellow(path)}."
+        # "Imported data from {crayon::yellow(path)}."# ,
         # " (Last modification at {path_info$modification_time})."
         # "{diff_time0}."
         # " (Last modification: {diff_time} min. ago)."
@@ -280,8 +280,8 @@
         path = path
       )
     .display_info(
-      # glue::glue("Exported data to {usethis::ui_path(path)}."),
-      glue::glue("{crayon::red('Exported')} data to {usethis::ui_path(path)}."),
+      # glue::glue("Exported data to {crayon::yellow(path)}."),
+      glue::glue("{crayon::red('Exported')} data to {crayon::yellow(path)}."),
       ...
     )
     invisible(path_export)
@@ -300,7 +300,7 @@
       .display_info(
         glue::glue(
           "Backup file at {path_backup} cannot be created because file ",
-          "to copy at {usethis::ui_path(path)} cannot be found."
+          "to copy at {crayon::yellow(path)} cannot be found."
         ),
         ...
       )
@@ -319,7 +319,7 @@
     invisible(file.copy(from = path, to = path_backup))
     .display_info(
       glue::glue(
-        "Backed up file at {path_backup} before exporting data to {usethis::ui_path(path)}."
+        "Backed up file at {path_backup} before exporting data to {crayon::yellow(path)}."
         ),
       ...
     )

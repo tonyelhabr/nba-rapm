@@ -8,7 +8,7 @@
            f_import = .import_data_from_path,
            f_get) {
 
-    res <- attempt::try_catch(expr = f_import(..., path = path, return_type = "warning"), .e = NULL)
+    res <- attempt::try_catch(expr = f_import(..., path = path, .return_type = "warning"), .e = NULL)
 
     if(!is.null(res)) {
       return(res)
@@ -18,7 +18,8 @@
       glue::glue("Could not get data with `f_import`. Trying `f_get`."),
       ...
     )
-    res <- attempt::try_catch(expr = f_get(..., path = path, return_type = "warning"), .e = NULL)
+
+    res <- attempt::try_catch(expr = f_get(..., path = path, .return_type = "warning"), .e = NULL)
 
     if(!is.null(res)) {
       return(res)
@@ -34,7 +35,7 @@
 # Not sure if I should use this or just wrap each call with `memoise::memoise()`.
 # .try_import_thing_memoise <- memoise::memoise(.try_import_thing)
 .try_import_players_nbastatr <-
-  memoise::memoise(
+  # memoise::memoise(
     function(...) {
       .try_import_thing(
         ...,
@@ -42,10 +43,10 @@
         path = config$path_players_nbastatr
       )
     }
-  )
+  # )
 
 .try_import_teams_nbastatr <-
-  memoise::memoise(
+  # memoise::memoise(
     function(...) {
       .try_import_thing(
         ...,
@@ -53,10 +54,10 @@
         path = config$path_teams_nbastatr
       )
     }
-  )
+  # )
 
 .try_import_players_game_logs_nbastatr <-
-  memoise::memoise(
+  # memoise::memoise(
     function(...) {
       .try_import_thing(
         ...,
@@ -64,10 +65,10 @@
         path = config$path_players_game_logs_nbastatr
       )
     }
-  )
+  # )
 
 .try_import_teams_game_logs_nbastatr <-
-  memoise::memoise(
+  # memoise::memoise(
     function(...) {
       .try_import_thing(
         ...,
@@ -75,10 +76,10 @@
         path = config$path_teams_game_logs_nbastatr
       )
     }
-  )
+  # )
 
 .try_import_players_summary_nbastatr <-
-  memoise::memoise(
+  # memoise::memoise(
     function(...) {
       .try_import_thing(
         ...,
@@ -86,10 +87,10 @@
         path = config$path_players_summary_nbastatr
       )
     }
-  )
+  # )
 
 .try_import_teams_summary_nbastatr <-
-  memoise::memoise(
+  # memoise::memoise(
     function(...) {
       .try_import_thing(
         ...,
@@ -97,10 +98,10 @@
         path = config$path_teams_summary_nbastatr
       )
     }
-  )
+  # )
 
 .try_import_bpm_nbastatr <-
-  memoise::memoise(
+  # memoise::memoise(
     function(...) {
       .try_import_thing(
         ...,
@@ -108,20 +109,20 @@
         path = config$path_bpm_nbastatr
       )
     }
-  )
+  # )
+
+.try_import_pm_nbastatr <-
+  # memoise::memoise(
+    function(...) {
+      .try_import_thing(
+        ...,
+        f_get = .get_pm_nbastatr,
+        path = config$path_pm_nbastatr
+      )
+    }
+  # )
 
 # non-nbastatr, with `f_get` ----
-
-.try_import_proj_profile <-
-  function(...) {
-    .try_import_thing(
-      ...,
-      validate = FALSE, # Because this is not associated with a season.
-      f_get = .get_proj_profile,
-      path = config$path_proj_profile
-    )
-  }
-
 .try_import_metrics_cors_grid <-
   function(...) {
     .display_warning(
@@ -165,7 +166,7 @@
     }
 
 .try_import_rapm_sz <-
-  memoise::memoise(
+  # memoise::memoise(
     function(...) {
       .try_import_thing(
         ...,
@@ -174,10 +175,10 @@
         path = config$path_rapm_sz
       )
     }
-  )
+  # )
 
 .try_import_rpm_espn <-
-  memoise::memoise(
+  # memoise::memoise(
     function(...) {
       .try_import_thing(
         ...,
@@ -186,7 +187,7 @@
         path = config$path_rpm_espn
       )
     }
-  )
+  # )
 
 
 .try_import_players_summary_compare <-

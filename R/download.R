@@ -47,7 +47,7 @@
     .display_info(
       glue::glue(
         "{n_paths} files succesfully downloaded and unzipped to ",
-        "{usethis::ui_path(dir)} for `id = {id}`."
+        "{crayon::yellow(dir)} for `id = {id}`."
         ),
       ...
     )

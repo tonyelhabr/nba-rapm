@@ -8,7 +8,7 @@ auto_main <-
       ...,
       skip = FALSE
     )
-    auto_prepare_models(
+    auto_prep_models(
       ...,
       scale = FALSE,
       collapse = TRUE,
@@ -24,9 +24,12 @@ auto_main <-
       # lambda_d = 500,
       skip = FALSE
     )
-    auto_extract_coefs(
+    auto_tidy_models(
       ...,
       skip = FALSE
+    )
+    auto_analyze_models(
+      ...
     )
     # auto_unregister_cores()
     # options(width = width_old)

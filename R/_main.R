@@ -3,6 +3,7 @@
 # C:/Users/aelhabr/Documents/R/R-3.4.4/bin/Rscript.exe "C:/Users/aelhabr/Documents/projects/nba-rapm/_main.R" --season 2015
 # C:/Users/aelhabr/Documents/R/R-3.4.4/bin/Rscript.exe "C:/Users/aelhabr/Documents/projects/nba-rapm/_main.R" --verbose FALSE
 
+# Prevent this from being sourced.
 if(FALSE) {
   dir_proj <- "C:/Users/aelhabr/Documents/projects/nba-rapm"
   if(!dir.exists(dir_proj)) {

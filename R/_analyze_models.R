@@ -1,4 +1,5 @@
 
+# to update, start ----
 .compare_metrics <-
   function(...,
            path_metrics_join = config$path_metrics_join,
@@ -10,8 +11,6 @@
       )
   }
 
-.METRIC_SRC <- c("rapm_calc", "rapm_both_calc", "rapm_sz", "rpm_espn", "rpm_rd", "bpm_nbastatr")
-.SRC <- c("calc", "sz", "espn", "rd", "nbastatr")
 .create_rgx <-
   function(x) {
     paste0("(", paste(x, collapse = ")|(", sep = ""), ")") %>%
@@ -93,7 +92,7 @@
       mutate(idx_grp = row_number()) %>%
       select(idx_grp, everything())
     f_clean <- memoise::memoise(auto_clean_pbp)
-    f_reshape <- memoise::memoise(auto_reshape_pbp)
+    f_prep <- memoise::memoise(auto_reshape_pbp)
 
     if (progress) {
       .pb <- .create_pb(total = nrow(params_grid))
@@ -106,12 +105,12 @@
       ),
       .f = ~ {
         .display_auto_step(glue::glue("{.season}, {.poss_min}, {.lambda_o}, {.lambda_d}"))
-        f_clean(# auto_clean_pbp(
+        f_clean(
           season = .season,
           # skip = FALSE
           skip = TRUE
         )
-        f_reshape(# auto_reshape_pbp(
+        f_prep(
           season = .season,
           poss_min = .poss_min,
           skip = FALSE
@@ -124,7 +123,7 @@
           lambda_d = .lambda_d,
           optimize = FALSE
         )
-        auto_extract_rapm_coefs(
+        auto_tidy_models(
           season = .season,
           skip = FALSE
         )
@@ -191,7 +190,7 @@
         tetidy::pull_distinctly(poss_min) %>%
         max()
       .display_info(
-        glue::glue("Setting {usethis::ui_field('poss-min')} to {usethis::ui_value(poss_min)}."),
+        glue::glue("Setting `poss_min` to {crayon::yellow(poss_min)}."),
         ...
       )
     }
@@ -214,8 +213,6 @@
     #     x = "alpha",
     #     y = "log10(lambda)"
     #   )
-    # viz_summ_glmnet
-    # Colors reference: https://github.com/drsimonj/corrr/blob/master/R/cor_df.R
     viz <-
       metrics_cors_grid %>%
       filter(src1 == !!src1) %>%
@@ -257,31 +254,215 @@
         data = viz,
         path_viz_metrics_cors_grid = path_viz_metrics_cors_grid
       )
-    # viz
+    viz
+  }
+# to update, end ----
+.unnest_grid_broom <-
+  function(data, value) {
+    value <- ensym2(value)
+    data %>%
+      select(y, x, data) %>%
+      unnest(data) %>%
+      select(y, x, !!value)
+  }
+
+.broomify_grid <-
+  function(data, f, ..., col_unnest = "fit", col_out = "data") {
+    col_unnest <- ensym2(col_unnest)
+    col_out <- ensym2(col_out)
+    data %>%
+      mutate(data = purrr::pmap(list(fit), ~f(..1))) %>%
+      .unnest_grid_broom(...)
+  }
+
+# .tabularize_grid_broom <-
+#   function(data, value) {
+#     value <- ensym2(value)
+#     data %>%
+#       .unnest_grid_broom(!!value) %>%
+#       spread(x, !!value)
+#   }
+
+# Note: Intended for this to work with both `broom::tidy()` and
+# `broom::glance()` output formats.
+.visualize_grid_broom <-
+  function(data, value, upper = FALSE, limits = c(-1, 1)) {
+
+    if(!upper) {
+      data <-
+        data %>%
+        filter(y < x)
+    }
+
+    value <- ensym2(value)
+    data %>%
+      ggplot(aes(x = x, y = y, fill = !!value)) +
+      geom_tile(alpha = 0.75) +
+      geom_text(aes(label = round(!!value, 2), size = !!value)) +
+      # Colors reference: https://github.com/drsimonj/corrr/blob/master/R/cor_df.R
+      # scale_fill_gradientn(
+      #   limits = limits,
+      #   # colors = rev(c("indianred2", "white", "skyblue1"))
+      #   colors = c("red", "white", "green")
+      # ) +
+      # scico::scale_fill_scico(
+      #   limits = limits,
+      #   direction = -1,
+      #   palette = "roma"
+      # ) +
+      viridis::scale_fill_viridis(
+        limits = limits,
+        direction = 1,
+        option = "E"
+      ) +
+      # coord_equal() +
+      guides(size = FALSE) +
+      teplot::theme_te(base_size = 11.5) +
+      theme(
+        axis.text.x = element_text(angle = 90, hjust = 1),
+        # legend.position = "none",
+        legend.position = "bottom",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+      ) +
+      labs(
+        x = NULL,
+        y = NULL,
+        caption = "By Tony ElHabr."
+      )
+  }
+
+
+.visualize_metrics_join_summary <-
+  function(...,
+           metrics_join_summary,
+           season,
+           path_viz_metrics_join_summary = config$path_viz_metrics_join_summary) {
+
+    subtitle <- sprintf("%04d NBA Season", season)
+    caption <-
+      paste0(
+        "By Tony ElHabr.\n",
+        "\n",
+        "Terminology:\n",
+        "`apm` = Adjusted Plus-Minus (PM); ",
+        "`bpm` = Box Score PM; ",
+        "`rapm` = Regularized Adjusted PM.\n",
+        "\n",
+        "`o/d` prefix = offensive/defensive;\n",
+        "`both` = calculated without splitting offense and defense.\n",
+        "`calc` = self-calculated (in this project);\n",
+        "`nbastatr` = derived from `{nbastatR}` package (created by A. Bresler);\n",
+        "`espn` = scraped from ESPN (credits to Jeremias Engelmann);\n",
+        "`sz` = scraped from http://basketball-analytics.gitlab.io/rapm-data/ ",
+        "website (created S. Zou)."
+      )
+
+    viz <-
+      metrics_join_summary %>%
+      .visualize_grid_broom(adj.r.squared) +
+      labs(
+        title = "Pair-wise % Explained (Adjusted R-Squared) of Metrics",
+        subtitle = subtitle,
+        caption = caption
+      )
+
+    .export_data_from_path(
+      ...,
+      data = viz,
+      season = season,
+      path = path_viz_metrics_join_summary,
+      units = "in",
+      height = 10,
+      width = 8
+    )
     viz
   }
 
-.analyze_rapm_coefs <-
+.compare_metrics_join_summary <-
+  function(...,
+           path_metrics_join = config$path_metrics_join,
+           path_metrics_join_summary = config$path_metrics_join_summary) {
+
+    metrics_join <-
+      .import_data_from_path(
+        ...,
+        path = path_metrics_join
+      )
+
+    cols_all <- metrics_join %>% names()
+    cols_rank <-
+      cols_all %>%
+      str_subset("rank")
+    cols_metric <-
+      cols_all %>%
+      str_subset("pm") %>%
+      setdiff(cols_rank)
+
+    grid_fmlas <-
+      crossing(
+        y = cols_metric,
+        x = cols_metric
+      )
+
+    grid_fits <-
+      grid_fmlas %>%
+      filter(x != y) %>%
+      mutate(fit =
+               purrr::pmap(list(y, x),
+                           ~lm(formula = formula(paste0(..1, " ~ ", ..2, " + 0")),
+                               data = metrics_join)
+               )
+      )
+    # grid_coefs <-
+    #   grid_fits %>%
+    #   .broomify_grid(broom::tidy, estimate) %>%
+    #   filter(!str_detect(y, "^pm")) %>%
+    #   arrange(desc(estimate))
+    # grid_coefs
+
+    metrics_join_summary  <-
+      grid_fits %>%
+      .broomify_grid(broom::glance, adj.r.squared) %>%
+      arrange(desc(adj.r.squared))
+
+
+    viz_metrics_join_summary <-
+      .visualize_metrics_join_summary(
+        ...,
+        metrics_join_summary = metrics_join_summary
+      )
+
+    .export_data_from_path(
+      ...,
+      data = metrics_join_summary,
+      path = path_metrics_join_summary
+    )
+    metrics_join_summary
+  }
+
+.analyze_models <-
   function(...) {
-    .summarise_metrics_cors(...)
-    .visualize_metrics_cors(...)
+    # .summarise_metrics_cors(...)
+    # .visualize_metrics_cors(...)
+    .compare_metrics_join_summary(...)
   }
 
 # This is primarily so that this step can/will be caught by the function(s)
 # to analyze profiling information.
-auto_analyze_rapm_coefs <-
+auto_analyze_models <-
   function(...,
            season = config$season,
-           # skip = config$skip,
+           skip = config$skip,
            verbose = config$verbose,
            export = config$export,
            backup = config$backup,
            clean = config$clean,
            n_keep = config$n_keep) {
-    .analyze_rapm_coefs(
+    .analyze_models(
       ...,
       season = config$season,
-      # skip = config$skip,
+      skip = config$skip,
       verbose = config$verbose,
       export = config$export,
       backup = config$backup,

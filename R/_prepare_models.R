@@ -266,6 +266,13 @@
       mutate(n_poss = 1) %>%
       select(pts, n_poss, everything())
 
+    n_row <- poss_wide_side %>% nrow()
+    n_col <- poss_wide_side %>% ncol()
+    .display_info(
+      glue::glue("Wide data dimensions: {scales::comma(n_row)} x {n_col}."),
+      ...
+    )
+
     poss_wide_side <-
       .collapse_poss_wide_side(
         ...,
@@ -325,6 +332,9 @@
         poss_long_d
       )
 
+    poss_long_o %>% count(rn)
+    poss_long_both %>%
+      count(rn)
     poss_wide_both <-
       .convert_to_poss_wide_side(
         ...,
@@ -333,7 +343,7 @@
       )
   }
 
-.prepare_models <-
+.prep_models <-
   function(...) {
 
     .display_auto_step(
@@ -369,7 +379,7 @@
     invisible()
   }
 
-auto_prepare_models <-
+auto_prep_models <-
   function(...,
            season = config$season,
            poss_min = config$poss_min,
@@ -384,7 +394,7 @@ auto_prepare_models <-
            clean = config$clean,
            n_keep = config$n_keep) {
 
-    .prepare_models(
+    .prep_models(
       ...,
       season = season,
       poss_min = poss_min,

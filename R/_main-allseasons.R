@@ -9,20 +9,13 @@ if(FALSE) {
   combine_rpm_espn()
   combine_rapm_sz()
 
-  # process ----
+  # main ----
   # This is the "meat".
   download_pbp_raw_files(overwrite = FALSE)
-  # main_auto()
-
-  # analyze ----
-  # This takes a while, so it's not vectorized across all seasons (yet).
-  visualize_proj_profile()
-  auto_analyze_rapm_coefs()
-
+  auto_main()
 
   # post-process ----
-  # combine_players_summary_compare()
-  combine_rapm_coefs()
+  # visualize_proj_profile()
 }
 
 

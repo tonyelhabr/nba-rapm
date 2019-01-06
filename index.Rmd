@@ -2,4 +2,4 @@
 title: "Index"
 ---
 
-This is a dummy home page.
+Please navigate to the other pages to see more about this project.

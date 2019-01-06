@@ -49,15 +49,14 @@ visualize_proj_profile()
 
 # Highlights
 
-A visual comparison of various RAPM-related metrics, either calculated
-in this project (i.e. `cacl`) or retrieved from an external source.
+Below is a visual comparison of various RAPM-related metrics, either
+calculated in this project (i.e. `cacl`) or retrieved from an external
+source.
 
 ![](data/final/viz_metrics_join_summary_2017.png)
 
 The data behind the
 visual.
-
-    ## Imported data from data/final/metrics_join_summary_2017.csv.
 
 | y                | apm\_calc | bpm\_nbastatr | dbpm\_nbastatr | drapm\_calc |   drapm\_sz |  drpm\_espn | obpm\_nbastatr | orapm\_calc |   orapm\_sz |  orpm\_espn | pm\_nbastatr | rapm\_both\_calc | rapm\_calc |  rapm\_sz | rpm\_espn |
 | :--------------- | --------: | ------------: | -------------: | ----------: | ----------: | ----------: | -------------: | ----------: | ----------: | ----------: | -----------: | ---------------: | ---------: | --------: | --------: |

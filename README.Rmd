@@ -59,8 +59,8 @@ visualize_proj_profile()
 
 # Highlights
 
-A visual comparison of various RAPM-related metrics, either calculated in this
-project (i.e. `cacl`) or retrieved from an external source.
+Below is a visual comparison of various RAPM-related metrics, 
+either calculated in this project (i.e. `cacl`) or retrieved from an external source.
 
 ![](data/final/viz_metrics_join_summary_2017.png)
 
@@ -69,6 +69,7 @@ The data behind the visual.
 ```{r metrics_join_summary, echo = FALSE}
 metrics_join_summary <-
   .import_data_from_path(
+    verbose = FALSE,
     season = .SEASON,
     path = config$path_metrics_join_summary
   )

@@ -3,6 +3,7 @@
 # + https://bookdown.org/yihui/rmarkdown/pdf-document.html#syntax-highlighting
 
 name: "Tony's NBA RAPM Project"
+output_dir: "."
 navbar:
   title: "My Website"
   type: inverse

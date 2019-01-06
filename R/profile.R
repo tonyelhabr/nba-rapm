@@ -13,10 +13,10 @@
     #     data = pd,
     #     path = path
     #   )
-    invisible(pd)
+    pd
   }
 
-.extract_proj_funcs <-
+.extract_proj_profile <-
   function(...) {
     pd <- .try_import_proj_profile(...)
     funcs <- lsf.str(all.names = TRUE, envir = .GlobalEnv) %>% c()
@@ -59,8 +59,8 @@
     proj_funcs
   }
 
-visualize_proj_funcs <- function(..., path_proj_funcs = config$path_viz_proj_funcs) {
-  proj_funcs <- .extract_proj_funcs(...)
+visualize_proj_profile <- function(..., path_proj_profile = config$path_viz_proj_profile) {
+  proj_funcs <- .extract_proj_profile(...)
   n_func_grps <- nrow(proj_funcs)
   # # Maybe `cli::tree()` using something like...
   # proj_funcs %>%
@@ -94,11 +94,11 @@ visualize_proj_funcs <- function(..., path_proj_funcs = config$path_viz_proj_fun
       season = NULL,
       validate = FALSE,
       data = viz,
-      path = path_proj_funcs,
+      path = path_proj_profile,
       units = "in",
       height = 7,
       width = 9
     )
-  # invisible(viz)
+  # viz
   viz
 }

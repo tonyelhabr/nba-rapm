@@ -7,19 +7,20 @@
 ..filter_pbp1 <-
   function(...,
            pbp,
-           players_summary_calc,
+           players_summary_compare,
            poss_min = .POSS_MIN,
            gp_min = .GP_MIN,
            mp_min = .MP_MIN) {
-    players_summary_calc_filt <-
-      players_summary_calc %>%
+    players_summary_compare_filt <-
+      players_summary_compare %>%
       filter(
-        poss_calc_total < poss_min |
-          gp_calc_total < gp_min |
-          mp_calc_total < mp_min
+        poss_both_calc < poss_min |
+          gp_calc < gp_min |
+          mp_both_calc < mp_min
       )
+
     pbp %>%
-      anti_join(players_summary_calc_filt, by = "id_player") %>%
+      anti_join(players_summary_compare_filt, by = "id_player") %>%
       group_by(rn) %>%
       filter(n() == 10L) %>%
       ungroup()
@@ -31,19 +32,19 @@
 ..filter_pbp2 <-
   function(...,
            pbp,
-           players_summary_calc,
+           players_summary_compare,
            poss_min = .POSS_MIN,
            gp_min = .GP_MIN,
            mp_min = .MP_MIN) {
-    players_summary_calc_filt <-
-      players_summary_calc %>%
+    players_summary_compare_filt <-
+      players_summary_compare %>%
       filter(
-        poss_calc_total >= poss_min,
-        gp_calc_total >= gp_min,
-        mp_calc_total >= mp_min
+        poss_both_calc >= poss_min,
+        gp_calc >= gp_min,
+        mp_both_calc >= mp_min
       )
     pbp %>%
-      semi_join(players_summary_calc_filt, by = "id_player")
+      semi_join(players_summary_compare_filt, by = "id_player")
   }
 
 # + It is worth separating this into its own function so that the `*min` parameters
@@ -55,15 +56,15 @@
 # has been created to have the "original" filtering implementation.
 # + Make the function "flexibile/dynamic" with `NULL` parameters.
 # Do this so that this function can be used
-# (i.e. outside the parent `reshape*()` function, where `players_summary_calc`
+# (i.e. outside the parent `reshape*()` function, where `players_summary_compare`
 # may not be calculated immediately before hand).
 # + May or may not actually use `side` in some of the following functions.
 .filter_pbp <-
   function(...,
            # pbp = NULL,
            path_pbp = config$path_pbp,
-           # path_players_summary_calc = NULL,
-           path_players_summary_calc = config$path_players_summary_calc){
+           # path_players_summary_compare = NULL,
+           path_players_summary_compare = config$path_players_summary_compare){
 
     # if(is.null(pbp))
     pbp <-
@@ -72,23 +73,24 @@
         path = path_pbp
       )
 
-    players_summary_calc <-
+    players_summary_compare <-
       .import_data_from_path(
         ...,
-        path = path_players_summary_calc
+        side = NULL,
+        path = path_players_summary_compare
       )
     n_row_before <- pbp %>% nrow()
     # pbp <-
     #   ..filter_pbp1(
     #     ...,
     #     pbp = pbp,
-    #     players_summary_calc = players_summary_calc
+    #     players_summary_compare = players_summary_compare
     #   )
     pbp <-
       ..filter_pbp2(
         ...,
         pbp = pbp,
-        players_summary_calc = players_summary_calc
+        players_summary_compare = players_summary_compare
       )
 
     n_row_after <- pbp %>% nrow()
@@ -106,7 +108,8 @@
 
 .check_poss_long_side_dups <-
   function(...,
-           # side,
+           # "Catch" `side` to prevent it from being passed to `.try_import_players_nbastatr()`.
+           side,
            poss_long_side,
            path_poss_long_error_side = config$path_poss_long_error_side) {
 
@@ -115,59 +118,57 @@
       count(rn, xid_player, sort = TRUE) %>%
       filter(n > 1L)
 
-    n_dups <- poss_long_side_dups %>% nrow()
-    if(n_dups > 0L) {
-      .display_info(
-        glue::glue(
-          "There are {scales::comma(n_dups)} rows with more than 1 ",
-          "player-side-possession combination."
-        ),
-        ...
-      )
-
-      players_nbastatr <- .try_import_players_nbastatr(...)
-
-      poss_long_side_dups <-
-        poss_long_side_dups %>%
-        mutate(
-          id_player = xid_player %>% str_replace("^[od]", "") %>% as.integer()
-        ) %>%
-        left_join(
-          players_nbastatr %>% select(id_player, name_player),
-          by = c("id_player")
-        )
-
-      path_export <-
-        .export_data_from_path(
-          ...,
-          # side = side,
-          data = poss_long_side_dups,
-          path = path_poss_long_error_side
-        )
-    }
+    # # Note: Taking this out because it's sort of verbose.
+    # n_dups <- poss_long_side_dups %>% nrow()
+    # if(n_dups > 0L) {
+    #   .display_info(
+    #     glue::glue(
+    #       "There are {scales::comma(n_dups)} rows with more than 1 ",
+    #       "player-side-possession combination."
+    #     ),
+    #     ...
+    #   )
+    #
+    #   players_nbastatr <- .try_import_players_nbastatr(...)
+    #
+    #   poss_long_side_dups <-
+    #     poss_long_side_dups %>%
+    #     mutate(
+    #       id_player = xid_player %>% str_replace("^[od]", "") %>% as.integer()
+    #     ) %>%
+    #     left_join(
+    #       players_nbastatr %>% select(id_player, name_player),
+    #       by = c("id_player")
+    #     )
+    #
+    #   path_export <-
+    #     .export_data_from_path(
+    #       ...,
+    #       # side = side,
+    #       data = poss_long_side_dups,
+    #       path = path_poss_long_error_side
+    #     )
+    # }
     poss_long_side_dups
-  }
-
-.filter_side <-
-  function(pbp, side, ...) {
-    pbp %>% filter(side == !!side)
   }
 
 .convert_to_poss_long_side <-
   function(...,
-           # side,
+           # Need `side` here (for `dummy`).
+           side,
            pbp,
            path_poss_long_side = config$path_poss_long_side) {
+
     poss_long_side <-
       pbp %>%
-      .filter_side(...) %>%
+      filter(side == !!side) %>%
       mutate(xid_player = sprintf("%s%07d", side, as.integer(id_player)))
 
     poss_long_side_dups <-
       poss_long_side %>%
       .check_poss_long_side_dups(
         ...,
-        # side = side,
+        side = side,
         poss_long_side = poss_long_side
       )
 
@@ -178,31 +179,18 @@
       anti_join(poss_long_side_dups, by = c("rn", "xid_player")) %>%
       arrange(rn, xid_player) %>%
       mutate(dummy = .dummy) %>%
-      select(rn, pts, pk, xid_player, dummy)
+      select(rn, pts, pk, id_game, half, period, xid_player, dummy)
 
     path_export <-
       .export_data_from_path(
         ...,
-        # side = side,
+        side = side,
         data = poss_long_side,
         path = path_poss_long_side
       )
     poss_long_side
   }
 
-# This is useful just to separate functionality.
-# Maybe change this so that it doesn't accept `...`, since it's not intended
-# to "catch" anything (e.g. `side`). This is how `.summarise_poss_wide_side()`
-# is written. (The downside is that the calling function has to know that
-# it can't pass extra arguments.)
-# .widen_poss_long_side <- function(...)
-
-# cols_summ <- c("cyl", "carb")
-# cols_grp <- mtcars %>% names() %>% setdiff(cols_summ)
-# cols_summ <- syms(cols_summ)
-# mtcars %>% group_by_at(vars(!!!cols_summ))
-
-# This is useful to "abstract away" `collapse`.
 .collapse_poss_wide_side <-
   function(...,
            # side,
@@ -222,18 +210,21 @@
     }
     if(collapse) {
       # Do something less "hard-coded" here?
+      # Do/don't group by `game`/`half`? (Was NOT originally).
       poss_wide_side <-
         poss_wide_side %>%
-        # mutate(n_poss = 1) %>%
-        # select(pts, n_poss, everything()) %>%
         group_by_at(vars(-pts, -n_poss)) %>%
+        # group_by_at(vars(-id_game, -half, -period, -pts, -n_poss)) %>%
         summarise_at(vars(pts, n_poss), funs(sum)) %>%
         ungroup()
     }
 
+    # If `scale = TRUE`, then don't use an actual version of `pp100poss`.
+    # (Use `pts`/`poss` instead.)
+    .scale_factor <- ifelse(scale, 1L, 100L)
     poss_wide_side %>%
       # select(pts, n_poss, everything()) %>%
-      mutate(pp100poss = 100 * pts / n_poss) %>%
+      mutate(pp100poss = .scale_factor * pts / n_poss) %>%
       # mutate(pp100poss = pts / n_poss) %>%
       select(pp100poss, pts, n_poss, everything())
   }
@@ -293,15 +284,6 @@
     poss_wide_side
   }
 
-.collapse_poss_wide_od <-
-  function(..., poss_wide_od) {
-    .collapse_poss_wide_side(
-      ...,
-      side = NULL,
-      poss_wide_side = poss_wide_od
-    )
-  }
-
 .convert_to_poss_side <-
   function(..., pbp) {
 
@@ -319,8 +301,9 @@
     poss_wide_side
   }
 
-.convert_to_poss_od <-
+.convert_to_poss_both <-
   function(..., pbp, path_poss_long_side = config$path_poss_long_side) {
+
     # Note that it doesn't seem easier to re-create these with `.convert_to_poss_long_side()`.
     poss_long_o <-
       .import_data_from_path(
@@ -334,30 +317,27 @@
         side = "d",
         path = path_poss_long_side
       )
-    poss_long_od <-
+
+    # Is binding really what should be done here? (Update: Yes.)
+    poss_long_both <-
       bind_rows(
         poss_long_o,
         poss_long_d
       )
-    poss_wide_side <-
-      .convert_to_poss_wide(
+
+    poss_wide_both <-
+      .convert_to_poss_wide_side(
         ...,
-        side = NULL,
-        poss_long_side = poss_long_od
+        side = "both",
+        poss_long_side = poss_long_both
       )
   }
 
-
-# ..prepare_rapm_models.tibble <-
-#   function(...) {
-#
-#   }
-
-.prepare_rapm_models <-
+.prepare_models <-
   function(...) {
 
     .display_auto_step(
-      glue::glue("Preparing data for RAPM models."),
+      glue::glue("Preparing data for modelling."),
       ...
     )
 
@@ -380,21 +360,16 @@
         pbp = pbp
       )
 
-    poss_od <-
-      .convert_to_poss_od(
+    poss_both <-
+      .convert_to_poss_both(
         ...,
         pbp = pbp
       )
 
-    invisible(
-      list(
-        poss_o = poss_o,
-        poss_d = poss_d
-      )
-    )
+    invisible()
   }
 
-auto_prepare_rapm_models <-
+auto_prepare_models <-
   function(...,
            season = config$season,
            poss_min = config$poss_min,
@@ -409,7 +384,7 @@ auto_prepare_rapm_models <-
            clean = config$clean,
            n_keep = config$n_keep) {
 
-    .prepare_rapm_models(
+    .prepare_models(
       ...,
       season = season,
       poss_min = poss_min,

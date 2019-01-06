@@ -1,38 +1,37 @@
 
-.compare_allinone_metrics <-
+.compare_metrics <-
   function(...,
-           path_rapm_coefs_join = config$path_rapm_coefs_join,
-           path_allinone_metrics_compare = config$path_allineone_metrics_compare) {
-    rapm_coefs_join <-
+           path_metrics_join = config$path_metrics_join,
+           path_metrics_compare = config$path_metrics_compare) {
+    metrics_join <-
       .import_data_from_path(
         ...,
-        path = path_rapm_coefs_join
+        path = path_metrics_join
       )
   }
 
-
-.SRC <- c("calc", "szou", "espn")
-.SRC_DEBUG <- c(.SRC, "nbastatr")
+.METRIC_SRC <- c("rapm_calc", "rapm_both_calc", "rapm_sz", "rpm_espn", "rpm_rd", "bpm_nbastatr")
+.SRC <- c("calc", "sz", "espn", "rd", "nbastatr")
 .create_rgx <-
   function(x) {
     paste0("(", paste(x, collapse = ")|(", sep = ""), ")") %>%
       str_replace_all("\\.", "[.]")
   }
 
-.correlate_rapm_coefs <-
+.correlate_metrics <-
   function(...,
-           path_rapm_coefs_join = config$path_rapm_coefs_join,
+           path_metrics_join = config$path_metrics_join,
            src = .SRC,
-           path_rapm_coefs_cors = config$path_rapm_coefs_cors) {
-    rapm_coefs_join <-
+           path_metrics_cors = config$path_metrics_cors) {
+    metrics_join <-
       .import_data_from_path(
         ...,
-        path = path_rapm_coefs_join
+        path = path_metrics_join
       )
 
     rgx_src <- src %>% .create_rgx()
     rapm_coefs_tidy <-
-      rapm_coefs_join %>%
+      metrics_join %>%
       gather(metric_src, value, matches(rgx_src)) %>%
       separate(metric_src, into = c("metric", "src"), sep = "_") %>%
       mutate_at(vars(src), funs(factor(., levels = !!src)))
@@ -45,7 +44,7 @@
       select_at(vars(matches(rgx_src))) %>%
       corrr::correlate(method = "spearman", quiet = TRUE)
 
-    rapm_coefs_cors <-
+    metrics_cors <-
       rapm_coefs_calcs %>%
       gather(src2, value, matches(rgx_src)) %>%
       rename(src1 = rowname) %>%
@@ -63,10 +62,10 @@
     path_export <-
       .export_data_from_path(
         ...,
-        data = rapm_coefs_cors,
-        path = path_rapm_coefs_cors
+        data = metrics_cors,
+        path = path_metrics_cors
       )
-    invisible(rapm_coefs_cors)
+    metrics_cors
   }
 
 # .SEQ_POSS_MIN <- seq(0, 5000, by = 5000)
@@ -74,14 +73,14 @@
 # .SEQ_LAMBDA <- seq(0, 1000, by = 1000)
 .SEQ_LAMBDA <- seq(0, 1000, by = 200)
 
-.get_rapm_coefs_cors_grid <-
+.get_metrics_cors_grid <-
   function(...,
            season = .SEASON,
            seq_poss_min = .SEQ_POSS_MIN,
            seq_lambda_o = .SEQ_LAMBDA,
            seq_lambda_d = .SEQ_LAMBDA,
            progress = TRUE,
-           path_rapm_coefs_cors_grid = config$path_rapm_coefs_cors_grid) {
+           path_metrics_cors_grid = config$path_metrics_cors_grid) {
 
     .validate_season(season)
     params_grid <-
@@ -99,7 +98,7 @@
     if (progress) {
       .pb <- .create_pb(total = nrow(params_grid))
     }
-    rapm_coefs_cors_grid_calcs <-
+    metrics_cors_grid_calcs <-
       params_grid %>%
       group_by(idx_grp) %>%
       mutate(results = purrr::pmap(list(
@@ -117,7 +116,7 @@
           poss_min = .poss_min,
           skip = FALSE
         )
-        auto_fit_rapm_models(
+        auto_fit_models(
           season = .season,
           skip = FALSE,
           # skip = TRUE,
@@ -129,17 +128,17 @@
           season = .season,
           skip = FALSE
         )
-        rapm_coefs_cors <-
-          .correlate_rapm_coefs(season = .season)
-        # print(coefs_cors)
+        metrics_cors <-
+          .correlate_metrics(season = .season)
+        # print(metrics_cors)
         if (!is.null(.pb)) {
           .pb$tick()
         }
-        rapm_coefs_cors
+        metrics_cors
       }))
 
-    rapm_coefs_cors_grid <-
-      rapm_coefs_cors_grid_calcs %>%
+    metrics_cors_grid <-
+      metrics_cors_grid_calcs %>%
       ungroup() %>%
       unnest(results) %>%
       rename_at(vars(matches("^\\.")), funs(str_remove(., "^\\."))) %>%
@@ -149,18 +148,18 @@
       .export_data_from_path(
         ...,
         season = season,
-        data = rapm_coefs_cors_grid,
-        path = path_rapm_coefs_cors_grid
+        data = metrics_cors_grid,
+        path = path_metrics_cors_grid
       )
-    invisible(rapm_coefs_cors_grid)
+    metrics_cors_grid
   }
 
-.summarise_rapm_coefs_cors <-
+.summarise_metrics_cors <-
   function(...,
-           path_rapm_coefs_cors_grid_summary = config$path_rapm_coefs_cors_grid_summary) {
-    rapm_coefs_cors_grid <- .try_import_rapm_coefs_cors_grid(...)
-    rapm_coefs_cors_grid_summary <-
-      rapm_coefs_cors_grid %>%
+           path_metrics_cors_grid_summary = config$path_metrics_cors_grid_summary) {
+    metrics_cors_grid <- .try_import_metrics_cors_grid(...)
+    metrics_cors_grid_summary <-
+      metrics_cors_grid %>%
       filter(src1 == "calc") %>%
       # spread(src2, value)
       group_by_at(vars(-idx_grp, -src2, -value)) %>%
@@ -173,22 +172,22 @@
     path_export <-
       .export_data_from_path(
         ...,
-        data = rapm_coefs_cors_grid_summary,
-        path_rapm_coefs_cors_grid_summary = path_rapm_coefs_cors_grid_summary
+        data = metrics_cors_grid_summary,
+        path_metrics_cors_grid_summary = path_metrics_cors_grid_summary
       )
-    invisible(path_rapm_coefs_cors_grid_summary)
+    path_metrics_cors_grid_summary
   }
 
-.visualize_rapm_coefs_cors <-
+.visualize_metrics_cors <-
   function(...,
            src1 = "calc",
-           src2 = "szou",
+           src2 = "sz",
            poss_min = NULL,
-           path_viz_rapm_coefs_cors_grid = config$path_viz_rapm_coefs_cors_grid) {
-    rapm_coefs_cors_grid <- .try_import_rapm_coefs_cors_grid(...)
+           path_viz_metrics_cors_grid = config$path_viz_metrics_cors_grid) {
+    metrics_cors_grid <- .try_import_metrics_cors_grid(...)
     if(is.null(poss_min)) {
       poss_min <-
-        rapm_coefs_cors_grid %>%
+        metrics_cors_grid %>%
         tetidy::pull_distinctly(poss_min) %>%
         max()
       .display_info(
@@ -218,7 +217,7 @@
     # viz_summ_glmnet
     # Colors reference: https://github.com/drsimonj/corrr/blob/master/R/cor_df.R
     viz <-
-      rapm_coefs_cors_grid %>%
+      metrics_cors_grid %>%
       filter(src1 == !!src1) %>%
       filter(src2 == !!src2) %>%
       filter(poss_min == !!poss_min) %>%
@@ -256,16 +255,16 @@
       .export_data_from_path(
         ...,
         data = viz,
-        path_viz_rapm_coefs_cors_grid = path_viz_rapm_coefs_cors_grid
+        path_viz_metrics_cors_grid = path_viz_metrics_cors_grid
       )
-    # invisible(viz)
+    # viz
     viz
   }
 
 .analyze_rapm_coefs <-
   function(...) {
-    .summarise_rapm_coefs_cors(...)
-    .visualize_rapm_coefs_cors(...)
+    .summarise_metrics_cors(...)
+    .visualize_metrics_cors(...)
   }
 
 # This is primarily so that this step can/will be caught by the function(s)

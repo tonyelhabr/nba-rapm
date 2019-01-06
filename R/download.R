@@ -6,12 +6,12 @@
 # and extracting the text after "id" using the online tool at
 # https://sites.google.com/site/gdocs2direct/.
 .ID_GOOGLEDRIVE_RAW_PLAY_BY_PLAY <- "1BmBC0EQCsvyCwRHybxm--IMWWVqWEAOu"
-.DIR_DATA_RAW <- "data-raw"
+.DIR_INPUT <- "input"
 .OVERWRITE_GOOGLEDRIVE <- FALSE
 .download_googledrive_files <-
   function(...,
            id = .ID_GOOGLEDRIVE_RAW_PLAY_BY_PLAY,
-           dir = .DIR_DATA_RAW,
+           dir = .DIR_INPUT,
            .overwrite = .OVERWRITE_GOOGLEDRIVE) {
 
     .create_dir_ifnecessary(..., dir = dir)
@@ -113,11 +113,11 @@ download_rpm_espn <-
       return(invisible(NULL))
     }
     res <- purrr::map(season, ~.download_rpm_espn(..., season = .x))
-    invisible(res)
+    res
   }
 
-download_rapm_szou <-
-  function(..., season = .SEASONS, path = config$path_rapm_szou) {
+download_rapm_sz <-
+  function(..., season = .SEASONS, path = config$path_rapm_sz) {
     paths_exist <-
       .check_dst_files_download(
         ...,
@@ -127,8 +127,8 @@ download_rapm_szou <-
     if(paths_exist) {
       return(invisible(NULL))
     }
-    res <- purrr::map(season, ~.download_rapm_szou(..., season = .x))
-    invisible(res)
+    res <- purrr::map(season, ~.download_rapm_sz(..., season = .x))
+    res
   }
 
 # download-combine ----
@@ -142,7 +142,7 @@ download_rapm_szou <-
 #         ...,
 #         path = path
 #       )
-#     invisible(res)
+#     res
 #   }
 #
 # # .download_combine_thing_memoise <- memoise::memoise(.download_combine_thing)
@@ -160,12 +160,12 @@ download_rapm_szou <-
 #     }
 #   )
 #
-# .download_combine_rapm_szou <-
+# .download_combine_rapm_sz <-
 #   memoise::memoise(
-#     function(..., path = config$path_rapm_szou_combined) {
+#     function(..., path = config$path_rapm_sz_combined) {
 #       .download_combine_thing(
 #         ...,
-#         f_download = .download_rapm_szou,
+#         f_download = .download_rapm_sz,
 #         path = path
 #       )
 #     }

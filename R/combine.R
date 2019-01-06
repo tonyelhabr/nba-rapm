@@ -36,7 +36,7 @@
         data = res,
         path = path_out
       )
-    invisible(res)
+    res
   }
 
 # Don't think I really need to specify `path_out` with these, assuming that
@@ -65,11 +65,11 @@ combine_rpm_espn <-
     )
   }
 
-combine_rapm_szou <-
+combine_rapm_sz <-
   function(...) {
     .combine_data_from_paths(
       ...,
-      path = config$path_rapm_szou
+      path = config$path_rapm_sz
     )
   }
 

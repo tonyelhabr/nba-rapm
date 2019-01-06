@@ -5,9 +5,9 @@ if(FALSE) {
   # the user that it is an option.
   download_nbastatr(overwrite = FALSE)
   download_rpm_espn(overwrite = FALSE)
-  download_rapm_szou(overwrite = FALSE)
+  download_rapm_sz(overwrite = FALSE)
   combine_rpm_espn()
-  combine_rapm_szou()
+  combine_rapm_sz()
 
   # process ----
   # This is the "meat".
@@ -16,7 +16,7 @@ if(FALSE) {
 
   # analyze ----
   # This takes a while, so it's not vectorized across all seasons (yet).
-  visualize_proj_funcs()
+  visualize_proj_profile()
   auto_analyze_rapm_coefs()
 
 

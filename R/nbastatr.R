@@ -25,7 +25,7 @@
         data = res,
         path = path
       )
-    invisible(res)
+    res
   }
 
 .get_teams_nbastatr <-
@@ -48,7 +48,7 @@
         data = res,
         path = path
       )
-    invisible(res)
+    res
   }
 
 .get_teams_game_logs_nbastatr <-
@@ -92,7 +92,7 @@
         path = path
       )
 
-    invisible(res)
+    res
   }
 
 .get_players_game_logs_nbastatr <-
@@ -123,7 +123,7 @@
         path = path
       )
 
-    invisible(res)
+    res
   }
 
 
@@ -166,7 +166,7 @@
       data = res,
       path = path
     )
-    invisible(res)
+    res
   }
 
 # Use something like this to get player-slugs for a specific year?
@@ -186,7 +186,6 @@
       pluck(1) %>%
       as_tibble()
   }
-
 
 .get_players_summary_nbastatr <-
   function(..., season = .SEASON, path) {
@@ -218,180 +217,40 @@
       data = res,
       path = path
     )
-    invisible(res)
+    res
   }
 
-# unused ----
-# .COLS_GAME_LOGS_PLAYER_NBASTATR_ALL <-
-#   c(
-#     "year_season",
-#     "slug_season",
-#     "slug_league",
-#     "type_season",
-#     "date_game",
-#     "id_game",
-#     "number_game_team_season",
-#     "name_team",
-#     "id_team",
-#     "is_b2b",
-#     "is_b2b_first",
-#     "is_b2b_second",
-#     "location_game",
-#     "slug_matchup",
-#     "slug_team",
-#     "count_days_rest_team",
-#     "count_days_next_game_team",
-#     "slug_opponent",
-#     "slug_team_winner",
-#     "slug_team_loser",
-#     "outcome_game",
-#     "name_player",
-#     "number_game_player_season",
-#     "count_days_rest_player",
-#     "count_days_next_game_player",
-#     "id_player",
-#     "is_win",
-#     "fgm",
-#     "fga",
-#     "pct_fg",
-#     "fg3m",
-#     "fg3a",
-#     "pct_fg3",
-#     "pct_ft",
-#     "has_video",
-#     "fg2m",
-#     "fg2a",
-#     "pct_fg2",
-#     "minutes",
-#     "ftm",
-#     "fta",
-#     "oreb",
-#     "dreb",
-#     "treb",
-#     "ast",
-#     "stl",
-#     "blk",
-#     "tov",
-#     "pf",
-#     "pts",
-#     "plusminus",
-#     "url_team_season_logo",
-#     "url_player_stats",
-#     "url_player_thumbnail",
-#     "url_player_headshot",
-#     "url_player_action_photo"
-#   )
-#
-# .COLS_GAME_LOGS_PLAYER_NBASTATR <-
-#   c(
-#     "id_player",
-#     "is_win",
-#     "fgm",
-#     "fga",
-#     "pct_fg",
-#     "fg3m",
-#     "fg3a",
-#     "pct_fg3",
-#     "pct_ft",
-#     "has_video",
-#     "fg2m",
-#     "fg2a",
-#     "pct_fg2",
-#     "minutes",
-#     "ftm",
-#     "fta",
-#     "oreb",
-#     "dreb",
-#     "treb",
-#     "ast",
-#     "stl",
-#     "blk",
-#     "tov",
-#     "pf",
-#     "pts",
-#     "plusminus"
-#   )
-#
-# .COLS_GAME_LOGS_TEAM_NBASTATR_ALL <-
-#   c(
-#     "year_season",
-#     "slug_season",
-#     "slug_league",
-#     "type_season",
-#     "date_game",
-#     "id_game",
-#     "number_game_team_season",
-#     "name_team",
-#     "id_team",
-#     "is_b2b",
-#     "is_b2b_first",
-#     "is_b2b_second",
-#     "location_game",
-#     "slug_matchup",
-#     "slug_team",
-#     "count_days_rest_team",
-#     "count_days_next_game_team",
-#     "slug_opponent",
-#     "slug_team_winner",
-#     "slug_team_loser",
-#     "outcome_game",
-#     "is_win",
-#     "fgm_team",
-#     "fga_team",
-#     "pct_fg_team",
-#     "fg3m_team",
-#     "fg3a_team",
-#     "pct_fg3team",
-#     "pct_ft_team",
-#     "has_video",
-#     "fg2m_team",
-#     "fg2a_team",
-#     "pct_fg2team",
-#     "minutes_team",
-#     "ftm_team",
-#     "fta_team",
-#     "oreb_team",
-#     "dreb_team",
-#     "treb_team",
-#     "ast_team",
-#     "stl_team",
-#     "blk_team",
-#     "tov_team",
-#     "pf_team",
-#     "pts_team",
-#     "plusminus_team",
-#     "url_team_season_logo",
-#     "id_opponent"
-#   )
-# .COLS_GAME_LOGS_TEAM_NBASTATR <-
-#   c(
-#     "name_team",
-#     "id_team",
-#     # "outcome_game",
-#     "is_win",
-#     "fgm_team",
-#     "fga_team",
-#     "pct_fg_team",
-#     "fg3m_team",
-#     "fg3a_team",
-#     "pct_fg3team",
-#     "pct_ft_team",
-#     "has_video",
-#     "fg2m_team",
-#     "fg2a_team",
-#     "pct_fg2team",
-#     "minutes_team",
-#     "ftm_team",
-#     "fta_team",
-#     "oreb_team",
-#     "dreb_team",
-#     "treb_team",
-#     "ast_team",
-#     "stl_team",
-#     "blk_team",
-#     "tov_team",
-#     "pf_team",
-#     "pts_team",
-#     "plusminus_team"
-#   )
+# Note that this is a bit different since it depends on `players_summary_nbastatr`
+# already existing.
+.get_players_bpm_nbastatr <-
+  function(..., path) {
+    players_summary_nbastatr <- .try_import_players_summary_nbastatr(...)
+    res <-
+      players_summary_nbastatr %>%
+      select(id = id_player_nba, name = name_player, matches("ratio.*pm$")) %>%
+      rename_at(vars(matches("ratio.*pm$")), funs(str_remove(., "ratio_")))
+    .export_data_from_path(
+      ...,
+      season = season,
+      data = res,
+      path = path
+    )
+    res
+  }
+
+# Note that this is also different since it depends on `players_summary_compare`
+# already existing.
+.get_players_pm <-
+  function(..., path) {
+    players_summary_compare <- .try_import_players_summary_compare(...)
+    res <-
+      players_summary_compare
+    .export_data_from_path(
+      ...,
+      season = season,
+      data = res,
+      path = path
+    )
+    res
+  }
 

@@ -11,7 +11,7 @@
     res <- attempt::try_catch(expr = f_import(..., path = path, return_type = "warning"), .e = NULL)
 
     if(!is.null(res)) {
-      return(invisible(res))
+      return(res)
     }
 
     .display_info(
@@ -21,7 +21,7 @@
     res <- attempt::try_catch(expr = f_get(..., path = path, return_type = "warning"), .e = NULL)
 
     if(!is.null(res)) {
-      return(invisible(res))
+      return(res)
     }
 
     .display_error(
@@ -99,6 +99,17 @@
     }
   )
 
+.try_import_bpm_nbastatr <-
+  memoise::memoise(
+    function(...) {
+      .try_import_thing(
+        ...,
+        f_get = .get_bpm_nbastatr,
+        path = config$path_bpm_nbastatr
+      )
+    }
+  )
+
 # non-nbastatr, with `f_get` ----
 
 .try_import_proj_profile <-
@@ -111,8 +122,7 @@
     )
   }
 
-
-.try_import_rapm_coefs_cors_grid <-
+.try_import_metrics_cors_grid <-
   function(...) {
     .display_warning(
       glue::glue("You should probably just run `f_get` directly."),
@@ -120,19 +130,19 @@
     )
     .try_import_thing(
       ...,
-      # f_get = .get_rapm_coefs_cors_grid,
+      # f_get = .get_metrics_cors_grid,
       f_get = NULL,
-      path = config$path_rapm_coefs_cors_grid
+      path = config$path_metrics_cors_grid
     )
   }
 
 # Do I need this?
-# .try_import_rapm_coefs_cors_grid_summary <-
+# .try_import_metrics_cors_grid_summary <-
 #   function(...) {
 #     .try_import_thing(
 #       ...,
-#       f_get = summarise_rapm_coefs_cors_grid,
-#       path = config$path_rapm_coefs_cors_grid_summary
+#       f_get = summarise_metrics_cors_grid,
+#       path = config$path_metrics_cors_grid_summary
 #     )
 #   }
 
@@ -141,7 +151,7 @@
 # + These should be used to import one season at a time.
 # + These functions set `f_get = NULL` because their output is "non-trivial"
 # to recreate, so they should be created by some other process (explicitly by the user).
-# + DO NOT `memoise::memoise()` for `*rapm_coefs()` because otherwise the `.get_rapm_coefs_cors_grid()`
+# + DO NOT `memoise::memoise()` for `*rapm_coefs()` because otherwise the `.get_metrics_cors_grid()`
 # function will not work properly!
 # + Note that these functions depend on the default value of `f_import` in `.try_import_thing()`.
 .try_import_rapm_coefs <-
@@ -154,14 +164,14 @@
       )
     }
 
-.try_import_rapm_szou <-
+.try_import_rapm_sz <-
   memoise::memoise(
     function(...) {
       .try_import_thing(
         ...,
         validate = FALSE,
         f_get = NULL,
-        path = config$path_rapm_szou
+        path = config$path_rapm_sz
       )
     }
   )
@@ -178,55 +188,53 @@
     }
   )
 
+
+.try_import_players_summary_compare <-
+  function(...) {
+    .try_import_thing(
+      ...,
+      f_get = NULL,
+      path = config$path_players_summary_compare
+    )
+  }
+
+
 # non-nbastatr, combined (with `f_get`) ----
-# These `combined` functions are useful for comparing data across seasons.
-# Note that `validate = FALSE` means that only the non-suffixed file is checked for
-# existence for determination of whether to call the `f_get` function.
-.try_import_rpm_espn_combined <-
-  memoise::memoise(
-    function(...) {
-      .try_import_thing(
-        ...,
-        validate = FALSE,
-        f_get = .download_combine_rpm_espn,
-        path = .create_path_combined(config$path_rpm_espn)
-      )
-    }
-  )
-
-.try_import_rapm_szou_combined <-
-  memoise::memoise(
-    function(...) {
-      .try_import_thing(
-        ...,
-        validate = FALSE,
-        f_get = .download_combine_rapm_szou,
-        path = .create_path_combined(config$path_rapm_szou)
-      )
-    }
-  )
-
-.try_import_rapm_coefs_combined <-
-  memoise::memoise(
-    function(...) {
-      .try_import_thing(
-        ...,
-        validate = FALSE,
-        f_get = combine_rapm_coefs,
-        path = .create_path_combined(config$path_rapm_coefs)
-      )
-    }
-  )
-
-# .try_import_players_summary_compare_combined <-
+# # These `combined` functions are useful for comparing data across seasons.
+# # Note that `validate = FALSE` means that only the non-suffixed file is checked for
+# # existence for determination of whether to call the `f_get` function.
+# .try_import_rpm_espn_combined <-
 #   memoise::memoise(
 #     function(...) {
 #       .try_import_thing(
 #         ...,
 #         validate = FALSE,
-#         f_get = combine_players_summary_compare,
-#         path = .create_path_combined(config$path_players_summary_compare)
+#         f_get = .download_combine_rpm_espn,
+#         path = .create_path_combined(config$path_rpm_espn)
 #       )
 #     }
 #   )
-
+#
+# .try_import_rapm_sz_combined <-
+#   memoise::memoise(
+#     function(...) {
+#       .try_import_thing(
+#         ...,
+#         validate = FALSE,
+#         f_get = .download_combine_rapm_sz,
+#         path = .create_path_combined(config$path_rapm_sz)
+#       )
+#     }
+#   )
+#
+# .try_import_rapm_coefs_combined <-
+#   memoise::memoise(
+#     function(...) {
+#       .try_import_thing(
+#         ...,
+#         validate = FALSE,
+#         f_get = combine_rapm_coefs,
+#         path = .create_path_combined(config$path_rapm_coefs)
+#       )
+#     }
+#   )

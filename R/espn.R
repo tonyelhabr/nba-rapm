@@ -73,6 +73,6 @@
       data = res,
       path = path
     )
-    invisible(res)
+    res
   }
 

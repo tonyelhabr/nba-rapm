@@ -52,18 +52,17 @@ suppressWarnings(suppressPackageStartupMessages(library("teplot")))
 .SEASON_TYPES <- "regular"
 .SEASON_TYPE <- .SEASON_TYPES[1]
 
-paths_funcs <-
-  list.files(
-    path = file.path("R"),
-    pattern = "R$",
-    full.names = TRUE
-  )
-invisible(sapply(paths_funcs, source))
-# sapply(paths_funcs, source)
-rm("paths_funcs")
+# paths_funcs <-
+#   list.files(
+#     path = file.path("R"),
+#     pattern = "R$",
+#     full.names = TRUE
+#   )
+# invisible(sapply(paths_funcs, source))
+# rm("paths_funcs")
+R.utils::sourceDirectory("R", recursive = FALSE)
 
-# if(interactive()) {
-#   config <- import_config()
-# }
-config <- import_config(file_static = )
+# The progress bar may interfere with other messages in the console.
+options(readr.show_progress = FALSE)
+config <- import_config()
 

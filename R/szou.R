@@ -1,5 +1,5 @@
 
-.create_url_szou <-
+.create_url_sz <-
   function(..., season) {
     .validate_season(season)
     season1 <- season
@@ -9,9 +9,9 @@
     )
   }
 
-.download_rapm_szou <-
-  function(..., path = config$path_rapm_szou) {
-    url <- .create_url_szou(...)
+.download_rapm_sz <-
+  function(..., path = config$path_rapm_sz) {
+    url <- .create_url_sz(...)
     resp <-
       url %>%
       httr::GET()
@@ -50,5 +50,5 @@
         data = res,
         path = path
       )
-    invisible(res)
+    res
   }

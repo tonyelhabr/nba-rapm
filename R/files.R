@@ -147,7 +147,6 @@
     invisible(dir)
   }
 
-# path <- "data-raw/pbp_with_lineup/pbp_with_lineup_2017-18.csv"
 # Add `verbose`, etc. (i.e. `backup`) to this(?).
 .import_data <-
   function(..., path) {
@@ -218,7 +217,8 @@
     #   )
     .display_info(
       glue::glue(
-        "Successfully imported data from {usethis::ui_path(path)}."# ,
+        "{crayon::green('Imported')} data from {usethis::ui_path(path)}."
+        # "Imported data from {usethis::ui_path(path)}."# ,
         # " (Last modification at {path_info$modification_time})."
         # "{diff_time0}."
         # " (Last modification: {diff_time} min. ago)."
@@ -280,7 +280,8 @@
         path = path
       )
     .display_info(
-      glue::glue("Successfully exported data to {usethis::ui_path(path)}."),
+      # glue::glue("Exported data to {usethis::ui_path(path)}."),
+      glue::glue("{crayon::red('Exported')} data to {usethis::ui_path(path)}."),
       ...
     )
     invisible(path_export)
@@ -298,7 +299,8 @@
     if (!file.exists(path)) {
       .display_info(
         glue::glue(
-          "Backup file at {path_backup} cannot be created because file to copy at {usethis::ui_path(path)} cannot be found."
+          "Backup file at {path_backup} cannot be created because file ",
+          "to copy at {usethis::ui_path(path)} cannot be found."
         ),
         ...
       )

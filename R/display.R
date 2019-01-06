@@ -1,12 +1,14 @@
 
 .display_info <- function(x, ..., .envir = parent.frame(), verbose = .VERBOSE) {
-  # .display_msg(..., verbose = verbose, type = "info")
   if(!verbose) {
     return(invisible(NULL))
   }
-  # usethis::ui_line(glue::glue("Info: {x}"), .envir = .envir)
-  usethis::ui_line(glue::glue("{x}"), .envir = .envir)
-  # cli::cat_rule(left = x, width = 80L)
+
+  # usethis::ui_line(glue::glue("{x}"), .envir = .envir)
+  # Reference: `usethis::ui_line()`
+  x <- glue::glue_collapse(x, "\n")
+  x <- glue::glue(x, .envir = .envir)
+  cli::cat_line(x)
 }
 
 .display_auto_step <- function(x, ..., .envir = parent.frame(), verbose = .VERBOSE) {
@@ -28,16 +30,17 @@
   usethis::ui_stop(x, .envir = .envir)
 }
 
-..pre_display <-
-  function(..., .width = 80L) {
-    opt_old <- getOption("width")
-    options(width = .width)
-  }
-
-..post_display <-
-  function(..., .width = 10000L) {
-    options(width = .width)
-  }
+# # TODO: Use these?
+# ..pre_display <-
+#   function(..., .width = 80L) {
+#     opt_old <- getOption("width")
+#     options(width = .width)
+#   }
+#
+# ..post_display <-
+#   function(..., .width = 10000L) {
+#     options(width = .width)
+#   }
 
 # # Reference: `glue` package vignette.
 # .sprintf_transformer <- function(text, envir) {

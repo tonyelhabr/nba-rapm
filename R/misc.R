@@ -1,18 +1,17 @@
 
-# select_one_of <-
-#   function(data, cols, drop = FALSE) {
-#
-#     .cols <- names(data)
-#
-#     if(!drop) {
-#       cols_in <- intersect(cols, .cols)
-#       cols_nin <- setdiff(.cols, cols_order)
-#       cols_fct <- factor(.cols, levels = c(cols_in, cols_nin))
-#     } else {
-#       cols_fct <- factor(cols, levels = cols)
-#     }
-#     dplyr::select(data, tidyselect::one_of(levels(cols_fct)))
-#   }
+# Reference: `{tetidy}` (and https://github.com/tidyverse/tidyr/blob/master/R/utils.R)
+ensym2 <- function (arg)  {
+  arg <- rlang::ensym(arg)
+  expr <- rlang::eval_bare(rlang::expr(rlang::enquo(!!arg)),  rlang::caller_env())
+  expr <- rlang::quo_get_expr(expr)
+  if (rlang::is_string(expr)) {
+    rlang::sym(expr)
+  } else if (rlang::is_symbol(expr)) {
+    expr
+  } else {
+    rlang::abort("Must supply a symbol or a string as argument")
+  }
+}
 
 .try_skip <-
   function(...,
@@ -77,7 +76,6 @@
     }
     skip
   }
-
 
 .create_pb <-
   function(total, ..., width = 80, format = "[:bar] :percent eta :eta\n") {

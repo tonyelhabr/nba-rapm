@@ -1,9 +1,4 @@
 
-# poss_side_wide <- .import_data_from_path(path = config$path_poss_wide_side, side = "o", season = 2017)
-# n_poss_max <- poss_side_wide %>% pull(n_poss) %>% sort(decreasing = TRUE) %>% .[[1]]
-# poss_side_long <- .import_data_from_path(path = config$path_poss_long_side, side = "o", season = 2017)
-# poss_side_long %>% mutate_at(vars(dummy), funs(. / n_poss_max)) %>%.spread_poss_side()
-
 auto_main <-
   function(...) {
     # width_old <- getOption("width")
@@ -13,14 +8,14 @@ auto_main <-
       ...,
       skip = FALSE
     )
-    auto_prepare_rapm_models(
+    auto_prepare_models(
       ...,
       scale = FALSE,
       collapse = TRUE,
       # skip = TRUE,
       skip = FALSE
     )
-    auto_fit_rapm_models(
+    auto_fit_models(
       ...,
       intercept = TRUE,
       # optimize = TRUE,
@@ -29,9 +24,13 @@ auto_main <-
       # lambda_d = 500,
       skip = FALSE
     )
+    auto_extract_coefs(
+      ...,
+      skip = FALSE
+    )
     # auto_unregister_cores()
     # options(width = width_old)
-    invisible(res)
+    invisible()
   }
 
 
@@ -44,7 +43,7 @@ auto_main <-
 #   .f = function(x) {
 #     # auto_clean_pbp(season = x, skip = TRUE)
 #     auto_reshape_pbp(season = x, skip = FALSE)
-#     auto_fit_rapm_models(
+#     auto_fit_models(
 #       season = x,
 #       skip = FALSE,
 #       # skip = TRUE,

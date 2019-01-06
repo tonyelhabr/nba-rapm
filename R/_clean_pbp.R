@@ -109,6 +109,7 @@
         matches("team1player[1-5]id$"),
         matches("team2player[1-5]id$")
       ) %>%
+      mutate(half = if_else(period <= 2L, 1L, 2L)) %>%
       unite(lineup1, matches("team1player"), sep = "-") %>%
       unite(lineup2, matches("team2player"), sep = "-") %>%
       # Do this because `event_num` is not completely reliable for sorting.
@@ -235,6 +236,7 @@
         "mp",
         "id_game",
         "period",
+        "half",
         "pk",
         paste0("id_team", suffix12),
         paste0("slug_team", suffix12),
@@ -267,6 +269,9 @@
   function(...,
            pbp_parse,
            path_pbp = config$path_pbp) {
+
+    # Note: Not sure if adding `half`/`period` to selection here will mess anything
+    # up down-stream.
     suppressMessages(
       pbp <-
         full_join(
@@ -276,6 +281,8 @@
               rn1 = rn,
               pk1 = pk,
               id_game,
+              half,
+              period,
               is_home = is_home1,
               # is_off = is_off1,
               pts = pts1,
@@ -294,6 +301,8 @@
               rn2 = rn,
               pk2 = pk,
               id_game,
+              half,
+              period,
               is_home = is_home2,
               # is_off = is_off2,
               pts = pts2,
@@ -325,7 +334,8 @@
       ungroup() %>%
       gather(dummy, id_player, matches("^x")) %>%
       select(-dummy) %>%
-      group_by(id_game, poss_num) %>%
+      # group_by(id_game, poss_num) %>%
+      group_by(id_game, half, period, poss_num) %>%
       mutate(player_num = row_number()) %>%
       ungroup() %>%
       mutate(side = if_else(player_num <= 5L, "o", "d")) %>%
@@ -451,7 +461,7 @@
     lineup_summary_calc
   }
 
-.summarise_players_stats <-
+.summarise_and_compare_players_stats <-
   function(data) {
     data %>%
       group_by(id_game, id_player, side) %>%
@@ -463,7 +473,13 @@
       ungroup()
   }
 
-.summarise_players <-
+.rename_side_calc <-
+  function(data) {
+    data %>%
+      rename_at(vars(matches("calc_[od]$")), funs(str_replace(., "_calc_([od])$", "_\\1_calc")))
+  }
+
+.summarise_and_compare_players <-
   function(...,
            pbp,
            path_players_summary_calc = config$path_players_summary_calc,
@@ -475,10 +491,10 @@
       bind_rows(
         pbp %>%
           filter(side == "o") %>%
-          .summarise_players_stats(),
+          .summarise_and_compare_players_stats(),
         pbp %>%
           filter(side == "d") %>%
-          .summarise_players_stats()
+          .summarise_and_compare_players_stats()
       ) %>%
       arrange(id_game, id_player)
 
@@ -498,13 +514,14 @@
           spread(metric, value),
         by = c("id_game", "id_player")
       ) %>%
-      mutate(pm_calc = pts_calc_o - pts_calc_d) %>%
+      .rename_side_calc() %>%
+      mutate(pm_calc = pts_o_calc - pts_d_calc) %>%
       arrange(id_game, id_player)
 
     players_game_logs_nbastatr <-
       .try_import_players_game_logs_nbastatr(...)
 
-    players_game_logs_nbastatr_slim <-
+    players_game_logs_nbastatr_min <-
       players_game_logs_nbastatr %>%
       select(
         id_game,
@@ -515,20 +532,20 @@
         slug_opponent,
         id_player,
         name_player,
-        mp_game_logs_nbastatr = minutes,
-        pm_game_logs_nbastatr = plusminus
+        mp_nbastatr = minutes,
+        pm_nbastatr = plusminus
       )
 
     players_game_logs_compare <-
       players_game_logs_calc_compare %>%
       left_join(
-        players_game_logs_nbastatr_slim,
+        players_game_logs_nbastatr_min,
         by = c("id_player", "id_game")
       ) %>%
       arrange(id_game, id_team, id_player) %>%
       mutate(
-        mp_diff = mp_calc - mp_game_logs_nbastatr,
-        pm_diff = pm_calc - pm_game_logs_nbastatr
+        mp_diff = mp_calc - mp_nbastatr,
+        pm_diff = pm_calc - pm_nbastatr
       ) %>%
       select(
         id_game,
@@ -538,12 +555,12 @@
         name_player,
         poss_calc,
         mp_calc,
-        mp_game_logs_nbastatr,
+        mp_nbastatr,
         mp_diff,
-        pts_calc_o,
-        pts_calc_d,
+        pts_o_calc,
+        pts_d_calc,
         pm_calc,
-        pm_game_logs_nbastatr,
+        pm_nbastatr,
         pm_diff
       )
 
@@ -573,28 +590,33 @@
       .try_import_players_nbastatr(...)
 
     cols_players_summary_calc <-
-      c("id_player",
+      c(
+        "id_player",
         "name_player",
-        paste0("gp", "_calc_total"),
-        paste0("poss", c("_calc_o", "_calc_d", "_calc_total")),
-        paste0("mp", c("_calc_o", "_calc_d", "_calc_total")),
-        paste0("pts", c("_calc_o", "_calc_d", "_o_per100_calc")),
+        paste0("gp", "_calc"),
+        paste0("poss", c("_o", "_d", "_both"), "_calc"),
+        paste0("mp", c("_o", "_d", "_both"), "_calc"),
+        paste0("pts", c("_o", "_d"), "_calc"),
+        paste0("pp100poss", c("_o", "_d"), "_calc"),
         "pm_calc"
       )
+
     players_summary_calc <-
       players_summary_calc_base %>%
-      unite(metric, metric, side) %>%
-      spread(metric, value) %>%
+      unite(metric_side, metric, side) %>%
+      spread(metric_side, value) %>%
+      .rename_side_calc() %>%
       mutate(
-        poss_calc_total = poss_calc_o + poss_calc_d,
-        mp_calc_total = mp_calc_o + mp_calc_d,
-        pm_calc = pts_calc_o - pts_calc_d
+        poss_both_calc = poss_o_calc + poss_d_calc,
+        mp_both_calc = mp_o_calc + mp_d_calc,
+        pm_calc = pts_o_calc - pts_d_calc
       ) %>%
       mutate(
-        pts_o_per100_calc = 100 * pts_calc_o / poss_calc_o
+        pp100poss_o_calc = 100 * pts_o_calc / poss_o_calc,
+        pp100poss_d_calc = 100 * pts_d_calc / poss_d_calc
       ) %>%
-      rename(gp_calc_total = gp_calc_o) %>%
-      select(-gp_calc_d) %>%
+      rename(gp_calc = gp_o_calc) %>%
+      select(-gp_d_calc) %>%
       left_join(
         players_nbastatr %>% select(id_player, name_player),
         by = "id_player"
@@ -612,51 +634,54 @@
     players_summary_nbastatr <-
       .try_import_players_summary_nbastatr(...)
 
-    players_summary_nbastatr_slim <-
+    players_summary_nbastatr_min <-
       players_summary_nbastatr %>%
       select(
         id_player = id_player_nba,
-        name_player_summary_nbastatr = name_player_bref,
-        gp_summary_nbastatr = count_games,
-        mp_summary1_nbastatr = minutes,
-        mp_summary2_nbastatr = minutes_totals
+        name_nbastatr = name_player_bref,
+        gp_nbastatr = count_games,
+        # The following two are equivalent.
+        # mp_nbastatr = minutes,
+        mp_nbastatr = minutes_totals
       )
 
-    players_game_logs_nbastatr_slim_summ <-
-      players_game_logs_nbastatr_slim %>%
+    players_game_logs_nbastatr_min_summ <-
+      players_game_logs_nbastatr_min %>%
       group_by(id_player, name_player) %>%
       summarise(
-        gp_game_logs_nbastatr = n(),
-        mp_game_logs_nbastatr = sum(mp_game_logs_nbastatr),
-        pm_game_logs_nbastatr = sum(pm_game_logs_nbastatr)
+        gp_nbastatr = n(),
+        mp_nbastatr = sum(mp_nbastatr),
+        pm_nbastatr = sum(pm_nbastatr)
       ) %>%
       ungroup() %>%
       arrange(id_player)
 
     cols_players_summary_calc_compare <-
-      c("id_player",
-        paste0("name_player", c("", "_summary_nbastatr")),
-        paste0("gp", c("_calc_total", "_summary_nbastatr")),
-        paste0("poss", c("_calc_o", "_calc_d", "_calc_total")),
+      c(
+        "id_player",
+        # paste0("name_player", c("", "_nbastatr")),
+        paste0("name_player", ""),
+        paste0("gp", c("_calc", "_nbastatr")),
+        paste0("poss", c("_o", "_d", "_both"), "_calc"),
         paste0("mp",
-               c(c("_calc_o", "_calc_d", "_calc_total"),
-                 "_game_logs_nbastatr",
-                 "_summary1_nbastatr",
-                 "_summary2_nbastatr")),
-        paste0("pts", c("_calc_o", "_calc_d", "_o_per100_calc")),
-        paste0("pm", c("_calc", "_game_logs_nbastatr"))
+               c(paste0(c("_o", "_d", "_both"), "_calc"),
+                 "_nbastatr")),
+        paste0("pts", c("_o", "_d"), "_calc"),
+        paste0("pp100poss", c("_o", "_d"), "_calc"),
+        paste0("pm", c("_calc", "_nbastatr"))
       )
 
     players_summary_compare <-
       players_summary_calc %>%
       left_join(
-        players_game_logs_nbastatr_slim_summ,
+        players_game_logs_nbastatr_min_summ,
         by = c("id_player", "name_player")
       ) %>%
-      left_join(
-        players_summary_nbastatr_slim,
-        by = c("id_player")
-      ) %>%
+      # This has all redundant columns.
+      # left_join(
+      #   players_summary_nbastatr_min,
+      #   by = c("id_player")
+      # ) %>%
       arrange(desc(pm_calc)) %>%
       select(cols_players_summary_calc_compare)
 
@@ -666,26 +691,26 @@
         data = players_summary_compare,
         path = path_players_summary_compare
       )
-    players_summary_calc
+    players_summary_compare
   }
 
 
-.summarise_teams <-
+.summarise_and_compare_teams <-
   function(...,
-           players_summary_calc,
+           players_summary_compare,
            path_teams_summary_calc = config$path_teams_summary_calc,
            path_teams_summary_compare = config$path_teams_summary_compare) {
 
     players_nbastatr <- .try_import_players_nbastatr(...)
 
-    players_summary_calc_aug <-
-      players_summary_calc %>%
+    players_summary_compare_aug <-
+      players_summary_compare %>%
       left_join(
         players_nbastatr %>% select(id_player, id_team, team_name),
         by = c("id_player")
       )
     teams_summary_calc <-
-      players_summary_calc_aug %>%
+      players_summary_compare_aug %>%
       group_by(id_team, team_name) %>%
       summarise_at(vars(matches("_calc")), funs(sum)) %>%
       ungroup() %>%
@@ -700,19 +725,19 @@
 
     teams_summary_nbastatr <- .try_import_teams_summary_nbastatr(...)
 
-    teams_summary_nbastatr_slim <-
+    teams_summary_nbastatr_min <-
       teams_summary_nbastatr %>%
       select(
         id_team,
-        gp_summary_nbastatr = gp,
-        pts_summary_nbastatr = pts
+        gp_nbastatr = gp,
+        pts_nbastatr = pts
       )
 
     # TODO: Re-arrange the columns to closer to those of similar names.
     teams_summary_compare <-
       teams_summary_calc %>%
       left_join(
-        teams_summary_nbastatr_slim,
+        teams_summary_nbastatr_min,
         by = c("id_team")
       ) %>%
       arrange(desc(pm_calc))
@@ -723,7 +748,7 @@
         data = teams_summary_compare,
         path = path_teams_summary_compare
       )
-    teams_summary_calc
+    teams_summary_compare
   }
 
 
@@ -800,7 +825,7 @@
         pbp_parse = pbp_parse
       )
 
-    # Note that the `players_summary_calc` is the only `_calc` object
+    # Note that the `players_summary` is the only object here
     # that matters (because the subsequent filtering depends on it).
     if(!skip_calc) {
       lineup_summary_calc <-
@@ -809,33 +834,20 @@
           pbp = pbp
         )
 
-      players_summary_calc <-
-        .summarise_players(
+      players_summary_compare <-
+        .summarise_and_compare_players(
           ...,
           pbp = pbp
         )
 
-      teams_summary_calc <-
-        .summarise_teams(
+      teams_summary_compare <-
+        .summarise_and_compare_teams(
           ...,
-          players_summary_calc = players_summary_calc
-        )
-    } else {
-      # TODO: There should probably be some logic to make sure that this
-      # data was generated from a "recent" version of `pbp`.
-      players_summary_calc <-
-        .import_data_from_path(
-          ...,
-          path = path_players_summary_calc
+          players_summary_compare = players_summary_compare
         )
     }
 
-    invisible(
-      list(
-        pbp = pbp,
-        players_summary_calc = players_summary_calc
-      )
-    )
+    invisible()
   }
 
 auto_clean_pbp <-

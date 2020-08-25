@@ -53,7 +53,7 @@ auto_main()
 # Highlights
 
 Below is a visual comparison of various RAPM-related metrics, 
-either calculated in this project (i.e. `cacl`) or retrieved from an external source.
+either calculated in this project (i.e. `calc`) or retrieved from an external source.
 
 ![](data/final/viz_metrics_join_summary_2017.png)
 
@@ -71,19 +71,36 @@ metrics_join_summary %>%
   knitr::kable()
 ```
 
-Offensive RAPM coefficients for 2017
+The data behind this visual
+
+```{r rapm_coefs_calc, echo = FALSE}
+rapm_coefs_calc <-
+  .import_data_from_path(
+    verbose = FALSE,
+    season = .SEASON,
+    path = config$path_rapm_coefs_calc
+  )
+rapm_coefs_calc
+rapm_coefs_calc %>%
+  mutate_at(vars(matches('rapm$')), ~scales::number(., accuracy = .01)) %>% 
+  head(20) %>% 
+  knitr::kable()
+```
+
+
+2017 offensive RAPM coefficients for top 10 players as a function of cross-validated (CV) log-lambda values
 
 
 ![](data/intermediate/viz_rapm_fit_side_o_2017.png)
 
-Defensive RAPM coefficients for 2017
+2017 defensive RAPM coefficients for top 10 players
 
 ![](data/intermediate/viz_rapm_fit_side_d_2017.png)
 
-Ridge regression CV Lambda Penalties for 2017 Offensive RAPM
+Ridge regression CV lambda penalties for 2017 offensive RAPM
 
 ![](data/intermediate/viz_rapm_fit_cv_side_o_2017.png)
 
-Ridge regression CV Lambda Penalties for 2017 Defensive RAPM
+Ridge regression CV lambda penalties for 2017 defensive RAPM
 
 ![](data/intermediate/viz_rapm_fit_cv_side_d_2017.png)

@@ -39,9 +39,9 @@ default:
   path_bpm_nbastatr:
     default: 'data/intermediate/bpm_nbastatr.csv'
     help: ''
-    
-    
-    
+
+
+
   # `clean_pbp()`.
   path_pbp_raw:
     default: 'data/raw/play_by_play_with_lineup.csv'
@@ -78,8 +78,8 @@ default:
   path_pbp:
     default: 'data/intermediate/pbp.rds'
     help: 'Path format of parsed AND cleaned raw play-by-play data.'
-    
-    
+
+
   # `fit_models()` and `tidy_models()`.
   path_poss_long_error_side:
     default: 'data/intermediate/poss_long_error.csv'
@@ -115,7 +115,7 @@ default:
   #   default: 'data/intermediate/rapm_coefs_var.csv'
   #   help: 'Path format of RAPM model coefficent variance values.'
   path_rapm_coefs_calc:
-    default: 'data/intermediate/rapm_coefs.csv'
+    default: 'data/intermediate/rapm_coefs_calc.csv'
     help: 'Path format of combined offensive and defensive RAPM coefficients.'
   path_apm_coefs_calc:
     default: 'data/intermediate/apm_coefs.csv'
@@ -124,7 +124,7 @@ default:
     default: 'data/final/metrics_join.csv'
     help: ''
 
-  
+
   # `analyze_models()`.
   path_metrics_join_summary:
     default: 'data/final/metrics_join_summary.csv'
@@ -163,6 +163,6 @@ default:
     with `path_proj_profile`.'
 
 
-   
+
 production:
 

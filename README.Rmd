@@ -71,7 +71,7 @@ metrics_join_summary %>%
   knitr::kable()
 ```
 
-The data behind this visual
+Top 20 RAPM players for 2017 (according to my calculations, which are probably off `r emo::ji('laugh')`)
 
 ```{r rapm_coefs_calc, echo = FALSE}
 rapm_coefs_calc <-
@@ -80,9 +80,9 @@ rapm_coefs_calc <-
     season = .SEASON,
     path = config$path_rapm_coefs_calc
   )
-rapm_coefs_calc
 rapm_coefs_calc %>%
   mutate_at(vars(matches('rapm$')), ~scales::number(., accuracy = .01)) %>% 
+  select(-id) %>% 
   head(20) %>% 
   knitr::kable()
 ```

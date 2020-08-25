@@ -68,45 +68,31 @@ The data behind this visual
 | rapm\_sz         | 0.2135919 |     0.0418785 |      0.0189409 |   0.1240432 |   0.4384602 |   0.0421981 |      0.0278430 |   0.2037157 |   0.5434344 |   0.0596036 |    0.4888706 |        0.3308535 |  0.2980069 |        NA | 0.1136859 |
 | rpm\_espn        | 0.0727325 |     0.2560962 |      0.1234330 |   0.0358574 |   0.0256227 |   0.3028806 |      0.1757929 |   0.1178648 |   0.0906094 |   0.6037412 |    0.1893420 |        0.1489425 |  0.1374234 | 0.1136859 |        NA |
 
-The data behind this visual
+Top 20 RAPM players for 2017 (according to my calculations, which are
+probably off 😆)
 
-    ## # A tibble: 416 x 7
-    ##         id name                slug   rank   drapm  orapm  rapm
-    ##      <int> <chr>               <chr> <int>   <dbl>  <dbl> <dbl>
-    ##  1  203957 Dante Exum          "UTA"     1  2.692  3.431  6.123
-    ##  2  201939 Stephen Curry       "GSW"     2 -0.1498 5.045  4.895
-    ##  3 1627875 Marcus Georges-Hunt ""        3 -1.072  5.785  4.713
-    ##  4 1628395 Jordan Bell         "GSW"     4  0.9958 3.387  4.383
-    ##  5  201148 Brandan Wright      ""        5  2.663  0.9943 3.657
-    ##  6 1628384 OG Anunoby          "TOR"     6  1.302  2.330  3.632
-    ##  7  202697 Iman Shumpert       "SAC"     7  2.783  0.7853 3.569
-    ##  8  101108 Chris Paul          "HOU"     8  0.3234 3.048  3.372
-    ##  9    2403 Nene                "HOU"     9  1.035  2.160  3.195
-    ## 10  201144 Mike Conley         "MEM"    10  2.190  0.9364 3.127
-    ## # ... with 406 more rows
-
-|      id | name                | slug | rank | drapm  | orapm | rapm |
-| ------: | :------------------ | :--- | ---: | :----- | :---- | :--- |
-|  203957 | Dante Exum          | UTA  |    1 | 2.69   | 3.43  | 6.12 |
-|  201939 | Stephen Curry       | GSW  |    2 | \-0.15 | 5.04  | 4.90 |
-| 1627875 | Marcus Georges-Hunt |      |    3 | \-1.07 | 5.79  | 4.71 |
-| 1628395 | Jordan Bell         | GSW  |    4 | 1.00   | 3.39  | 4.38 |
-|  201148 | Brandan Wright      |      |    5 | 2.66   | 0.99  | 3.66 |
-| 1628384 | OG Anunoby          | TOR  |    6 | 1.30   | 2.33  | 3.63 |
-|  202697 | Iman Shumpert       | SAC  |    7 | 2.78   | 0.79  | 3.57 |
-|  101108 | Chris Paul          | HOU  |    8 | 0.32   | 3.05  | 3.37 |
-|    2403 | Nene                | HOU  |    9 | 1.04   | 2.16  | 3.20 |
-|  201144 | Mike Conley         | MEM  |   10 | 2.19   | 0.94  | 3.13 |
-|  201569 | Eric Gordon         | HOU  |   11 | 1.04   | 2.07  | 3.11 |
-| 1628470 | Torrey Craig        | DEN  |   12 | 0.83   | 2.26  | 3.09 |
-|  203512 | Lucas Nogueira      |      |   13 | 1.14   | 1.90  | 3.04 |
-|  200782 | PJ Tucker           | HOU  |   14 | 0.76   | 2.22  | 2.99 |
-|  203496 | Robert Covington    | MIN  |   15 | 1.09   | 1.88  | 2.97 |
-|    2585 | Zaza Pachulia       | DET  |   16 | 0.31   | 2.57  | 2.88 |
-|  200757 | Thabo Sefolosha     | UTA  |   17 | 1.02   | 1.83  | 2.85 |
-|  101141 | Ersan Ilyasova      | MIL  |   18 | 1.02   | 1.57  | 2.59 |
-|  203954 | Joel Embiid         | PHI  |   19 | 0.97   | 1.49  | 2.46 |
-|  202327 | Ekpe Udoh           | UTA  |   20 | 1.00   | 1.46  | 2.46 |
+| name                | slug | rank | drapm  | orapm | rapm |
+| :------------------ | :--- | ---: | :----- | :---- | :--- |
+| Dante Exum          | UTA  |    1 | 2.69   | 3.43  | 6.12 |
+| Stephen Curry       | GSW  |    2 | \-0.15 | 5.04  | 4.90 |
+| Marcus Georges-Hunt |      |    3 | \-1.07 | 5.79  | 4.71 |
+| Jordan Bell         | GSW  |    4 | 1.00   | 3.39  | 4.38 |
+| Brandan Wright      |      |    5 | 2.66   | 0.99  | 3.66 |
+| OG Anunoby          | TOR  |    6 | 1.30   | 2.33  | 3.63 |
+| Iman Shumpert       | SAC  |    7 | 2.78   | 0.79  | 3.57 |
+| Chris Paul          | HOU  |    8 | 0.32   | 3.05  | 3.37 |
+| Nene                | HOU  |    9 | 1.04   | 2.16  | 3.20 |
+| Mike Conley         | MEM  |   10 | 2.19   | 0.94  | 3.13 |
+| Eric Gordon         | HOU  |   11 | 1.04   | 2.07  | 3.11 |
+| Torrey Craig        | DEN  |   12 | 0.83   | 2.26  | 3.09 |
+| Lucas Nogueira      |      |   13 | 1.14   | 1.90  | 3.04 |
+| PJ Tucker           | HOU  |   14 | 0.76   | 2.22  | 2.99 |
+| Robert Covington    | MIN  |   15 | 1.09   | 1.88  | 2.97 |
+| Zaza Pachulia       | DET  |   16 | 0.31   | 2.57  | 2.88 |
+| Thabo Sefolosha     | UTA  |   17 | 1.02   | 1.83  | 2.85 |
+| Ersan Ilyasova      | MIL  |   18 | 1.02   | 1.57  | 2.59 |
+| Joel Embiid         | PHI  |   19 | 0.97   | 1.49  | 2.46 |
+| Ekpe Udoh           | UTA  |   20 | 1.00   | 1.46  | 2.46 |
 
 2017 offensive RAPM coefficients for top 10 players as a function of
 cross-validated (CV) log-lambda values

@@ -50,13 +50,6 @@ that also comes with the project.
 auto_main()
 ```
 
-Finally, there are functions to explore other things about the data/project.
-
-```{r usage_extra, eval = FALSE}
-visualize_proj_profile()
-```
-
-
 # Highlights
 
 Below is a visual comparison of various RAPM-related metrics, 
@@ -64,7 +57,7 @@ either calculated in this project (i.e. `cacl`) or retrieved from an external so
 
 ![](data/final/viz_metrics_join_summary_2017.png)
 
-The data behind the visual.
+The data behind this visual
 
 ```{r metrics_join_summary, echo = FALSE}
 metrics_join_summary <-
@@ -78,3 +71,19 @@ metrics_join_summary %>%
   knitr::kable()
 ```
 
+Offensive RAPM coefficients for 2017
+
+
+![](data/intermediate/viz_rapm_fit_side_o_2017.png)
+
+Defensive RAPM coefficients for 2017
+
+![](data/intermediate/viz_rapm_fit_side_d_2017.png)
+
+Ridge regression CV Lambda Penalties for 2017 Offensive RAPM
+
+![](data/intermediate/viz_rapm_fit_cv_side_o_2017.png)
+
+Ridge regression CV Lambda Penalties for 2017 Defensive RAPM
+
+![](data/intermediate/viz_rapm_fit_cv_side_d_2017.png)

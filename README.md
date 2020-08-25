@@ -40,13 +40,6 @@ interface (CLI) that also comes with the project.
 auto_main()
 ```
 
-Finally, there are functions to explore other things about the
-data/project.
-
-``` r
-visualize_proj_profile()
-```
-
 # Highlights
 
 Below is a visual comparison of various RAPM-related metrics, either
@@ -55,8 +48,7 @@ source.
 
 ![](data/final/viz_metrics_join_summary_2017.png)
 
-The data behind the
-visual.
+The data behind this visual
 
 | y                | apm\_calc | bpm\_nbastatr | dbpm\_nbastatr | drapm\_calc |   drapm\_sz |  drpm\_espn | obpm\_nbastatr | orapm\_calc |   orapm\_sz |  orpm\_espn | pm\_nbastatr | rapm\_both\_calc | rapm\_calc |  rapm\_sz | rpm\_espn |
 | :--------------- | --------: | ------------: | -------------: | ----------: | ----------: | ----------: | -------------: | ----------: | ----------: | ----------: | -----------: | ---------------: | ---------: | --------: | --------: |
@@ -75,3 +67,19 @@ visual.
 | rapm\_calc       | 0.6750558 |     0.1600988 |      0.0191713 |   0.3356299 |   0.0756311 |   0.0175993 |      0.1512988 |   0.7619807 |   0.2277643 |   0.1121011 |    0.3124833 |        0.7345316 |         NA | 0.2980069 | 0.1374234 |
 | rapm\_sz         | 0.2135919 |     0.0418785 |      0.0189409 |   0.1240432 |   0.4384602 |   0.0421981 |      0.0278430 |   0.2037157 |   0.5434344 |   0.0596036 |    0.4888706 |        0.3308535 |  0.2980069 |        NA | 0.1136859 |
 | rpm\_espn        | 0.0727325 |     0.2560962 |      0.1234330 |   0.0358574 |   0.0256227 |   0.3028806 |      0.1757929 |   0.1178648 |   0.0906094 |   0.6037412 |    0.1893420 |        0.1489425 |  0.1374234 | 0.1136859 |        NA |
+
+Offensive RAPM coefficients for 2017
+
+![](data/intermediate/viz_rapm_fit_side_o_2017.png)
+
+Defensive RAPM coefficients for 2017
+
+![](data/intermediate/viz_rapm_fit_side_d_2017.png)
+
+Ridge regression CV Lambda Penalties for 2017 Offensive RAPM
+
+![](data/intermediate/viz_rapm_fit_cv_side_o_2017.png)
+
+Ridge regression CV Lambda Penalties for 2017 Defensive RAPM
+
+![](data/intermediate/viz_rapm_fit_cv_side_d_2017.png)
